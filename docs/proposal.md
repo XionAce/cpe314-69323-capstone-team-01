@@ -1,89 +1,87 @@
-# Project Proposal — working draft
+# UC-B Campus Marketplace with Reviews — Project Proposal
 
-Working title: Campus Marketplace with Reviews
+CPE 314 — Software Design & Software Design Laboratory
 
-Course: CPE 314 — Software Design & Software Design Laboratory
+Group-1 / Team 01 · BSCPE 3B · EDP 69323
 
-Group/team number: Group 1 / Team 01
+**Group Name / No.:** Group 1 | BSCPE 3B | EDP 69323
+UC-B Campus Marketplace with Reviews
 
-EDP: 69323
+**Members:** John Benedict Alaiza; Acexion Mahigugmaon; Glyde V. Arreglado; Tristan Urot; Joshua Brian S. Enovero; Eman De Paz
 
-Members and GitHub usernames: PENDING — user will add teammates later.
+**Repository URL:** https://github.com/XionAce/cpe314-69323-capstone-team-01
 
-Repository URL: https://github.com/XionAce/cpe314-69323-capstone-team-01
+**Chosen Theme (circle one):** J — Campus Marketplace with Reviews (assigned)
 
-Repository name: cpe314-69323-capstone-team-01
+**API You Will Use:** FakeStoreAPI — https://fakestoreapi.com (no key required)
 
-Theme: Option J; class sign-up availability PENDING
+## 1. One-Paragraph Pitch
 
-Public API: FakeStoreAPI, https://fakestoreapi.com — products endpoint https://fakestoreapi.com/products
+We propose UC-B Campus Marketplace with Reviews, a Java desktop application where students, faculty, school units, and department committees can post and browse goods. It retains textbook, electronics, and furniture listings with type-specific condition rules, recursive category search, buyer-interest queues, browsing history, and reviews. SQLite/JDBC persistence, a responsive background sales-CSV import, FakeStoreAPI suggestions, and category price/rating bar charts integrate the required lessons. Uniforms, department shirts, and intramural merchandise are a proposed apparel extension for instructor approval; online payments are outside scope.
 
-## 1. One-paragraph pitch
+## 2. Entity-Relationship Sketch
 
-Campus Marketplace with Reviews is a Java desktop application for students buying and selling used textbooks, electronics, and furniture. Sellers post items with type-specific condition assessments, while buyers browse nested categories, search listings, join an interest waitlist, and leave reviews. The application stores its data in SQLite, imports historical sales without freezing the interface, and uses a public product catalog to suggest categories and reference price ranges when suitable comparisons exist. Category charts help students compare asking prices and review ratings, with limitations and sample counts displayed clearly.
+PK = primary key; FK = foreign key. Text notation follows the preliminary ER model.
 
-## 2. Preliminary ER sketch
+Seller(id PK, memberId FK, displayName, sellerKind); Member(id PK, name)
 
-Member(id PK, displayName, email)
+Category(id PK, parentId FK → Category.id, name)
 
-Category(id PK, parentId FK -> Category.id, name)
+Listing(id PK, sellerId FK, categoryId FK, type, title, priceMinor, currency, status)
 
-Listing(id PK, sellerId FK -> Member.id, categoryId FK -> Category.id, type, title, description, priceMinor, currency, status, createdAt)
+Review(id PK, listingId FK, reviewerId FK → Member.id, rating, comment)
 
-TextbookDetails / ElectronicsDetails / FurnitureDetails(listingId PK/FK -> Listing.id, type-specific grading evidence)
+BuyerInterest(id PK, listingId FK, buyerId FK → Member.id, joiningOrder)
 
-Review(id PK, listingId FK -> Listing.id, reviewerId FK -> Member.id, rating, comment, createdAt)
+HistoricalSale(id PK, categoryId FK, sourceRecordId, priceMinor, currency, soldAt)
 
-BuyerInterest(id PK, listingId FK -> Listing.id, buyerId FK -> Member.id, joinedAt)
+Member 1:M Seller; Seller 1:M Listing; Category 1:M Listing, child Category and HistoricalSale; Listing 1:M Review and BuyerInterest; Member 1:M Review and BuyerInterest. Each listing also has one matching subtype-details record for condition evidence.
 
-ImportBatch(id PK, sourceName, status, startedAt, finishedAt)
+## 3. Feature Checklist
 
-HistoricalSale(id PK, batchId FK -> ImportBatch.id, sourceRecordId, categoryId FK -> Category.id, title, salePriceMinor, currency, soldAt)
+Check off which mandatory requirement each planned feature will satisfy:
 
-Member 1:M Listing; Category 1:M Listing; Category 1:M child Category; Listing 1:M Review; Member 1:M Review; Listing 1:M BuyerInterest; Member 1:M BuyerInterest; ImportBatch 1:M HistoricalSale; Category 1:M HistoricalSale. Each Listing has exactly one detail record of its selected type, enforced by service transactions and mapping tests.
-
-## 3. Feature checklist
-
-| Planned feature | Requirement |
+| Planned Feature | Requirement(s) It Satisfies |
 |---|---|
-| Abstract Listing with TextbookListing, ElectronicsListing, FurnitureListing grading overrides | OOD and SRP |
-| Per-item FIFO waitlist, LIFO recent history | Data structures |
-| Recursive Java traversal collecting listings under nested categories | Recursion |
-| JUnit 5 normal and edge-case tests, at least six | Automated testing |
-| Related SQLite tables accessed with JDBC PreparedStatement | Data model/database |
-| Parse real catalog response and use suitable products in editable suggestions | API consumption |
-| Browse, search, post, review, waitlist, import and dashboard controls | Event-driven GUI |
-| Background CSV/API operations with progress and failure handling | Concurrency |
-| Average asking prices and average ratings by category | Data mining |
-| Separate labeled price and rating bar charts | Visualization |
+| Abstract Listing; Textbook, Electronics and Furniture grading overrides. | Object-Oriented Design (Week 4) |
+| FIFO interest Queue, LIFO history Stack behavior; recursive category-tree search. | Data Structures and Recursion (Week 3) |
+| At least 6 JUnit 5 tests with normal and edge cases. | Automated Testing (Week 4) |
+| Related SQLite tables; JDBC PreparedStatement and foreign keys. | Data Modeling and Database (Week 5) |
+| Parse catalog products for editable category and price suggestions. | API Consumption (Week 5) |
+| JavaFX post/search/review/import controls; background CSV/API work. | Event-Driven GUI and Concurrency (Week 6) |
+| Mean category prices and review ratings; labeled bar charts. | Data Mining and Visualization (Week 6) |
 
-## 4. Proposed task split — assign names before submission
+## 4. Task Split
 
-| Owner | Responsibility |
+| Member | Primary Responsibility (this milestone) |
 |---|---|
-| PENDING member 1 | Domain model, condition grading, associated tests |
-| PENDING member 2 | SQLite schema, repositories, persistence tests |
-| PENDING member 3 | Recursive categories, waitlists, recent history, tests |
-| PENDING member 4 | Browse/post/review GUI integration |
-| PENDING member 5 | Catalog client, CSV import, concurrency, tests |
-| PENDING member 6 | Analytics/charts, integration/demo coordination |
+| John Benedict Alaiza | Sample listings, categories and condition examples. |
+| Acexion Mahigugmaon | Architecture, implementation planning and integration. |
+| Glyde V. Arreglado | ER sketch, attributes and relationship review. |
+| Tristan Urot | GUI sketches, control labels and user steps. |
+| Joshua Brian S. Enovero | Sample CSV and API/import validation cases. |
+| Eman De Paz | Test cases and expected analytics calculations. |
 
-For a five-member group, redistribute the sixth responsibility explicitly. Every owner updates their design-document sections and commits their own work.
+Proposed roles for member confirmation; actual contributions will be recorded in each member’s own commits.
 
-## 5. Public API plan
+## 5. Public API You Plan to Use
 
-FakeStoreAPI provides sample product title, description, category and price data. The application will request products through Java HttpClient, parse JSON, and rank relevant products for editable category and reference-price suggestions. A successful real call must be demonstrated; fixture data is for deterministic tests and labeled offline fallback only.
+FakeStoreAPI — GET https://fakestoreapi.com/products (no key): provides product titles, descriptions, categories and prices for editable category and reference-price suggestions. Docs: https://fakestoreapi.com/docs.
 
-Actual Java reachability and catalog coverage are unverified. Previous browsing attempts were blocked; that does not establish whether Java requests will succeed. Product currency must be resolved before converting remote values into local PHP suggestions. Unsupported listings return no comparable result rather than a fabricated match.
+## 6. Risks / Open Questions
 
-## 6. Risks and open questions
+How will we keep the interface responsive while importing a large CSV file?
 
-| Risk/question | Proposed response | Instructor response |
-|---|---|---|
-| Catalog may not cover textbooks/furniture | Demonstrate supported matches; keep manual entry; ask whether supplementary catalog data/API is required | PENDING |
-| Remote price currency not established | Confirm convention; document any demo assumption; use no silent conversion | PENDING |
-| Large CSV can freeze GUI or contend for SQLite writes | JavaFX Task, streaming parser, serialized writes, bounded transactions, progress and cancellation | PENDING |
-| Different developer/presentation configurations | Maven Wrapper, pinned versions, Java 21, early Eclipse import and fresh-checkout test | PENDING |
-| Category cycles or repeated import records | Reject cycles; stable source IDs and duplicate constraints | PENDING |
+How will recursive searches include listings from every nested subcategory?
 
-This draft is not ready for submission until administrative fields, roles, API decisions and instructor responses are completed. Instructor review/sign-off: PENDING.
+What should the application show when FakeStoreAPI has no comparable product?
+
+How will we calculate category ratings and average prices accurately?
+
+---
+
+Submission copies, using the instructor template:
+
+[Revised Word proposal](https://docs.google.com/document/d/1WKe4Z_dsyzu8EQerr_-1qp6eYKJjS0pf/edit) · [Revised PDF proposal](https://drive.google.com/file/d/1kU4UM0kmT_17ppp3_ONYVf3K2j1lJfxE/view)
+
+Instructor sign-off remains pending. This document records proposed responsibilities, not completed contributions.
