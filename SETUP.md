@@ -1,8 +1,8 @@
 # Computer and repository setup
 
-Status: preparation only. Tool installation and compilation have not yet been verified.
+Status: preparation only. User-provided terminal output verifies java and javac 21.0.12.1. Eclipse installation is shown in screenshots; project import, compilation and launch remain pending.
 
-The automated official JDK download failed in this session with a Windows TLS credentials error using both PowerShell and curl. Install from the official page below in your browser; installation is still pending.
+The earlier automated JDK download failed, but the user subsequently installed Temurin JDK 21 successfully. The steps below remain setup guidance for teammates.
 
 ## 1. Install JDK 21
 
@@ -78,11 +78,11 @@ Accept only after a fresh checkout builds, a minimal JavaFX window opens, and te
 
 - [x] Existing tool audit recorded.
 - [x] Planning documents and repository guidance prepared.
-- [ ] JDK 21 installed; java and javac verified.
+- [x] JDK 21 installed; java and javac verified in user-provided output.
 - [ ] Eclipse installed and project JDK configured.
 - [x] EDP 69323 and Group 1 confirmed.
-- [ ] Team roster, roles and remote confirmed; teammates will be added later.
-- [ ] Option J availability confirmed.
+- [ ] Six names and proposed roles recorded; member confirmation and GitHub invitations pending.
+- [x] Option J assigned, as confirmed by the user.
 - [ ] Proposal and initial design document reviewed by the group.
 - [ ] Public API accessibility/coverage and currency convention resolved.
 - [ ] Required proposal submitted and instructor sign-off recorded.
