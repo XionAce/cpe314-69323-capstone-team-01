@@ -7,15 +7,15 @@
 | Read supplied specification/templates/checklists | Done in chat | References linked in README |
 | Audit local tools | Done | See environment audit |
 | Prepare repository documents | Done as drafts | Team review needed |
-| Install and verify Java 21 | Pending | Local setup |
-| Install/configure Eclipse | Pending | Local setup |
+| Install and verify Java 21 | Verified in user-provided terminal output | java/javac 21.0.12.1 |
+| Install/configure Eclipse | Installed per user screenshots | Select JDK 21; project import/run pending |
 | Record EDP and group | Done | EDP 69323, Group 1 / Team 01 |
 | Identify team repository | Done | XionAce/cpe314-69323-capstone-team-01; Public; created by user |
-| Add members and assign roles | Deferred by user | User will add teammates later; real names/accounts needed then |
-| Confirm theme availability | Pending | Class sign-up list/instructor |
+| Add members and assign roles | Six names and proposed roles recorded | Member confirmation and GitHub accounts/invitations pending |
+| Confirm theme availability | Assigned | User confirmed Option J |
 | Verify Java API reachability and sample coverage | Pending | JDK; live endpoint check |
 | Resolve currency and unsupported catalog categories | Pending | Team/instructor decision |
-| Complete required proposal format and initial design document | Draft ready | Team metadata and review |
+| Complete required proposal format and initial design document | Revised proposal Word/PDF ready for review | Design document remains preliminary |
 | Submit proposal and record instructor sign-off | Pending | Course checkpoint workflow |
 
 ## After instructor sign-off
