@@ -1,4 +1,4 @@
-# Campus Marketplace with Reviews — Project Design Document
+# UC-B Campus Marketplace with Reviews — Project Design Document
 
 University of Cebu — Computer Engineering Department
 
@@ -8,9 +8,9 @@ Instructor: Richyll Son
 
 First Semester, S.Y. 2026–2027
 
-Group number: 1 (Team 01). EDP: 69323. Team members: PENDING — user will add teammates later.
+Group number: 1 (Team 01). EDP: 69323. Section: BSCPE 3B. Members: John Benedict Alaiza; Acexion Mahigugmaon; Glyde V. Arreglado; Tristan Urot; Joshua Brian S. Enovero; Eman De Paz.
 
-Version 0.1 — preparation draft, 17 October 2026.
+Version 0.2 — preparation draft, 18 October 2026.
 
 ## Revision history
 
@@ -20,13 +20,13 @@ Version 0.1 — preparation draft, 17 October 2026.
 
 ## 1. Introduction and project overview
 
-Campus Marketplace with Reviews helps students list and discover used textbooks, electronics, and furniture through a JavaFX desktop interface. Type-specific condition rules, buyer-interest waitlists, nested categories, reviews, and category analytics support informed browsing. SQLite provides local persistence, and background imports and product-catalog lookups keep interactions responsive. The selected theme is Option J, subject to confirmation on the class sign-up list.
+Campus Marketplace with Reviews helps students list and discover used textbooks, electronics, and furniture through a JavaFX desktop interface. Type-specific condition rules, buyer-interest waitlists, nested categories, reviews, and category analytics support informed browsing. SQLite provides local persistence, and background imports and product-catalog lookups keep interactions responsive. The selected theme is assigned Option J. Campus apparel and school/department sellers are proposed extensions for instructor review.
 
 ## 2. Preliminary ER sketch and team roles
 
-Use docs/proposal.md Section 2 as the preliminary ER sketch. Members sell Listings; Categories contain Listings and child Categories; Listings receive Reviews and BuyerInterests; ImportBatches contain HistoricalSales assigned to Categories. Listing subtype detail records store grading evidence.
+Use docs/proposal.md Section 2 as the preliminary ER sketch. Members have Seller profiles; Sellers post Listings; Categories contain Listings and child Categories; Listings receive Reviews and BuyerInterests; ImportBatches contain HistoricalSales assigned to Categories. Listing subtype detail records store grading evidence.
 
-The proposed roles are in docs/proposal.md Section 4. Assign every member's actual name and role before submission. This draft does not assert that the roster requirement is complete.
+The six names and proposed milestone responsibilities are in docs/proposal.md Section 4. Members must confirm their roles; actual contributions remain to be recorded.
 
 ## 3. System architecture and object-oriented design
 
