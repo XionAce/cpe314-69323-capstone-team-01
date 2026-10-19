@@ -19,7 +19,6 @@ Agreed direction: Java 21, JavaFX 21, Maven Wrapper, SQLite through JDBC, JUnit 
 | docs/requirements.md | Requirement-to-feature-to-test mapping |
 | docs/work-plan.md | Tasks, decisions, ownership, milestone exit criteria |
 | docs/environment-audit.md | What was actually found on this computer |
-| AGENTS.md | Instructions for future work in this repository |
 
 EDP: 69323. Group: 1 (Team 01 in the course naming convention).
 Repository: [XionAce/cpe314-69323-capstone-team-01](https://github.com/XionAce/cpe314-69323-capstone-team-01).
