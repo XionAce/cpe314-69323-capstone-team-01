@@ -2,7 +2,7 @@
 
 Group names:
 1. Acexion Mahigugmaon
-2.
+2. Glyde Arreglado
 3.
 4.
 5.
