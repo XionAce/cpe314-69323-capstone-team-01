@@ -79,11 +79,11 @@ Accept only after a fresh checkout builds, a minimal JavaFX window opens, and te
 - [x] Existing tool audit recorded.
 - [x] Planning documents and repository guidance prepared.
 - [x] JDK 21 installed; java and javac verified in user-provided output.
-- [ ] Eclipse installed and project JDK configured.
+- [x] Eclipse installed and project JDK configured.
 - [x] EDP 69323 and Group 1 confirmed.
-- [ ] Six names and proposed roles recorded; member confirmation and GitHub invitations pending.
+- [x] Six names and proposed roles recorded; member confirmation and GitHub invitations pending.
 - [x] Option J assigned, as confirmed by the user.
-- [ ] Proposal and initial design document reviewed by the group.
-- [ ] Public API accessibility/coverage and currency convention resolved.
+- [x] Proposal and initial design document reviewed by the group.
+- [x] Public API accessibility/coverage and currency convention resolved.
 - [ ] Required proposal submitted and instructor sign-off recorded.
 - [ ] After sign-off: Maven Wrapper, dependency resolution, minimal JavaFX launch and Eclipse import verified.
