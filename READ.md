@@ -2,7 +2,7 @@
 
 # Team Members
 Group names:
-1. Acexion Mahigugmaon
+1. Acexion B. Mahigugmaon
 2. Glyde Arreglado
 3. Tristan Dominic Urot
 4. John Benedict Alaiza
