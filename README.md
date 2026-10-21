@@ -41,8 +41,9 @@ The folder name `campus-marketplace` is a temporary local name. The remote repos
 - [Design-document template](https://drive.google.com/file/d/1sRJ5rjciHBeYgBQmUbpJB12kWyD_sCkO/view)
 - [Week 8 design checklist](https://drive.google.com/file/d/1wb9xb2nd7RDowEEbSMx-M-l58qnO9gMM/view)
 
+## Project Proposal File
 The docs proposal in Word and PDF:
 
-[Revised Word proposal](https://docs.google.com/document/d/1WKe4Z_dsyzu8EQerr_-1qp6eYKJjS0pf/edit) · [Revised PDF proposal](https://drive.google.com/file/d/1kU4UM0kmT_17ppp3_ONYVf3K2j1lJfxE/view)
+[Word proposal](https://docs.google.com/document/d/1WKe4Z_dsyzu8EQerr_-1qp6eYKJjS0pf/edit) · [PDF proposal](https://drive.google.com/file/d/1kU4UM0kmT_17ppp3_ONYVf3K2j1lJfxE/view)
 
 The design document remains a working draft. Instructor submission and approval have not been recorded.
