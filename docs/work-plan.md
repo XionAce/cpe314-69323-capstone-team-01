@@ -5,7 +5,6 @@
 | Task | Status | Owner/input |
 |---|---|---|
 | Read supplied specification/templates/checklists | Done in chat | References linked in README |
-| Audit local tools | Done | See environment audit |
 | Prepare repository documents | Done as drafts | Team review needed |
 | Install and verify Java 21 | Verified in user-provided terminal output | java/javac 21.0.12.1 |
 | Install/configure Eclipse | Installed per user screenshots | Select JDK 21; project import/run pending |
@@ -30,6 +29,6 @@ Obtain the detailed Week 9–11 checklists; only their references, not those fil
 
 ## Team editing workflow
 
-Use one editing agent/tool for a feature at a time, or separate branches/checkouts with explicit ownership. Read the same requirements and repository guidance in Codex and Antigravity. Review changes, run shared checks, then integrate. Avoid several divergent copied project folders.
+Team must check the flow that is been given stated on the proposal/project bracnh.
 
 Do not publish placeholders as completed administrative information, fabricate commits, or mark tests/builds/approval successful without evidence.
