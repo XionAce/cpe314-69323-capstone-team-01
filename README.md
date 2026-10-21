@@ -1,5 +1,12 @@
 # UC-B Campus Marketplace with Reviews
 
+Group names:
+1. Acexion Mahigugmaon
+2.
+3.
+4.
+5.
+
 CPE 314, Option J. Preparation repository — application development has not started.
 
 Agreed direction: Java 21, JavaFX 21, Maven Wrapper, SQLite through JDBC, JUnit 5, and FakeStoreAPI.
