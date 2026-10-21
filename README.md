@@ -5,7 +5,7 @@ Group names:
 1. Acexion Mahigugmaon
 2. Glyde Arreglado
 3. Tristan Urot
-4.
+4.John Benedict Alaiza
 5.
 
 CPE 314, Option J. Preparation repository; application development has not started.
