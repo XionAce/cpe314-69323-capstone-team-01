@@ -6,6 +6,8 @@ Group names:
 2. Glyde Arreglado
 3. Tristan Urot
 4. John Benedict Alaiza
+5. [Name]
+6. [Name]
 
 
 
