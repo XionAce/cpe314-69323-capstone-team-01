@@ -3,7 +3,7 @@
 Group names:
 1. Acexion Mahigugmaon
 2. Glyde Arreglado
-3.
+3. Tristan Urot
 4.
 5.
 
