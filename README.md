@@ -1,19 +1,8 @@
 # UC-B Campus Marketplace with Reviews
 
-# Team Members
-Group names:
-1. Acexion B. Mahigugmaon
-2. Glyde Arreglado
-3. Tristan Dominic Urot
-4. John Benedict Alaiza
-5. [Name]
-6. [Name]
-
-
-
 CPE 314, Option J. Preparation repository; application development has not started.
 
-Agreed direction: Java 21, JavaFX 21, Maven Wrapper, SQLite through JDBC, JUnit 5, and FakeStoreAPI.
+Program direction: Java 21, JavaFX 21, Maven Wrapper, SQLite through JDBC, JUnit 5, and FakeStoreAPI.
 
 ## Start here
 
