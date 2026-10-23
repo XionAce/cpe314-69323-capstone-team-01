@@ -11,7 +11,7 @@ Status: draft roster. Confirm full names and the same GitHub accounts used durin
 |-|-|-|
 |Acexion B. Mahigugmaon|25227422|XionAce|
 |Glyde V. Arreglado|25248675|Arreglado-A|
-|Tristan Dominic Urot|PENDING|Tristan-urot|
+|Tristan Dominic Urot|25243742|Tristan-urot|
 |John Benedict Alaiza|25268475|JohnAlaiza|
 |Joshua Brian S. Enovero|PENDING|PENDING|
 |Eman De Paz|PENDING|PENDING|
