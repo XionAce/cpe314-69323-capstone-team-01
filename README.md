@@ -34,7 +34,7 @@ EDP: 69323. Group: 1 (Team 01 in the course naming convention).
 Repository: [XionAce/cpe314-69323-capstone-team-01](https://github.com/XionAce/cpe314-69323-capstone-team-01).
 Section: BSCPE 3B. Six member names and proposed milestone roles are recorded in the proposal. Option J is assigned. GitHub usernames/invitations and instructor sign-off remain pending.
 
-The folder name `campus-marketplace` is a temporary local name. The remote repository exists and is Public as created by the user. Preparation drafts belong on project/proposal; the checkpoint pull request remains a draft until reviewed and completed. Source references remain in Drive.
+The folder name `campus-marketplace` is a temporary local name. The remote repository exists and is Public as created by the user. Preparation drafts belong on project/proposal; the checkpoint pull request remains a draft until reviewed and completed.
 
 ## Course references
 
