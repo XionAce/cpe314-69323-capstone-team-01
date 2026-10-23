@@ -1,61 +1,107 @@
 # UC-B Campus Marketplace with Reviews — Project Design Document
 
-University of Cebu — Computer Engineering Department
-
 CPE 314 — Software Design & Software Design Laboratory
+
+University of Cebu — Computer Engineering Department
 
 Instructor: Richyll Son
 
-First Semester, S.Y. 2026–2027
+Term: First Semester, S.Y. 2026–2027
 
-Group number: 1 (Team 01). EDP: 69323. Section: BSCPE 3B. Members: John Benedict Alaiza; Acexion Mahigugmaon; Glyde V. Arreglado; Tristan Urot; Joshua Brian S. Enovero; Eman De Paz.
+Group 1 / Team 01 · BSCPE 3B · EDP 69323
 
-Version 0.2 — preparation draft, 18 October 2026.
+Version 0.3 — 23 October 2026 — Week 8 draft
 
-## Revision history
+Members: John Benedict Alaiza; Acexion B. Mahigugmaon; Glyde V. Arreglado; Tristan Dominic Urot; Joshua Brian S. Enovero; Eman De Paz
 
-| Version | Date | Author | Changes |
-|---|---|---|---|
-| 0.1 | 2026-10-17 | Assistant-prepared draft; team review pending | Initial overview, ER sketch, proposed responsibility split |
+[Formatted Word document](design-document.docx) · [PDF copy](design-document.pdf)
 
-## 1. Introduction and project overview
+## Revision History
 
-Campus Marketplace with Reviews helps students list and discover used textbooks, electronics, and furniture through a JavaFX desktop interface. Type-specific condition rules, buyer-interest waitlists, nested categories, reviews, and category analytics support informed browsing. SQLite provides local persistence, and background imports and product-catalog lookups keep interactions responsive. The selected theme is assigned Option J. Campus apparel and school/department sellers are proposed extensions for instructor review.
+| Version | Date | Changes |
+|---|---|---|
+| 0.1 | 17 October 2026 | Initial planning draft |
+| 0.2 | 18 October 2026 | Working title, roster and assigned theme updated |
+| 0.3 | 23 October 2026 | Week 8 template draft with introduction, ER sketch and roles |
 
-## 2. Preliminary ER sketch and team roles
+## 1. Introduction & Project Overview
 
-Use docs/proposal.md Section 2 as the preliminary ER sketch. Members have Seller profiles; Sellers post Listings; Categories contain Listings and child Categories; Listings receive Reviews and BuyerInterests; ImportBatches contain HistoricalSales assigned to Categories. Listing subtype detail records store grading evidence.
+UC-B Campus Marketplace with Reviews is a proposed Java desktop application for students, faculty, school units, and department committees to post and browse campus goods. Our assigned theme is Option J, retaining Textbook, Electronics, and Furniture listing types with different condition-grading rules, nested category search, buyer-interest waitlists, recently viewed listings, and reviews. We plan to use JavaFX, SQLite through JDBC, a background sales-history CSV import, FakeStoreAPI product suggestions, and category price and rating bar charts. Uniforms and department merchandise are proposed additions for instructor review; the initial application uses local storage, with online payments outside its scope.
 
-The six names and proposed milestone responsibilities are in docs/proposal.md Section 4. Members must confirm their roles; actual contributions remain to be recorded.
+## 2. Preliminary ER Sketch & Team Roles
 
-## 3. System architecture and object-oriented design
+![Core preliminary entity relationships](erd.png)
 
-Planned: JavaFX controllers call services; plain Java domain classes own rules; repository interfaces isolate JDBC; ProductCatalogClient isolates HTTP. Listing is abstract with three grading implementations. Final diagrams and implementation rationale will be added when built.
+Figure 1: Core preliminary entity relationships
 
-## 4. Data model and database design
+### 2.1 Key Attributes and Relationships
 
-Preliminary only: see proposal. Final ERD, reviewed keys/cardinality, exact schema and migration evidence pending.
+Table 4: Preliminary entities and key attributes
 
-## 5. API integration design
+| Entity | Key attributes |
+|---|---|
+| Member | id PK; name |
+| Seller | id PK; memberId FK → Member.id; displayName; sellerKind |
+| Category | id PK; parentId FK → Category.id; name |
+| Listing | id PK; sellerId FK → Seller.id; categoryId FK → Category.id; type; title; priceMinor; currency; status |
+| Review | id PK; listingId FK → Listing.id; reviewerId FK → Member.id; rating; comment |
+| BuyerInterest | id PK; listingId FK → Listing.id; buyerId FK → Member.id; joiningOrder |
+| HistoricalSale | id PK; categoryId FK → Category.id; sourceRecordId; priceMinor; currency; soldAt |
 
-FakeStoreAPI products; JSON fields used for suggestions. Verified Java response, matching rules, currency policy, sample payload and fallback evidence pending.
+Member 1:M Seller, Review and BuyerInterest. Seller 1:M Listing. Category 1:M Listing, child Category and HistoricalSale. Listing 1:M Review and BuyerInterest. Category.parentId is optional for roots. PK identifies a record; FK refers to another record. Subtype-details fields remain preliminary.
 
-## 6. Concurrency design
+### 2.2 Team Roles
 
-Planned JavaFX Task for streaming CSV import; background catalog work; UI callbacks for rendering; per-operation connections and serialized writes. Final thread flow and responsiveness evidence pending.
+Table 5: Proposed primary responsibilities for Week 8
 
-## 7. Data mining and visualization design
+| Member | Primary responsibility |
+|---|---|
+| John Benedict Alaiza | Sample listings, categories and condition examples. |
+| Acexion B. Mahigugmaon | Architecture, implementation planning and integration. |
+| Glyde V. Arreglado | ER sketch, attributes and relationship review. |
+| Tristan Dominic Urot | GUI sketches, control labels and user steps. |
+| Joshua Brian S. Enovero | Sample CSV and API/import validation cases. |
+| Eman De Paz | Test cases and expected analytics calculations. |
 
-Planned separate calculations for average listing asking price and mean review rating by direct category. Separate bar charts with currency and 0–5 rating axes, sample counts, and no-data states. Final implementation and examples pending.
+These are proposed responsibilities for member confirmation. Actual contributions and supporting commits will be recorded in Section 9.
 
-## 8. Testing summary
+## 3. System Architecture & Object-Oriented Design
 
-No tests written or executed yet. At least six meaningful JUnit 5 tests required. Planned cases are in docs/requirements.md. Add actual counts/results only after execution.
+Reserved for a later milestone. Add the class hierarchy, responsibilities and design rationale after the proposal is approved and the implementation is developed.
 
-## 9. Individual contributions
+## 4. Data Model & Database Design
 
-PENDING actual member work and commit references. Do not assign assistant-authored planning material as evidence of a member's implementation.
+Reserved for a later milestone. Finalize the ERD, SQL types, constraints and SQLite schema. Section 2 contains the preliminary proposal model only.
 
-## Appendix — final submission formatting
+## 5. API Integration Design
 
-Use the supplied instructor template: Calibri 11, one-inch margins, Heading 1/2/3 styles and generated table of contents, revision history, table captions above tables, figure captions below figures, page numbers. Keep code excerpts short and link complete repository files. This Markdown draft is content preparation, not a claim that the final template formatting is complete.
+Reserved for a later milestone. Document the actual endpoint response, parsing, comparable-product matching, currency policy and failure handling after verification.
+
+## 6. Concurrency Design
+
+Reserved for a later milestone. Record the implemented background import/API work, UI update approach, cancellation and error handling.
+
+## 7. Data Mining & Visualization Design
+
+Reserved for a later milestone. Document the implemented category calculations, sample counts, currency handling and labeled charts.
+
+## 8. Testing Summary
+
+Reserved for a later milestone. No application test suite or execution results are recorded in this Week 8 draft. Add actual JUnit coverage, edge cases and results when available.
+
+## 9. Individual Contributions
+
+Contribution records will be added with verified commit references. The roles in Section 2 describe proposed responsibilities and do not claim completed implementation.
+
+## Appendix
+
+The formatted document retains the template’s title page, table of contents, revision history, formatting reference, nine numbered sections and appendix.
+
+- [Project repository](https://github.com/XionAce/cpe314-69323-capstone-team-01)
+- [Project proposal](https://github.com/XionAce/cpe314-69323-capstone-team-01/blob/project/proposal/docs/proposal.md)
+- [Student Guide — Group Capstone Project](https://drive.google.com/file/d/195Y8cNaHnd0M7FpIwmKDYzfok5pbKZti/view)
+- [Week 8 design-document checklist](https://drive.google.com/file/d/1wb9xb2nd7RDowEEbSMx-M-l58qnO9gMM/view)
+- [Project design-document template](https://drive.google.com/file/d/1sRJ5rjciHBeYgBQmUbpJB12kWyD_sCkO/view)
+- [FakeStoreAPI documentation](https://fakestoreapi.com/docs)
+
+Instructor approval, final implementation ownership, API behavior and currency decisions remain to be confirmed.
