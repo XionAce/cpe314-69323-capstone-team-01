@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1920" viewBox="0 0 2400 1920">
+<rect width="2400" height="1920" fill="#f5f7fb"/>
+<text x="90" y="90" font-family="Segoe UI,Arial,sans-serif" font-size="50" font-weight="700" fill="#15243b">Campus Marketplace with Reviews</text>
+<text x="92" y="134" font-family="Segoe UI,Arial,sans-serif" font-size="29" font-weight="400" fill="#526987">PRELIMINARY — PROPOSAL MODEL  |  Structure reference only</text>
+<polyline points="560,280 810,280" fill="none" stroke="#526987" stroke-width="4"/>
+<rect x="577" y="245" width="27" height="27" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="584" y="265" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">1</text>
+<rect x="703" y="245" width="47" height="27" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="710" y="265" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">0..*</text>
+<polyline points="1050,442 1050,680" fill="none" stroke="#526987" stroke-width="4"/>
+<rect x="1058" y="515" width="27" height="27" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="1065" y="535" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">1</text>
+<rect x="1058" y="625" width="47" height="27" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="1065" y="645" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">0..*</text>
+<polyline points="1660,360 1510,360 1510,800 1340,800" fill="none" stroke="#526987" stroke-width="4"/>
+<rect x="1573" y="325" width="27" height="27" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="1580" y="345" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">1</text>
+<rect x="1363" y="765" width="47" height="27" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="1370" y="785" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">0..*</text>
+<polyline points="1660,280 1580,280 1580,170 2285,170 2285,350 2210,350" fill="none" stroke="#526987" stroke-width="4"/>
+<rect x="1653" y="179" width="129" height="33" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="1660" y="199" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">parent 0..1</text>
+<rect x="2213" y="375" width="47" height="27" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="2220" y="395" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">0..*</text>
+<rect x="1943" y="137" width="199" height="33" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="1950" y="157" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">category nesting</text>
+<polyline points="220,356 65,356 65,1245 250,1245 250,1320" fill="none" stroke="#526987" stroke-width="4"/>
+<rect x="118" y="370" width="27" height="27" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="125" y="390" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">1</text>
+<rect x="258" y="1265" width="47" height="27" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="265" y="1285" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">0..*</text>
+<polyline points="450,356 450,555 725,555 725,1255 1050,1255 1050,1320" fill="none" stroke="#526987" stroke-width="4"/>
+<rect x="458" y="395" width="27" height="27" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="465" y="415" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">1</text>
+<rect x="1058" y="1265" width="47" height="27" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="1065" y="1285" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">0..*</text>
+<polyline points="810,980 700,980 700,1180 520,1180 520,1320" fill="none" stroke="#526987" stroke-width="4"/>
+<rect x="733" y="945" width="27" height="27" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="740" y="965" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">1</text>
+<rect x="528" y="1265" width="47" height="27" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="535" y="1285" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">0..*</text>
+<polyline points="1230,1114 1230,1320" fill="none" stroke="#526987" stroke-width="4"/>
+<rect x="1238" y="1145" width="27" height="27" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="1245" y="1165" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">1</text>
+<rect x="1238" y="1265" width="47" height="27" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="1245" y="1285" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">0..*</text>
+<polyline points="2000,442 2000,1320" fill="none" stroke="#526987" stroke-width="4"/>
+<rect x="2008" y="490" width="27" height="27" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="2015" y="510" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">1</text>
+<rect x="2008" y="1265" width="47" height="27" fill="#f5f7fb" stroke="#f5f7fb" stroke-width="2"/>
+<text x="2015" y="1285" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">0..*</text>
+<rect x="90" y="180" width="470" height="176" fill="#ffffff" stroke="#b9c8da" stroke-width="2"/>
+<rect x="90" y="180" width="470" height="65" fill="#193b61" stroke="#193b61" stroke-width="2"/>
+<text x="112" y="222" font-family="Segoe UI,Arial,sans-serif" font-size="33" font-weight="700" fill="#ffffff">Member</text>
+<text x="112" y="284" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">id  [PK]</text>
+<text x="112" y="327" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">name</text>
+<rect x="810" y="180" width="480" height="262" fill="#ffffff" stroke="#b9c8da" stroke-width="2"/>
+<rect x="810" y="180" width="480" height="65" fill="#193b61" stroke="#193b61" stroke-width="2"/>
+<text x="832" y="222" font-family="Segoe UI,Arial,sans-serif" font-size="33" font-weight="700" fill="#ffffff">Seller</text>
+<text x="832" y="284" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">id  [PK]</text>
+<text x="832" y="327" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">memberId  [FK → Member.id]</text>
+<text x="832" y="370" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">displayName</text>
+<text x="832" y="413" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">sellerKind</text>
+<rect x="1660" y="220" width="550" height="219" fill="#ffffff" stroke="#b9c8da" stroke-width="2"/>
+<rect x="1660" y="220" width="550" height="65" fill="#193b61" stroke="#193b61" stroke-width="2"/>
+<text x="1682" y="262" font-family="Segoe UI,Arial,sans-serif" font-size="33" font-weight="700" fill="#ffffff">Category</text>
+<text x="1682" y="324" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">id  [PK]</text>
+<text x="1682" y="367" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">parentId  [FK → Category.id]</text>
+<text x="1682" y="410" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">name</text>
+<rect x="810" y="680" width="530" height="434" fill="#ffffff" stroke="#b9c8da" stroke-width="2"/>
+<rect x="810" y="680" width="530" height="65" fill="#193b61" stroke="#193b61" stroke-width="2"/>
+<text x="832" y="722" font-family="Segoe UI,Arial,sans-serif" font-size="33" font-weight="700" fill="#ffffff">Listing</text>
+<text x="832" y="784" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">id  [PK]</text>
+<text x="832" y="827" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">sellerId  [FK → Seller.id]</text>
+<text x="832" y="870" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">categoryId  [FK → Category.id]</text>
+<text x="832" y="913" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">type</text>
+<text x="832" y="956" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">title</text>
+<text x="832" y="999" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">priceMinor</text>
+<text x="832" y="1042" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">currency</text>
+<text x="832" y="1085" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">status</text>
+<rect x="90" y="1320" width="570" height="305" fill="#ffffff" stroke="#b9c8da" stroke-width="2"/>
+<rect x="90" y="1320" width="570" height="65" fill="#193b61" stroke="#193b61" stroke-width="2"/>
+<text x="112" y="1362" font-family="Segoe UI,Arial,sans-serif" font-size="33" font-weight="700" fill="#ffffff">Review</text>
+<text x="112" y="1424" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">id  [PK]</text>
+<text x="112" y="1467" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">listingId  [FK → Listing.id]</text>
+<text x="112" y="1510" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">reviewerId  [FK → Member.id]</text>
+<text x="112" y="1553" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">rating</text>
+<text x="112" y="1596" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">comment</text>
+<rect x="840" y="1320" width="570" height="262" fill="#ffffff" stroke="#b9c8da" stroke-width="2"/>
+<rect x="840" y="1320" width="570" height="65" fill="#193b61" stroke="#193b61" stroke-width="2"/>
+<text x="862" y="1362" font-family="Segoe UI,Arial,sans-serif" font-size="33" font-weight="700" fill="#ffffff">BuyerInterest</text>
+<text x="862" y="1424" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">id  [PK]</text>
+<text x="862" y="1467" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">listingId  [FK → Listing.id]</text>
+<text x="862" y="1510" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">buyerId  [FK → Member.id]</text>
+<text x="862" y="1553" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">joiningOrder</text>
+<rect x="1690" y="1320" width="570" height="348" fill="#ffffff" stroke="#b9c8da" stroke-width="2"/>
+<rect x="1690" y="1320" width="570" height="65" fill="#193b61" stroke="#193b61" stroke-width="2"/>
+<text x="1712" y="1362" font-family="Segoe UI,Arial,sans-serif" font-size="33" font-weight="700" fill="#ffffff">HistoricalSale</text>
+<text x="1712" y="1424" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">id  [PK]</text>
+<text x="1712" y="1467" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">categoryId  [FK → Category.id]</text>
+<text x="1712" y="1510" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">sourceRecordId</text>
+<text x="1712" y="1553" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">priceMinor</text>
+<text x="1712" y="1596" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">currency</text>
+<text x="1712" y="1639" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="400" fill="#15243b">soldAt</text>
+<rect x="90" y="1750" width="2170" height="150" fill="#e8eef6" stroke="#b9c8da" stroke-width="2"/>
+<text x="115" y="1793" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="400" fill="#15243b">Legend: PK = primary key; FK = foreign key; 0..* = zero or more related records.</text>
+<text x="115" y="1837" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="400" fill="#15243b">Subtype details: one matching details record per listing is proposed; fields and tables are not finalized.</text>
+<text x="115" y="1872" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="400" fill="#15243b">Textbook / Electronics / Furniture condition rules belong to the planned Java hierarchy.</text>
+</svg>

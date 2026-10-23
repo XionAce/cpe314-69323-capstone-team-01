@@ -15,6 +15,10 @@ CPE 314, Option J. Preparation repository; application development has not start
 
 Agreed direction: Java 21, JavaFX 21, Maven Wrapper, SQLite through JDBC, JUnit 5, and FakeStoreAPI.
 
+## Project structure
+
+The recommended Maven folders and a starter Java 21 POM are prepared. See [structure and next steps](docs/structure.md), the [draft team information](TEAM_INFO.md), and the [preliminary ER diagram](docs/erd.png). This scaffold has no runnable application yet.
+
 ## Start here
 
 1. Follow [SETUP.md](SETUP.md) to prepare the computer.
@@ -24,7 +28,11 @@ Agreed direction: Java 21, JavaFX 21, Maven Wrapper, SQLite through JDBC, JUnit 
 
 | File | Purpose |
 |---|---|
+| TEAM_INFO.md | Draft roster; missing student numbers and account confirmation |
+| pom.xml | Starter Java 21 Maven project descriptor |
 | SETUP.md | Installation, configuration, Eclipse workflow, verification |
+| docs/structure.md | Folder responsibilities, Eclipse import and checkpoint workflow |
+| docs/erd.png | Preliminary ER diagram based on the proposal |
 | docs/proposal.md | Six-section proposal draft; pending administrative fields clearly marked |
 | docs/design-document.md | Initial cumulative design-document content |
 | docs/requirements.md | Requirement-to-feature-to-test mapping |
