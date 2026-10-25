@@ -1,0 +1,21 @@
+# Generated files and local Eclipse/editor state
+target/
+bin/
+.project
+.classpath
+.settings/
+.metadata/
+.idea/
+.vscode/
+
+# Mutable data belongs outside this source folder
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.log
+.env
+.env.*
+!.env.example

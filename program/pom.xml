@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <!-- Maven reads this file to build the same project in Eclipse and the terminal. -->
+    <modelVersion>4.0.0</modelVersion>
+    <!-- These coordinates identify our project; they are not Java package declarations. -->
+    <groupId>edu.uc</groupId>
+    <artifactId>campus-marketplace</artifactId>
+    <version>0.2.0-SNAPSHOT</version>
+    <name>UC-B Campus Marketplace with Reviews</name>
+    <description>CPE 314 Group 1, Milestone 1 desktop prototype</description>
+
+    <!-- Shared values: Java language level, text encoding and exact dependency versions. -->
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.release>21</maven.compiler.release>
+        <javafx.version>21.0.8</javafx.version>
+        <sqlite.version>3.50.3.0</sqlite.version>
+        <slf4j.version>1.7.36</slf4j.version>
+        <junit.version>5.13.4</junit.version>
+        <campusmarket.smoke>false</campusmarket.smoke>
+    </properties>
+
+    <!-- Dependencies are libraries Maven downloads; no manual copying of JARs is needed. -->
+    <dependencies>
+        <dependency>
+            <!-- JavaFX supplies desktop controls and its required supporting modules. -->
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <!-- This JDBC driver lets Java open and query a local SQLite database file. -->
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>${sqlite.version}</version>
+        </dependency>
+        <dependency>
+            <!-- A quiet logging implementation required at runtime by the SQLite driver. -->
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
+            <version>${slf4j.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <!-- JUnit supplies @Test and assertions; test scope keeps it out of normal application use. -->
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <!-- Plugins perform build tasks; they are different from application libraries. -->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <!-- Reject an unsupported Java/Maven version with an understandable message. -->
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <id>require-project-jdk</id>
+                        <goals><goal>enforce</goal></goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>[21,22)</version>
+                                    <message>Use JDK 21 for this project and Eclipse Maven launches.</message>
+                                </requireJavaVersion>
+                                <requireMavenVersion><version>[3.9,4)</version></requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <!-- The clean goal removes generated build output in target. -->
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.4.1</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <!-- Copy CSS and schema resources into the built application's classpath. -->
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <!-- Compile source using Java 21 language/API compatibility. -->
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.14.0</version>
+                <configuration><release>21</release></configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <!-- Run JUnit tests and write reports into target/surefire-reports. -->
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.3</version>
+                <configuration><useModulePath>false</useModulePath></configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <!-- Package compiled classes/resources into a JAR; this is not a standalone installer. -->
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
+            </plugin>
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <!-- The javafx:run goal launches our app with its JavaFX libraries. -->
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <!-- Begin at Launcher.main(), which hands control to JavaFX App. -->
+                    <mainClass>edu.uc.campusmarket.Launcher</mainClass>
+                    <options>
+                        <option>-Dcampusmarket.smoke=${campusmarket.smoke}</option>
+                    </options>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

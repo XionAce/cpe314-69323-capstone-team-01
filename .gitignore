@@ -25,4 +25,4 @@ application-local.properties
 .local-tools/
 downloads/
 
-# Keep SQL migrations, deterministic seeds, CSV samples and Maven Wrapper tracked.
+# Keep SQL migrations, deterministic seeds, JSON samples and Maven Wrapper tracked.
