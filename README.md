@@ -1,41 +1,43 @@
 # UC-B Campus Marketplace with Reviews
 
-CPE 314, Option J. Preparation repository; application development has not started.
+**Repository name:** `cpe314-69323-capstone-team-01`
 
-Program direction: Java 21, JavaFX 21, Maven Wrapper, SQLite through JDBC, JUnit 5, and FakeStoreAPI.
+**GitHub repository:** [XionAce/cpe314-69323-capstone-team-01](https://github.com/XionAce/cpe314-69323-capstone-team-01)
 
-## Start here
+## Project information
 
-1. Follow [SETUP.md](SETUP.md) to prepare the computer.
-2. Review the updated [proposal and proposed team roles](docs/proposal.md).
-3. Obtain instructor proposal sign-off for assigned Option J.
-4. After approval, bootstrap Maven and prove a minimal JavaFX window runs in Eclipse before building features.
-
-| File | Purpose |
+| Detail | Information |
 |---|---|
-| SETUP.md | Installation, configuration, Eclipse workflow, verification |
-| docs/proposal.md | Six-section proposal draft; pending administrative fields clearly marked |
-| docs/design-document.md | Initial cumulative design-document content |
-| docs/requirements.md | Requirement-to-feature-to-test mapping |
-| docs/work-plan.md | Tasks, decisions, ownership, milestone exit criteria |
+| Course | CPE 314 — Software Design & Software Design Laboratory |
+| Section | BSCPE 3B |
+| EDP | 69323 |
+| Group | Group 1 / Team 01 |
+| Assigned theme | Option J — Campus Marketplace with Reviews |
+| Technology | Java 21, JavaFX, Maven, SQLite/JDBC and JUnit 5 |
 
-EDP: 69323. Group: 1 (Team 01 in the course naming convention).
-Repository: [XionAce/cpe314-69323-capstone-team-01](https://github.com/XionAce/cpe314-69323-capstone-team-01).
-Section: BSCPE 3B. Six member names and proposed milestone roles are recorded in the proposal. Option J is assigned. GitHub usernames/invitations and instructor sign-off remain pending.
+## Team members
 
-The folder name `campus-marketplace` is a temporary local name. The remote repository exists and is Public as created by the user. Preparation drafts belong on project/proposal; the checkpoint pull request remains a draft until reviewed and completed.
+| Member | Student number | GitHub username |
+|---|---|---|
+| Acexion B. Mahigugmaon | 25227422 | XionAce |
+| Glyde V. Arreglado | 25248675 | Arreglado-A |
+| Tristan Dominic Urot | 25243742 | Tristan-urot |
+| John Benedict Alaiza | 25268475 | JohnAlaiza |
+| Joshua Brian S. Enovero | PENDING | enovsjbs |
+| Eman De Paz | PENDING | PENDING |
 
-## Course references
+Details marked PENDING will be completed by the respective members.
 
-- [Project specification](https://drive.google.com/file/d/1Dg7WB1CXs0u0QTd_thN90c8uoo2S5-fb/view)
-- [Proposal template](https://drive.google.com/file/d/1beVx66CiG0C3SGBIamGNacwwyLfdNvIB/view)
-- [Week 8 checklist](https://drive.google.com/file/d/1PyimFGvzOBwXCWOy-E6zHlCrOfOsY8wz/view)
-- [Design-document template](https://drive.google.com/file/d/1sRJ5rjciHBeYgBQmUbpJB12kWyD_sCkO/view)
-- [Week 8 design checklist](https://drive.google.com/file/d/1wb9xb2nd7RDowEEbSMx-M-l58qnO9gMM/view)
+## Project overview
 
-## Project Proposal File
-The docs proposal in Word and PDF:
+UC-B Campus Marketplace with Reviews is a Java desktop prototype for posting and browsing campus goods. The Milestone 1 prototype includes textbook, electronics and furniture listings, condition grading, nested category search, buyer-interest waitlists, recently viewed listings, and SQLite persistence.
 
-[Word proposal](https://docs.google.com/document/d/1WKe4Z_dsyzu8EQerr_-1qp6eYKJjS0pf/edit) · [PDF proposal](https://drive.google.com/file/d/1kU4UM0kmT_17ppp3_ONYVf3K2j1lJfxE/view)
+Reviews, FakeStoreAPI suggestions, background JSON sales-history import, analytics and charts are planned for later milestones.
 
-The design document remains a working draft. Instructor submission and approval have not been recorded.
+## Project files
+
+- [Working prototype program](https://github.com/XionAce/cpe314-69323-capstone-team-01/tree/feature/milestone-1-prototype/program)
+- [Project proposal](https://github.com/XionAce/cpe314-69323-capstone-team-01/blob/project/proposal/docs/proposal.md)
+- [Project design document](https://github.com/XionAce/cpe314-69323-capstone-team-01/blob/project/proposal/docs/design-document.md)
+
+The project and team information above is kept on `main` so it appears on the repository homepage. The prototype and proposal remain on their respective branches.
