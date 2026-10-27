@@ -1,0 +1,15 @@
+{
+    "folders": [
+        {
+            "name": "Campus Marketplace",
+            "path": "program"
+        }
+    ],
+    "settings": {
+        "java.import.exclusions": [
+            "**/_Archive/**",
+            "**/target/**",
+            "**/.git/**"
+        ]
+    }
+}

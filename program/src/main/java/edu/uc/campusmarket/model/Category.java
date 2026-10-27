@@ -1,22 +1,26 @@
-// Each category is one node of the marketplace's category tree.
 package edu.uc.campusmarket.model;
 
-// record generates immutable component fields and accessors such as id(), parentId(), and name().
-// Long (capital L) can be null, unlike primitive long: null means this category is a root.
-public record Category(long id, Long parentId, String name) {
-    // This compact constructor checks the values before the generated record assignment.
-    public Category {
-        // Categories used by listings must have a saved, positive ID.
-        ModelValidation.positive(id, "Category ID");
-        // Validate a parent only when there is one; a root has no parent to check.
-        if (parentId != null) {
-            ModelValidation.positive(parentId, "Parent category ID");
-            // This catches a direct self-link; CategoryService catches longer cycles across nodes.
-            if (parentId == id) {
-                throw new IllegalArgumentException("A category cannot be its own parent.");
-            }
+public class Category {
+    private final long id;
+    private final Long parentId;
+    private final String name;
+
+    public Category(long id, Long parentId, String name) {
+        if (id <= 0 || name == null || name.isBlank()) {
+            throw new IllegalArgumentException("A category needs a positive ID and a name.");
         }
-        // Strip surrounding whitespace and reject a blank/null category name.
-        name = ModelValidation.text(name, "Category name");
+        if (parentId != null && (parentId <= 0 || parentId == id)) {
+            throw new IllegalArgumentException("A category needs a different, positive parent ID.");
+        }
+        this.id = id;
+        this.parentId = parentId; // null means this category is a root.
+        this.name = name.strip();
     }
+
+    public long getId() { return id; }
+    public Long getParentId() { return parentId; }
+    public String getName() { return name; }
+
+    @Override
+    public String toString() { return name; }
 }

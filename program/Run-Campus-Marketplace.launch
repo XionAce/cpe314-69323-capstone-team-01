@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+    <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+        <listEntry value="/campus-marketplace"/>
+    </listAttribute>
+    <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+        <listEntry value="4"/>
+    </listAttribute>
+    <listAttribute key="org.eclipse.debug.ui.favoriteGroups">
+        <listEntry value="org.eclipse.debug.ui.launchGroup.run"/>
+        <listEntry value="org.eclipse.debug.ui.launchGroup.debug"/>
+    </listAttribute>
+    <stringAttribute key="org.eclipse.jdt.launching.CLASSPATH_PROVIDER" value="org.eclipse.m2e.launchconfig.classpathProvider"/>
+    <booleanAttribute key="org.eclipse.jdt.launching.DEFAULT_CLASSPATH" value="true"/>
+    <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="edu.uc.campusmarket.App"/>
+    <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="campus-marketplace"/>
+    <stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.eclipse.m2e.launchconfig.sourcepathProvider"/>
+    <stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="--module-path &quot;${env_var:USERPROFILE}/.m2/repository/org/openjfx/javafx-base/21.0.8/javafx-base-21.0.8-win.jar;${env_var:USERPROFILE}/.m2/repository/org/openjfx/javafx-graphics/21.0.8/javafx-graphics-21.0.8-win.jar;${env_var:USERPROFILE}/.m2/repository/org/openjfx/javafx-controls/21.0.8/javafx-controls-21.0.8-win.jar&quot; --add-modules javafx.controls"/>
+    <stringAttribute key="org.eclipse.jdt.launching.WORKING_DIRECTORY" value="${workspace_loc:/campus-marketplace}"/>
+</launchConfiguration>

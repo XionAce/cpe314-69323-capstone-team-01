@@ -1,11 +1,6 @@
-// All listing types return a value from this shared set of grades.
 package edu.uc.campusmarket.model;
 
-// enum defines fixed named choices; it prevents misspellings such as "GOD" instead of "GOOD".
+// An enum limits condition results to these four choices.
 public enum ConditionGrade {
-    // Subclasses calculate one of these values from their own condition evidence.
-    LIKE_NEW,
-    GOOD,
-    FAIR,
-    POOR
+    LIKE_NEW, GOOD, FAIR, POOR
 }

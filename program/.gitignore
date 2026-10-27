@@ -6,7 +6,10 @@ bin/
 .settings/
 .metadata/
 .idea/
-.vscode/
+!.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/extensions.json
 
 # Mutable data belongs outside this source folder
 *.db

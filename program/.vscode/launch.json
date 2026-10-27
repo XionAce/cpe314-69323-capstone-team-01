@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run Campus Marketplace",
+            "request": "launch",
+            "mainClass": "edu.uc.campusmarket.App",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "vmArgs": "--module-path \"${env:USERPROFILE}/.m2/repository/org/openjfx/javafx-base/21.0.8/javafx-base-21.0.8-win.jar;${env:USERPROFILE}/.m2/repository/org/openjfx/javafx-graphics/21.0.8/javafx-graphics-21.0.8-win.jar;${env:USERPROFILE}/.m2/repository/org/openjfx/javafx-controls/21.0.8/javafx-controls-21.0.8-win.jar\" --add-modules javafx.controls"
+        }
+    ]
+}

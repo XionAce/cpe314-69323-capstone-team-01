@@ -20,7 +20,7 @@
         <sqlite.version>3.50.3.0</sqlite.version>
         <slf4j.version>1.7.36</slf4j.version>
         <junit.version>5.13.4</junit.version>
-        <campusmarket.smoke>false</campusmarket.smoke>
+        <campusmarket.dataDir>${user.home}/.ucb-campus-marketplace-simple</campusmarket.dataDir>
     </properties>
 
     <!-- Dependencies are libraries Maven downloads; no manual copying of JARs is needed. -->
@@ -115,10 +115,10 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <!-- Begin at Launcher.main(), which hands control to JavaFX App. -->
-                    <mainClass>edu.uc.campusmarket.Launcher</mainClass>
+                    <!-- App.main starts the JavaFX window. -->
+                    <mainClass>edu.uc.campusmarket.App</mainClass>
                     <options>
-                        <option>-Dcampusmarket.smoke=${campusmarket.smoke}</option>
+                        <option>-Dcampusmarket.dataDir=${campusmarket.dataDir}</option>
                     </options>
                 </configuration>
             </plugin>
