@@ -1,0 +1,22 @@
+/* JavaFX CSS only controls appearance; the Java classes contain the program's behavior. */
+.root {
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 13px;
+    -fx-background-color: #f6f5ee;
+    -fx-text-fill: #24392e;
+}
+.title { -fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #244a36; }
+.section-title { -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #244a36; }
+.muted { -fx-font-size: 11px; -fx-text-fill: #637267; }
+.identity { -fx-alignment: center-right; }
+.button { -fx-padding: 8 12; -fx-background-color: #e3eadf; -fx-text-fill: #244a36; -fx-cursor: hand; }
+.button:hover { -fx-background-color: #d3dfcc; }
+.button.primary { -fx-background-color: #2d593f; -fx-text-fill: white; }
+.text-field, .combo-box { -fx-background-color: white; -fx-border-color: #ccd5c8; }
+.tree-view, .table-view, .text-area { -fx-border-color: #d0d8cb; -fx-background-color: white; }
+.table-view .column-header { -fx-background-color: #e7ecdf; -fx-padding: 8 2; }
+.table-row-cell { -fx-cell-size: 34px; }
+.table-row-cell:selected, .tree-cell:selected { -fx-background-color: #41644b; -fx-text-fill: white; }
+.table-row-cell:selected .text { -fx-fill: white; }
+.tree-cell { -fx-padding: 8 4; }
+.text-area .content { -fx-background-color: #fbfcf8; }
