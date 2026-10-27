@@ -37,7 +37,7 @@ Reviews, FakeStoreAPI suggestions, background JSON sales-history import, analyti
 ## Project files
 
 - [Working prototype program](https://github.com/XionAce/cpe314-69323-capstone-team-01/tree/feature/milestone-1-prototype/program)
-- [Project proposal](https://github.com/XionAce/cpe314-69323-capstone-team-01/blob/project/proposal/docs/proposal.md)
-- [Project design document](https://github.com/XionAce/cpe314-69323-capstone-team-01/blob/project/proposal/docs/design-document.md)
+- [Revised project proposal](docs/proposal.pdf)(https://github.com/XionAce/cpe314-69323-capstone-team-01/blob/project/proposal/docs/proposal.md)
+- [Revised project design document](docs/design-document.pdf)(https://github.com/XionAce/cpe314-69323-capstone-team-01/blob/project/proposal/docs/design-document.md)
 
-The project and team information above is kept on `main` so it appears on the repository homepage. The prototype and proposal remain on their respective branches.
+The revised Week 8 proposal and design document are available on main. Milestone implementation work is submitted through separate branches and pull requests.
