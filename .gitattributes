@@ -1,0 +1,4 @@
+# Keep document and image bytes intact when cloning on Windows.
+*.pdf binary
+*.docx binary
+*.png binary

@@ -1,0 +1,28 @@
+# Build output and machine-specific editor files
+target/
+bin/
+.metadata/
+.project
+.classpath
+.settings/
+.idea/
+.vscode/
+
+# Local runtime data and configuration
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.log
+.env
+.env.*
+!.env.example
+application-local.properties
+
+# Portable local tools must not enter the team repository
+.local-tools/
+downloads/
+
+# Keep SQL migrations, deterministic seeds, JSON samples and Maven Wrapper tracked.
