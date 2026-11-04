@@ -37,6 +37,15 @@ public class MarketplaceService {
     }
 
     public Path databasePath() { return database.getPath(); }
+    public SalesHistoryImporter importer() { return new SalesHistoryImporter(database); }
+    public List<Database.CategorySummary> prices(String currency) throws SQLException { return database.priceSummary(currency); }
+    public List<Database.CategorySummary> ratings() throws SQLException { return database.ratingSummary(); }
+    public String historyPreview() throws SQLException { return database.historyPreview(); }
+    public String reviews(long listingId) throws SQLException { return database.reviews(listingId); }
+    public void review(long listingId, long memberId, int rating, String comment) throws SQLException {
+        requireMember(memberId);
+        database.addReview(listingId, memberId, rating, comment);
+    }
     public List<Member> getMembers() { return new ArrayList<>(members); }
     public List<Category> getCategories() { return new ArrayList<>(categories); }
 
