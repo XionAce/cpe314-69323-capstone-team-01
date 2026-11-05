@@ -18,7 +18,7 @@ public class App extends Application {
         view = new MarketplaceView(service);
         Scene scene = new Scene(view.getRoot(), 960, 660);
         scene.getStylesheets().add(App.class.getResource("/ui/marketplace.css").toExternalForm());
-        stage.setTitle("UC-B Campus Marketplace - Milestone 1");
+        stage.setTitle("UC-B Campus Marketplace - Milestone 2");
         stage.setMinWidth(900);
         stage.setMinHeight(620);
         stage.setScene(scene);

@@ -1,5 +1,5 @@
 -- Same ten tables and constraints as the approved V0.2 design.
--- Reviews and HistoricalSales are reserved for Milestone 2.
+-- Reviews and HistoricalSales are used by Milestone 2.
 -- Prices are stored as centavos, and currency is stored separately.
 
 CREATE TABLE Members (

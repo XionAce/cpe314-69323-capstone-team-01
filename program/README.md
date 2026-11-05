@@ -1,5 +1,7 @@
 # Run and understand this program
 
+The current working version is **Milestone 2**. See [the Milestone 2 guide](../docs/MILESTONE_2.md) for API suggestions, reviews, JSON import, charts, sample data, test evidence and remaining demo checks. The source map and Week 9 demo below describe the retained foundation; Milestone 2 adds `api/CatalogProduct.java`, `api/ProductCatalogClient.java` and `service/SalesHistoryImporter.java`.
+
 This folder is the complete Java 21 + JavaFX 21 + SQLite/JDBC Maven project. Keep `pom.xml`, `src`, `mvnw.cmd`, `mvnw` and the hidden `.mvn` folder together. Maven supplies JavaFX and the SQLite driver; do not add JARs by hand.
 
 ## Antigravity: Run button

@@ -11,7 +11,7 @@ Course minimums come from the Project Specification. Additional behavior below i
 | R05 | 3+ related entities, SQLite/JDBC | Reviewed ERD, migrations, repositories | Save/reload, foreign keys, transaction rollback; PreparedStatement review |
 | R06 | Meaningful real REST consumption | Product catalog suggestions | Java request succeeds; parsed result changes editable suggestion; fake client unit tests |
 | R07 | JavaFX/Swing GUI, 3+ interactive controls | JavaFX search/post/review/import | Controls trigger visible use cases |
-| R08 | Background long operation | CSV task and HTTP worker | Large input while UI tick/control remains responsive; failure/cancel recovery |
+| R08 | Background long operation | JSON import task and HTTP worker | Large input while UI tick/control remains responsive; failure/cancel recovery |
 | R09 | Meaningful aggregation | Price and review summaries | Known fixture gives exact expected counts/averages without join fanout |
 | R10 | Labeled chart | Two category bar charts | Category labels, currency/ratings axis, no-data behavior |
 
@@ -24,10 +24,10 @@ Course minimums come from the Project Specification. Additional behavior below i
 - Waitlists persist in increasing entry-ID order and reject duplicate active buyers. Recent views are bounded session history per active member; deduplicate repeated entries.
 - Store money as integer minor units and currency. Use BigDecimal calculations. API currency semantics remain pending.
 - Begin analytics at direct category membership. Do not mix currencies or average category averages. Show rating sample counts; unrated is not zero stars.
-- CSV is UTF-8 with stable source_record_id, title, category_path, sale_price, currency, sold_at. Stream with Commons CSV. Duplicate detection is scoped to a documented source namespace and record ID, independent of import batch.
-- Completed import batches remain saved on cancellation; current uncommitted batch rolls back. Report accepted/rejected/duplicate counts and partial completion honestly.
+- JSON is a UTF-8 array with sourceRecordId, categoryPath, price, currency and soldAt. Gson streams one record at a time. sourceRecordId is globally unique across imports.
+- One import uses one transaction. Malformed JSON, cancellation or database failure rolls back its new rows. Semantic-invalid rows and duplicate IDs are skipped/countable. Existing saved records remain.
 - Keep writes serialized and connections per operation; read GUI inputs before background execution. No controls accessed from worker code.
 
 ## Later test targets
 
-Grading thresholds for all types; collection order and empties; four-plus category levels; temporary-DB subtype round trips and FK failures; review constraints; quoted CSV/newlines; duplicate reimports; failed-batch rollback; API timeout/malformed/no-match cases; currency policy; aggregation fixture with multiple reviews on one listing.
+Grading thresholds for all types; collection order and empties; four-plus category levels; temporary-DB subtype round trips and FK failures; review constraints; malformed/trailing JSON and invalid records; duplicate reimports; failed-batch rollback; API timeout/malformed/no-match cases; currency policy; aggregation fixture with multiple reviews on one listing.

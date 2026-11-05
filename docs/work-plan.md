@@ -1,5 +1,7 @@
 # Preparation and milestone work plan
 
+Current update (3 November 2026): the proposal was approved after the Week 8 revision. Milestone 2 implementation is now authorized and prepared; see [the current guide](MILESTONE_2.md). The preparation status table below is historical. Sales-history import uses JSON.
+
 ## Now — preparation
 
 | Task | Status | Owner/input |
@@ -21,9 +23,9 @@
 
 Week 9: establish Maven/Wrapper and a minimal JavaFX launch; import in Eclipse immediately; implement domain hierarchy and database round trip; produce GUI skeleton. Record exact tool/dependency versions only once resolved and tested.
 
-Week 10: finish recursive search, waitlist/history, reviews, background CSV and API work; add deterministic tests, analytics and charts; complete the corresponding design-document sections.
+Week 10: finish recursive search, waitlist/history, reviews, background JSON and API work; add deterministic tests, analytics and charts; complete the corresponding design-document sections.
 
-Week 11: fresh-checkout build and presentation-machine rehearsal; persistence, API/fallback, CSV responsiveness and charts demonstrated; final document with genuine contributions and individual code explanations.
+Week 11: fresh-checkout build and presentation-machine rehearsal; persistence, API/fallback, JSON responsiveness and charts demonstrated; final document with genuine contributions and individual code explanations.
 
 Obtain the detailed Week 9–11 checklists; only their references, not those files, were available in the Project folder inspected.
 

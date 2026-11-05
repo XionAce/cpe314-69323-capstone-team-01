@@ -357,6 +357,99 @@ public class Database {
         }
     }
 
+    /** These two summaries are queried separately so reviews never multiply listing prices. */
+    public record CategorySummary(String category, String currency, double average, int count) { }
+
+    public List<CategorySummary> priceSummary(String currency) throws SQLException {
+        List<CategorySummary> rows = new ArrayList<>();
+        try (var connection = open(); var query = connection.prepareStatement("""
+                SELECT c.name, AVG(l.priceMinor) / 100.0 AS mean, COUNT(*) AS n
+                FROM Listings l JOIN Categories c ON c.id = l.categoryId
+                WHERE l.status = 'AVAILABLE' AND l.currency = ?
+                GROUP BY c.id ORDER BY c.name, c.id
+                """)) {
+            query.setString(1, currency);
+            try (var result = query.executeQuery()) {
+                while (result.next()) rows.add(new CategorySummary(result.getString(1), currency,
+                        result.getDouble(2), result.getInt(3)));
+            }
+        }
+        return rows;
+    }
+
+    public List<CategorySummary> ratingSummary() throws SQLException {
+        List<CategorySummary> rows = new ArrayList<>();
+        try (var connection = open(); var query = connection.prepareStatement("""
+                SELECT c.name, AVG(r.rating) AS mean, COUNT(*) AS n
+                FROM Reviews r JOIN Listings l ON l.id = r.listingId
+                JOIN Categories c ON c.id = l.categoryId
+                WHERE l.status = 'AVAILABLE' GROUP BY c.id ORDER BY mean DESC, c.id
+                """); var result = query.executeQuery()) {
+            while (result.next()) rows.add(new CategorySummary(result.getString(1), "",
+                    result.getDouble(2), result.getInt(3)));
+        }
+        return rows;
+    }
+
+    public void addReview(long listingId, long memberId, int rating, String comment) throws SQLException {
+        if (rating < 1 || rating > 5) throw new IllegalArgumentException("Rating must be 1 to 5.");
+        if (comment == null || comment.length() > 1000) throw new IllegalArgumentException("Comment must be at most 1000 characters.");
+        try (var connection = open()) {
+            connection.setAutoCommit(false);
+            try {
+                try (var query = connection.prepareStatement("""
+                        SELECT s.memberId, l.status FROM Listings l JOIN Sellers s ON s.id = l.sellerId
+                        WHERE l.id = ?
+                        """)) {
+                    query.setLong(1, listingId);
+                    try (var result = query.executeQuery()) {
+                        if (!result.next()) throw new IllegalArgumentException("Listing not found.");
+                        if (result.getLong(1) == memberId) throw new IllegalArgumentException("You cannot review your own listing.");
+                        if (!result.getString(2).equals("AVAILABLE")) throw new IllegalArgumentException("Listing is withdrawn.");
+                    }
+                }
+                try (var insert = connection.prepareStatement("""
+                        INSERT INTO Reviews(listingId, reviewerId, rating, comment)
+                        SELECT ?, ?, ?, ? WHERE NOT EXISTS
+                        (SELECT 1 FROM Reviews WHERE listingId = ? AND reviewerId = ?)
+                        """)) {
+                    insert.setLong(1, listingId); insert.setLong(2, memberId); insert.setInt(3, rating);
+                    insert.setString(4, comment.trim()); insert.setLong(5, listingId); insert.setLong(6, memberId);
+                    if (insert.executeUpdate() != 1) throw new IllegalArgumentException("You already reviewed this listing.");
+                }
+                connection.commit();
+            } catch (SQLException | RuntimeException error) { rollback(connection, error); throw error; }
+        }
+    }
+
+    public String reviews(long listingId) throws SQLException {
+        StringBuilder text = new StringBuilder();
+        try (var connection = open(); var query = connection.prepareStatement("""
+                SELECT m.name, r.rating, r.comment FROM Reviews r JOIN Members m ON m.id = r.reviewerId
+                WHERE r.listingId = ? ORDER BY r.id
+                """)) {
+            query.setLong(1, listingId);
+            try (var result = query.executeQuery()) {
+                while (result.next()) text.append(result.getString(1)).append(": ").append(result.getInt(2))
+                        .append("/5 - ").append(result.getString(3)).append('\n');
+            }
+        }
+        return text.isEmpty() ? "No reviews yet." : text.toString();
+    }
+
+    public String historyPreview() throws SQLException {
+        StringBuilder text = new StringBuilder("Latest imported sales (up to 20):\n");
+        try (var connection = open(); var query = connection.prepareStatement("""
+                SELECT h.sourceRecordId, c.name, h.priceMinor, h.currency, h.soldAt
+                FROM HistoricalSales h JOIN Categories c ON c.id = h.categoryId ORDER BY h.id DESC LIMIT 20
+                """); var result = query.executeQuery()) {
+            while (result.next()) text.append(result.getString(1)).append(" | ").append(result.getString(2))
+                    .append(" | ").append(result.getString(4)).append(' ')
+                    .append(BigDecimal.valueOf(result.getLong(3), 2)).append(" | ").append(result.getString(5)).append('\n');
+        }
+        return text.toString();
+    }
+
     private void rollback(Connection connection, Exception error) {
         try {
             connection.rollback();
