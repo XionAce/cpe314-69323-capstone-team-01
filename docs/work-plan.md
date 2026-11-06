@@ -1,36 +1,24 @@
-# Preparation and milestone work plan
+# Current milestone work plan
 
-Current update (3 November 2026): the proposal was approved after the Week 8 revision. Milestone 2 implementation is now authorized and prepared; see [the current guide](MILESTONE_2.md). The preparation status table below is historical. Sales-history import uses JSON.
+Updated 7 November 2026. The proposal was approved after the Week 8 revision. Milestone 1 PR #5 was merged on 4 November; its branch is retained. Milestone 2 is implemented and is now receiving instructor corrections. Milestone 3 has not started.
 
-## Now — preparation
+## This correction
 
-| Task | Status | Owner/input |
-|---|---|---|
-| Read supplied specification/templates/checklists | Done in chat | References linked in README |
-| Prepare repository documents | Done as drafts | Team review needed |
-| Install and verify Java 21 | Verified in user-provided terminal output | java/javac 21.0.12.1 |
-| Install/configure Eclipse | Installed per user screenshots | Select JDK 21; project import/run pending |
-| Record EDP and group | Done | EDP 69323, Group 1 / Team 01 |
-| Identify team repository | Done | XionAce/cpe314-69323-capstone-team-01; Public; created by user |
-| Add members and assign roles | Six names and proposed roles recorded | Member confirmation and GitHub accounts/invitations pending |
-| Confirm theme availability | Assigned | User confirmed Option J |
-| Verify Java API reachability and sample coverage | Pending | JDK; live endpoint check |
-| Resolve currency and unsupported catalog categories | Pending | Team/instructor decision |
-| Complete required proposal format and initial design document | Revised proposal Word/PDF ready for review | Design document remains preliminary |
-| Submit proposal and record instructor sign-off | Pending | Course checkpoint workflow |
+- Keep design-document.md as the design master and export its PDF from the same source.
+- Include Sections 3-4 in that master, with all ten table definitions and all ERD attributes.
+- Keep Week 10 API, concurrency and mining/chart content in Sections 5-7.
+- Replace generic proposal risks with specific catalog-price, review-average, import and missing-detail questions.
+- Document JDK 21 clearly and verify the normal build without skipping the guard.
+- Provide a controlled UI action to restore missing condition details and test ownership, rollback and preserved data.
+- Verify the existing busy flag and button disabling through actual GUI interaction.
 
-## After instructor sign-off
+## Team follow-up
 
-Week 9: establish Maven/Wrapper and a minimal JavaFX launch; import in Eclipse immediately; implement domain hierarchy and database round trip; produce GUI skeleton. Record exact tool/dependency versions only once resolved and tested.
+- XionAce creates the correction pull request after the correction branch is published.
+- Confirm Emanuelle De Paz's accepted invitation and write permission; the permission read on 7 November returned read. Username from the instructor feedback: emanuelledepaz-cyber.
+- Eman needs his own real, explainable code/test contribution. Other members should own the next agreed changes and explain their code. These corrections do not fabricate contribution history.
+- Ask whether the exact project/milestone-1 branch name is still required now that prototype PR #5 has been merged. The original proposal PR #2 remains open; revised Week 8 documents were merged through PR #7. Review those states with the instructor before further merge/closure actions.
+- Show the ten-table schema when clarifying the feedback's conflicting counts of ten and eleven. Do not add an unused table merely to match the number.
+- Rehearse the next oral check using the current program, schema and document master. Peer ratings stay in each student's private coursework repository.
 
-Week 10: finish recursive search, waitlist/history, reviews, background JSON and API work; add deterministic tests, analytics and charts; complete the corresponding design-document sections.
-
-Week 11: fresh-checkout build and presentation-machine rehearsal; persistence, API/fallback, JSON responsiveness and charts demonstrated; final document with genuine contributions and individual code explanations.
-
-Obtain the detailed Week 9–11 checklists; only their references, not those files, were available in the Project folder inspected.
-
-## Team editing workflow
-
-Team must check the flow that is been given stated on the proposal/project bracnh.
-
-Do not publish placeholders as completed administrative information, fabricate commits, or mark tests/builds/approval successful without evidence.
+See [MILESTONE_2.md](MILESTONE_2.md) for verification, limits and demonstration steps.

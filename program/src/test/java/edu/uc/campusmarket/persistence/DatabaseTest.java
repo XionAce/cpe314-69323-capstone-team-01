@@ -124,7 +124,60 @@ class DatabaseTest {
     @Test
     void missingSubtypeDetailsAreReportedInsteadOfInventingACondition() throws SQLException {
         execute("DELETE FROM TextbookDetails WHERE listingId = 1");
-        assertThrows(SQLException.class, database::getListings);
+        SQLException error = assertThrows(SQLException.class, database::getListings);
+        assertTrue(error.getMessage().contains("Restore missing details"));
+    }
+
+    @Test
+    void ownerRestoresAllThreeTypesWithoutChangingSharedData() throws SQLException {
+        List<Listing> original = database.getListings();
+        database.addInterest(1, 2);
+        database.addReview(1, 2, 4, "Keep this review");
+        execute("DELETE FROM TextbookDetails");
+        execute("DELETE FROM ElectronicsDetails");
+        execute("DELETE FROM FurnitureDetails");
+        for (int i = 0; i < original.size(); i++) {
+            long owner = i + 1;
+            assertEquals(original.get(i).getId(), database.listingsForRepair(owner).getFirst().id());
+            database.restoreDetails(owner, original.get(i));
+            assertTrue(database.listingsForRepair(owner).isEmpty());
+        }
+        List<Listing> restored = new Database(database.getPath()).getListings();
+        for (int i = 0; i < original.size(); i++) {
+            assertEquals(original.get(i).getTitle(), restored.get(i).getTitle());
+            assertEquals(original.get(i).getPriceMinor(), restored.get(i).getPriceMinor());
+            assertEquals(original.get(i).gradeCondition(), restored.get(i).gradeCondition());
+        }
+        assertEquals(List.of(2L), database.getWaitlist(1));
+        assertTrue(database.reviews(1).contains("Keep this review"));
+    }
+
+    @Test
+    void restorationRejectsAnotherOwnerWrongTypeAndExistingDetails() throws SQLException {
+        Listing original = database.getListings().getFirst();
+        execute("DELETE FROM TextbookDetails WHERE listingId = 1");
+        assertTrue(database.listingsForRepair(2).isEmpty());
+        assertThrows(IllegalArgumentException.class, () -> database.restoreDetails(2, original));
+        Listing wrongType = new Electronics(1, 1, 2, "Wrong type", new BigDecimal("10.00"),
+                "PHP", "AVAILABLE", true, false, false);
+        assertThrows(IllegalArgumentException.class, () -> database.restoreDetails(1, wrongType));
+        assertEquals(0, number("SELECT COUNT(*) FROM TextbookDetails"));
+        database.restoreDetails(1, original);
+        assertThrows(IllegalArgumentException.class, () -> database.restoreDetails(1, original));
+        assertEquals(3, database.getListings().size());
+    }
+
+    @Test
+    void failedRestorationLeavesTheListingAndOtherDataIntact() throws SQLException {
+        Listing original = database.getListings().getFirst();
+        database.addInterest(1, 2);
+        execute("DELETE FROM TextbookDetails WHERE listingId = 1");
+        execute("CREATE TRIGGER reject_restore AFTER INSERT ON TextbookDetails BEGIN SELECT RAISE(ABORT, 'test failure'); END");
+        assertThrows(SQLException.class, () -> database.restoreDetails(1, original));
+        assertEquals(0, number("SELECT COUNT(*) FROM TextbookDetails"));
+        assertEquals(3, number("SELECT COUNT(*) FROM Listings"));
+        assertEquals(List.of(2L), database.getWaitlist(1));
+        assertEquals(1, database.listingsForRepair(1).size());
     }
 
     @Test

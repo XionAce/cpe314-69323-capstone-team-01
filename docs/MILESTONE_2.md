@@ -2,6 +2,22 @@
 
 This continues the simplified Week 9 program. Java 21, JavaFX, SQLite/JDBC and Maven remain the shared setup. The three listing subclasses, category recursion, waitlist queue and recent-view stack remain.
 
+## Instructor corrections - 7 November 2026
+
+The instructor's feedback reviews Week 8 and Week 9, not a Milestone 2 score. These corrections carry the relevant fixes into the current Milestone 2 program and documents.
+
+- `design-document.md` is now the complete design master, with Sections 1-7. The PDF is exported from it. Sections 3-4 are no longer side notes.
+- The design and proposal each show all ten actual tables and all columns in three readable ERD views. The design includes the actual CREATE TABLE statements. The report says both ten and eleven tables; clarify the discrepancy using schema.sql instead of adding an unused table.
+- Proposal risks now cover catalog currency/mismatch, duplicated prices from review joins, repeat/cancelled JSON imports and missing subtype details. These are questions; no instructor answer is invented.
+- The required JDK 21 and version checks are prominent in the READMEs. The normal Maven build was run with the enforcer enabled.
+- Owners can use **Restore missing details** to re-enter observed condition for a listing with no detail record. Members load before listing search, so recovery is available even after a search error. Existing details cannot be overwritten. The operation preserves the listing, reviews and waitlist and rolls back on failure.
+
+Verification on 7 November: `mvnw.cmd -o clean verify`, followed by `mvnw.cmd -o verify` after the final UI correction, passed **43 tests, 0 failures, 0 errors, 0 skipped** on Temurin JDK 21.0.12.1 and Maven 3.9.11. Database tests cover restoration of all three types, incorrect owner/type, existing details and rollback without lost data.
+
+Eleven checks against the actual JavaFX App and an isolated temporary database passed: recovery instructions, member selection after an error, owner-only candidates, cancellation, explicit condition selection with no default, restored grading, preserved review/waitlist, table reload, selective disabling and one save after repeated handler calls. The public API was not called again for this correction; its earlier live verification is historical evidence below.
+
+Still requiring team/instructor follow-up: Emanuelle's write access and genuine contribution, oral explanations, the exact Milestone 1 checkpoint branch name after PR #5 was merged, and the still-open original proposal PR #2. See work-plan.md. This update does not claim those administrative or individual requirements are complete.
+
 ## Run it
 
 In Antigravity, open the existing CampusMarketplace workspace. Wait for Maven to resolve the added Gson 2.13.2 JSON library, then use **Run Campus Marketplace**. In Eclipse, refresh the project, choose **Maven > Update Project**, then run the existing **Run-Campus-Marketplace** Java Application profile.
@@ -70,4 +86,4 @@ Eighteen checks of the running actual App passed against isolated temporary data
 
 ## Git submission is manual
 
-The shared working branch is **feature/milestone-2-program**. Earlier member commits are already published there; remaining integration, QA and guide files must be committed before a fresh clone contains the complete program. The separate **feature/milestone-2** branch holds the revised PDFs. The instructor's checkpoint branch is project/milestone-2, with an open PR into main titled exactly **Milestone 2 — Team 01**. Confirm the final submission arrangement before opening the checkpoint PR. Actual member work and private peer evaluations remain separate grading requirements.
+The shared Milestone 2 branch is **feature/milestone-2-program**; PR #8 is open against main. The 7 November corrections are published separately on **fix/instructor-feedback-week8-10**, based on that program branch. XionAce creates the correction PR manually; use feature/milestone-2-program as its base to review only these corrections. No PR is created or merged by the correction work. Keep milestone branches. Confirm any instructor-specific checkpoint naming before further submission actions. Actual member work and private peer evaluations remain separate requirements.

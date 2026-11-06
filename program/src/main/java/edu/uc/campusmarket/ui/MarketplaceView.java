@@ -4,6 +4,7 @@ import edu.uc.campusmarket.model.*;
 import edu.uc.campusmarket.service.MarketplaceService;
 import edu.uc.campusmarket.api.ProductCatalogClient;
 import edu.uc.campusmarket.persistence.Database.CategorySummary;
+import edu.uc.campusmarket.persistence.Database.ListingForRepair;
 import javafx.application.Platform;
 import javafx.scene.chart.*;
 import javafx.stage.FileChooser;
@@ -128,8 +129,12 @@ public class MarketplaceView {
         review.setId("review-button");
         review.setOnAction(e -> reviewListing());
         workButtons.add(review);
+        Button restore = new Button("Restore missing details");
+        restore.setId("restore-details-button");
+        restore.setOnAction(event -> restoreMissingDetails());
+        workButtons.add(restore);
         VBox panel = new VBox(9, new Label("Category (includes subcategories)"), filterCategory,
-                searchRow, table, new HBox(8, view, join, review), details);
+                searchRow, table, new FlowPane(8, 8, view, join, review, restore), details);
         VBox.setVgrow(table, Priority.ALWAYS);
         return panel;
     }
@@ -177,14 +182,12 @@ public class MarketplaceView {
 
     private void chooseObservations() {
         long defaultCategory;
+        observation.getItems().setAll(observationsFor(type.getValue()));
         if (type.getValue().equals("TEXTBOOK")) {
-            observation.getItems().setAll("No visible damage", "Light markings", "Heavy markings", "Damaged cover", "Missing pages");
             defaultCategory = 2;
         } else if (type.getValue().equals("ELECTRONICS")) {
-            observation.getItems().setAll("No visible damage", "Cosmetic damage", "Functional defect", "Does not power on");
             defaultCategory = 3;
         } else {
-            observation.getItems().setAll("No visible damage", "Light wear", "Heavy wear", "Structural damage", "Unstable");
             defaultCategory = 4;
         }
         observation.getSelectionModel().selectFirst();
@@ -193,8 +196,17 @@ public class MarketplaceView {
         }
     }
 
+    private List<String> observationsFor(String itemType) {
+        if (itemType.equals("TEXTBOOK")) return List.of("No visible damage", "Light markings",
+                "Heavy markings", "Damaged cover", "Missing pages");
+        if (itemType.equals("ELECTRONICS")) return List.of("No visible damage", "Cosmetic damage",
+                "Functional defect", "Does not power on");
+        return List.of("No visible damage", "Light wear", "Heavy wear", "Structural damage", "Unstable");
+    }
+
     public void initialize() {
-        runTask(() -> { service.initialize(); return service.search(1, ""); }, listings -> {
+        // Load members first so an owner can repair a damaged listing even if search fails.
+        runTask(() -> { service.initialize(); return true; }, initialized -> {
             memberBox.getItems().setAll(service.getMembers());
             memberBox.getSelectionModel().selectFirst();
             filterCategory.getItems().setAll(service.getCategories());
@@ -205,7 +217,7 @@ public class MarketplaceView {
             chooseObservations();
             databasePath.setText("Database: " + service.databasePath());
             ready = true;
-            showListings(listings);
+            refresh();
         });
     }
 
@@ -228,7 +240,8 @@ public class MarketplaceView {
             String evidence = observation.getValue();
             runTask(() -> {
                 long sellerId = service.sellerFor(memberId);
-                Listing item = makeListing(sellerId, categoryId, itemTitle, amount, itemType, evidence);
+                Listing item = makeListing(0, sellerId, categoryId, itemTitle, amount,
+                        "PHP", "AVAILABLE", itemType, evidence);
                 service.post(memberId, item);
                 return service.search(1, ""); // SELECT the saved data again.
             }, listings -> {
@@ -245,25 +258,55 @@ public class MarketplaceView {
         }
     }
 
-    private Listing makeListing(long seller, long category, String title, BigDecimal price,
-                                String type, String evidence) {
+    private Listing makeListing(long id, long seller, long category, String title, BigDecimal price,
+                                String currency, String status, String type, String evidence) {
         if (type.equals("TEXTBOOK")) {
             WearLevel markings = WearLevel.NONE;
             if (evidence.equals("Light markings")) markings = WearLevel.LIGHT;
             if (evidence.equals("Heavy markings")) markings = WearLevel.HEAVY;
             // One missing page represents the chosen observation in this skeleton form.
-            return new Textbook(0, seller, category, title, price, "PHP", "AVAILABLE",
+            return new Textbook(id, seller, category, title, price, currency, status,
                     evidence.equals("Missing pages") ? 1 : 0, markings, evidence.equals("Damaged cover"));
         }
         if (type.equals("ELECTRONICS")) {
-            return new Electronics(0, seller, category, title, price, "PHP", "AVAILABLE",
+            return new Electronics(id, seller, category, title, price, currency, status,
                     !evidence.equals("Does not power on"), evidence.equals("Functional defect"), evidence.equals("Cosmetic damage"));
         }
         WearLevel wear = WearLevel.NONE;
         if (evidence.equals("Light wear")) wear = WearLevel.LIGHT;
         if (evidence.equals("Heavy wear")) wear = WearLevel.HEAVY;
-        return new Furniture(0, seller, category, title, price, "PHP", "AVAILABLE",
+        return new Furniture(id, seller, category, title, price, currency, status,
                 !evidence.equals("Unstable"), evidence.equals("Structural damage"), wear);
+    }
+
+    private void restoreMissingDetails() {
+        if (!ready || busy) return;
+        long memberId = memberBox.getValue().getId();
+        runTask(() -> service.listingsForRepair(memberId), candidates -> {
+            if (candidates.isEmpty()) { message("This member has no listings with missing details."); return; }
+            ChoiceDialog<ListingForRepair> choose = new ChoiceDialog<>(candidates.getFirst(), candidates);
+            choose.setTitle("Restore missing details");
+            choose.setHeaderText("Choose one of your listings. Its other saved data will stay the same.");
+            choose.initOwner(root.getScene().getWindow());
+            var selection = choose.showAndWait();
+            if (selection.isEmpty()) return;
+            ListingForRepair item = selection.get();
+            ChoiceDialog<String> condition = new ChoiceDialog<>(null, observationsFor(item.type()));
+            condition.setSelectedItem(null); // Require an observation; never assume an undamaged item.
+            condition.setTitle("Confirm condition");
+            condition.setHeaderText(item.title() + " - select the condition you actually observed.");
+            condition.initOwner(root.getScene().getWindow());
+            condition.getDialogPane().lookupButton(ButtonType.OK).disableProperty()
+                    .bind(condition.selectedItemProperty().isNull());
+            var evidence = condition.showAndWait();
+            if (evidence.isEmpty()) return;
+            Listing observed = makeListing(item.id(), item.sellerId(), item.categoryId(), item.title(),
+                    item.price(), item.currency(), item.status(), item.type(), evidence.get());
+            runTask(() -> { service.restoreDetails(memberId, observed); return item.id(); }, id -> {
+                details.setText("Condition details restored for listing #" + id + ".");
+                refresh();
+            });
+        });
     }
 
     private void showListings(List<Listing> listings) {

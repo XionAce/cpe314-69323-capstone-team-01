@@ -4,6 +4,16 @@ The current working version is **Milestone 2**. See [the Milestone 2 guide](../d
 
 This folder is the complete Java 21 + JavaFX 21 + SQLite/JDBC Maven project. Keep `pom.xml`, `src`, `mvnw.cmd`, `mvnw` and the hidden `.mvn` folder together. Maven supplies JavaFX and the SQLite driver; do not add JARs by hand.
 
+## Required Java version
+
+Use **JDK 21**, including for Eclipse's Maven launch. In this folder run `java -version` and `.\mvnw.cmd -version`; both must show Java 21. The enforcer range `[21,22)` deliberately rejects JDK 17 and 25. Select the installed JDK 21 in your editor and JAVA_HOME before reopening the terminal. Do not skip the enforcer to report a normal build. Once the version checks match, run `.\mvnw.cmd clean verify`.
+
+## Restore missing condition details
+
+If search reports that a listing has no condition details, choose that listing's owner in the demo-member selector. Click **Restore missing details**, choose the affected listing, then select the condition actually observed. No condition is selected automatically. Confirm to save and reload the listings. Cancel leaves the record unchanged.
+
+Restoration keeps the listing ID, title, price, reviews and waitlist. The database rechecks ownership and type, and rejects existing/conflicting details. A failure rolls back the restoration. Conflicting subtype rows require database-maintainer review rather than automatic replacement. Demo-member selection is not authentication. Never delete the live database as a repair shortcut.
+
 ## Antigravity: Run button
 
 1. Choose **File > Open Workspace from File...** and open **`C:\Users\HP\Documents\Codex\campus-marketplace-work\CampusMarketplace.code-workspace`**. This workspace contains only `program`. The window title should identify **CampusMarketplace**, rather than **Untitled (Workspace)**. Alternatively, use File > Open Folder to open `program` by itself. Opening the whole Documents/Codex folder imports archived Maven copies and creates duplicate-project errors.

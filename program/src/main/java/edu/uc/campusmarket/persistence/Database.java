@@ -203,7 +203,10 @@ public class Database {
         if (result.getObject("textbookId") != null) detailCount++;
         if (result.getObject("electronicsId") != null) detailCount++;
         if (result.getObject("furnitureId") != null) detailCount++;
-        if (detailCount != 1) throw new SQLException("Listing " + id + " needs exactly one matching detail row.");
+        if (detailCount == 0) throw new SQLException("Listing " + id
+                + " has no condition details. Select its owner and use Restore missing details.");
+        if (detailCount != 1) throw new SQLException("Listing " + id
+                + " has conflicting detail rows. Ask the database maintainer to review this record.");
         if (type.equals("TEXTBOOK") && result.getObject("textbookId") != null) {
             return new Textbook(id, seller, category, title, price, currency, status, result.getInt("missingPages"),
                     WearLevel.valueOf(result.getString("markingLevel")), result.getBoolean("coverDamaged"));
@@ -268,6 +271,11 @@ public class Database {
             statement.executeUpdate();
         }
         long id = lastId(connection);
+        insertDetails(connection, id, listing);
+        return id;
+    }
+
+    private void insertDetails(Connection connection, long id, Listing listing) throws SQLException {
         if (listing instanceof Textbook book) {
             try (PreparedStatement statement = connection.prepareStatement("INSERT INTO TextbookDetails VALUES (?, ?, ?, ?)")) {
                 statement.setLong(1, id); statement.setInt(2, book.getMissingPages());
@@ -287,7 +295,70 @@ public class Database {
                 statement.executeUpdate();
             }
         }
-        return id;
+    }
+
+    /** Shared values are known even when a listing's condition row is missing. */
+    public record ListingForRepair(long id, long sellerId, long categoryId, String title,
+                                   BigDecimal price, String currency, String status, String type) {
+        @Override public String toString() { return "#" + id + " - " + title + " (" + type + ")"; }
+    }
+
+    public List<ListingForRepair> listingsForRepair(long memberId) throws SQLException {
+        List<ListingForRepair> rows = new ArrayList<>();
+        String sql = """
+                SELECT l.* FROM Listings l JOIN Sellers s ON s.id = l.sellerId
+                LEFT JOIN TextbookDetails t ON t.listingId = l.id
+                LEFT JOIN ElectronicsDetails e ON e.listingId = l.id
+                LEFT JOIN FurnitureDetails f ON f.listingId = l.id
+                WHERE s.memberId = ? AND t.listingId IS NULL
+                  AND e.listingId IS NULL AND f.listingId IS NULL ORDER BY l.id
+                """;
+        try (Connection connection = open(); PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, memberId);
+            try (ResultSet result = statement.executeQuery()) {
+                while (result.next()) rows.add(new ListingForRepair(result.getLong("id"),
+                        result.getLong("sellerId"), result.getLong("categoryId"), result.getString("title"),
+                        BigDecimal.valueOf(result.getLong("priceMinor"), 2), result.getString("currency"),
+                        result.getString("status"), result.getString("type")));
+            }
+        }
+        return rows;
+    }
+
+    public void restoreDetails(long memberId, Listing observed) throws SQLException {
+        try (Connection connection = open()) {
+            connection.setAutoCommit(false);
+            try {
+                // Recheck ownership, type and missing rows at save time, not just in the dialog.
+                String sql = """
+                        SELECT s.memberId, l.type,
+                          (SELECT COUNT(*) FROM TextbookDetails WHERE listingId = l.id)
+                        + (SELECT COUNT(*) FROM ElectronicsDetails WHERE listingId = l.id)
+                        + (SELECT COUNT(*) FROM FurnitureDetails WHERE listingId = l.id) AS details
+                        FROM Listings l JOIN Sellers s ON s.id = l.sellerId WHERE l.id = ?
+                        """;
+                try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                    statement.setLong(1, observed.getId());
+                    try (ResultSet result = statement.executeQuery()) {
+                        if (!result.next()) throw new IllegalArgumentException("Listing does not exist.");
+                        if (result.getLong("memberId") != memberId)
+                            throw new IllegalArgumentException("Only the listing owner can restore details.");
+                        if (!result.getString("type").equals(observed.getType()))
+                            throw new IllegalArgumentException("Condition details must match the listing type.");
+                        if (result.getInt("details") != 0)
+                            throw new IllegalArgumentException("Details already exist. No record was replaced.");
+                    }
+                }
+                if (!(observed instanceof Textbook) && !(observed instanceof Electronics)
+                        && !(observed instanceof Furniture))
+                    throw new IllegalArgumentException("Unsupported listing type.");
+                insertDetails(connection, observed.getId(), observed);
+                connection.commit();
+            } catch (SQLException | RuntimeException error) {
+                rollback(connection, error);
+                throw error;
+            }
+        }
     }
 
     private long lastId(Connection connection) throws SQLException {

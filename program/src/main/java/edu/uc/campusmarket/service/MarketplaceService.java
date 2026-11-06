@@ -49,6 +49,16 @@ public class MarketplaceService {
     public List<Member> getMembers() { return new ArrayList<>(members); }
     public List<Category> getCategories() { return new ArrayList<>(categories); }
 
+    public List<Database.ListingForRepair> listingsForRepair(long memberId) throws SQLException {
+        requireMember(memberId);
+        return database.listingsForRepair(memberId);
+    }
+
+    public void restoreDetails(long memberId, Listing observed) throws SQLException {
+        requireMember(memberId);
+        database.restoreDetails(memberId, observed);
+    }
+
     public List<Listing> search(long categoryId, String keyword) throws SQLException {
         List<Long> categoryIds = categoryIdsUnder(categoryId, categories);
         String query = keyword == null ? "" : keyword.trim().toLowerCase(Locale.ROOT);

@@ -1,87 +1,210 @@
-# UC-B Campus Marketplace with Reviews — Project Proposal
+# UC-B Campus Marketplace with Reviews
 
-CPE 314 — Software Design & Software Design Laboratory
+Week 8 - Project Proposal (approved; corrected 7 November 2026)
 
-Group-1 / Team 01 · BSCPE 3B · EDP 69323
+CPE 314 - Software Design
 
-**Group Name / No.:** Group 1 | BSCPE 3B | EDP 69323
-UC-B Campus Marketplace with Reviews
+**Group Name / No.:** Group 1 / Team 01 - BSCPE 3B - EDP 69323
 
-**Members:** John Benedict Alaiza; Acexion Mahigugmaon; Glyde V. Arreglado; Tristan Urot; Joshua Brian S. Enovero; Eman De Paz
+**Members:**
 
-**Repository URL:** https://github.com/XionAce/cpe314-69323-capstone-team-01
+John Benedict Alaiza
 
-**Chosen Theme (circle one):** J — Campus Marketplace with Reviews (assigned)
+Acexion B. Mahigugmaon
 
-**API You Will Use:** FakeStoreAPI — https://fakestoreapi.com (no key required)
+Glyde V. Arreglado
+
+Tristan Dominic Urot
+
+Joshua Brian S. Enovero
+
+Emanuelle De Paz
+
+**Repository:** [XionAce/cpe314-69323-capstone-team-01](https://github.com/XionAce/cpe314-69323-capstone-team-01)
+
+**Theme:** Campus Marketplace with Reviews
+
+**API:** FakeStoreAPI - https://fakestoreapi.com
+
+**Version:** V 0.2 - instructor corrections, 7 November 2026
 
 ## 1. One-Paragraph Pitch
 
-We propose UC-B Campus Marketplace with Reviews, a Java desktop application where students, faculty, school units, and department committees can post and browse goods. It retains textbook, electronics, and furniture listings with type-specific condition rules, recursive category search, buyer-interest queues, browsing history, and reviews. SQLite/JDBC persistence, a responsive background sales-CSV import, FakeStoreAPI suggestions, and category price/rating bar charts integrate the required lessons. Uniforms, department shirts, and intramural merchandise are a proposed apparel extension for instructor approval; online payments are outside scope.
+UC-B Campus Marketplace with Reviews is a local Java desktop app for students, faculty and school groups to post and browse campus goods. Textbook, Electronics and Furniture listings have their own condition rules. Recursive category search, buyer-interest queues, recently viewed stacks, reviews, SQLite/JDBC persistence, public API suggestions, background JSON sales-history import and category charts demonstrate the required lessons. The prototype uses demo members; real login and online payments are outside its scope. The proposal was approved after the Week 8 revision.
+
+<!-- pagebreak -->
 
 ## 2. Entity-Relationship Sketch
 
-PK = primary key; FK = foreign key. Text notation follows the preliminary ER model.
+The revised ERD shows all ten application tables and all their attributes. Listings is repeated across three views to keep the diagram readable. PK = primary key, FK = foreign key, UK = unique key. Complete SQL and constraints are in Section 4 of the project design document.
 
-Seller(id PK, memberId FK, displayName, sellerKind); Member(id PK, name)
+```mermaid
+erDiagram
+    Members {
+        INTEGER id PK
+        TEXT name
+    }
+    Sellers {
+        INTEGER id PK
+        INTEGER memberId FK
+        TEXT displayName
+        TEXT sellerKind
+    }
+    Listings {
+        INTEGER id PK
+        INTEGER sellerId FK
+        INTEGER categoryId FK
+        TEXT type
+        TEXT title
+        INTEGER priceMinor
+        TEXT currency
+        TEXT status
+    }
+    Reviews {
+        INTEGER id PK
+        INTEGER listingId FK
+        INTEGER reviewerId FK
+        INTEGER rating
+        TEXT comment
+    }
+    BuyerInterests {
+        INTEGER id PK
+        INTEGER listingId FK
+        INTEGER buyerId FK
+        INTEGER joiningOrder
+    }
+    Members ||--o{ Sellers : owns
+    Members ||--o{ Reviews : writes
+    Members ||--o{ BuyerInterests : joins
+    Sellers ||--o{ Listings : posts
+    Listings ||--o{ Reviews : receives
+    Listings ||--o{ BuyerInterests : queues
+```
 
-Category(id PK, parentId FK → Category.id, name)
+Figure 1: Members, sellers, listings, reviews and buyer interests
 
-Listing(id PK, sellerId FK, categoryId FK, type, title, priceMinor, currency, status)
+<!-- pagebreak -->
 
-Review(id PK, listingId FK, reviewerId FK → Member.id, rating, comment)
+### Categories and imported sales
 
-BuyerInterest(id PK, listingId FK, buyerId FK → Member.id, joiningOrder)
+```mermaid
+erDiagram
+    Categories {
+        INTEGER id PK
+        INTEGER parentId FK
+        TEXT name
+    }
+    Listings {
+        INTEGER id PK
+        INTEGER sellerId FK
+        INTEGER categoryId FK
+        TEXT type
+        TEXT title
+        INTEGER priceMinor
+        TEXT currency
+        TEXT status
+    }
+    HistoricalSales {
+        INTEGER id PK
+        INTEGER categoryId FK
+        TEXT sourceRecordId UK
+        INTEGER priceMinor
+        TEXT currency
+        TEXT soldAt
+    }
+    Categories o|--o{ Categories : parents
+    Categories ||--o{ Listings : classifies
+    Categories ||--o{ HistoricalSales : groups
+```
 
-HistoricalSale(id PK, categoryId FK, sourceRecordId, priceMinor, currency, soldAt)
+Figure 2: Categories, listings and historical sales
 
-Member 1:M Seller; Seller 1:M Listing; Category 1:M Listing, child Category and HistoricalSale; Listing 1:M Review and BuyerInterest; Member 1:M Review and BuyerInterest. Each listing also has one matching subtype-details record for condition evidence.
+Each category has zero or one parent and zero or more children. Current listings and historical sales each belong to one category.
+
+<!-- pagebreak -->
+
+### Condition details
+
+```mermaid
+erDiagram
+    Listings {
+        INTEGER id PK
+        INTEGER sellerId FK
+        INTEGER categoryId FK
+        TEXT type
+        TEXT title
+        INTEGER priceMinor
+        TEXT currency
+        TEXT status
+    }
+    TextbookDetails {
+        INTEGER listingId PK,FK
+        INTEGER missingPages
+        TEXT markingLevel
+        INTEGER coverDamaged
+    }
+    ElectronicsDetails {
+        INTEGER listingId PK,FK
+        INTEGER powersOn
+        INTEGER hasFunctionalDefect
+        INTEGER hasCosmeticDamage
+    }
+    FurnitureDetails {
+        INTEGER listingId PK,FK
+        INTEGER structurallyStable
+        INTEGER hasStructuralDamage
+        TEXT surfaceWear
+    }
+    Listings ||--o| TextbookDetails : has
+    Listings ||--o| ElectronicsDetails : has
+    Listings ||--o| FurnitureDetails : has
+```
+
+Figure 3: Type-specific listing details
+
+Each listing has exactly one matching subtype-details row overall. listingId is both the PK and FK in each detail table. Transactions and Java validation enforce the matching-type rule.
+
+<!-- pagebreak -->
 
 ## 3. Feature Checklist
 
-Check off which mandatory requirement each planned feature will satisfy:
+Table 1: Features and course requirements
 
-| Planned Feature | Requirement(s) It Satisfies |
+| Feature | Requirement |
 |---|---|
-| Abstract Listing; Textbook, Electronics and Furniture grading overrides. | Object-Oriented Design (Week 4) |
-| FIFO interest Queue, LIFO history Stack behavior; recursive category-tree search. | Data Structures and Recursion (Week 3) |
-| At least 6 JUnit 5 tests with normal and edge cases. | Automated Testing (Week 4) |
-| Related SQLite tables; JDBC PreparedStatement and foreign keys. | Data Modeling and Database (Week 5) |
-| Parse catalog products for editable category and price suggestions. | API Consumption (Week 5) |
-| JavaFX post/search/review/import controls; background CSV/API work. | Event-Driven GUI and Concurrency (Week 6) |
-| Mean category prices and review ratings; labeled bar charts. | Data Mining and Visualization (Week 6) |
+| Abstract Listing with three condition-grading subclasses | Object-oriented design and polymorphism |
+| FIFO waitlist, LIFO recent history and recursive category search | Data structures and recursion |
+| JUnit normal and edge-case checks | Automated testing |
+| Related SQLite tables and PreparedStatement persistence | Database modeling and JDBC |
+| Live FakeStoreAPI catalog suggestions | API consumption |
+| JavaFX controls and background JSON/API operations | Event-driven GUI and concurrency |
+| Category means, counts and labeled bar charts | Data mining and visualization |
 
 ## 4. Task Split
 
-| Member | Primary Responsibility (this milestone) |
+Table 2: Team responsibilities
+
+| Member and role | Responsibility |
 |---|---|
-| John Benedict Alaiza | Sample listings, categories and condition examples. |
-| Acexion Mahigugmaon | Architecture, implementation planning and integration. |
-| Glyde V. Arreglado | ER sketch, attributes and relationship review. |
-| Tristan Urot | GUI sketches, control labels and user steps. |
-| Joshua Brian S. Enovero | Sample CSV and API/import validation cases. |
-| Eman De Paz | Test cases and expected analytics calculations. |
+| John Benedict Alaiza - Backend Developer (Listing Models) | Listing classes, condition rules and validation. |
+| Acexion B. Mahigugmaon - Project Leader / Integration | Connect the components, maintain documents and coordinate fixes. |
+| Glyde V. Arreglado - Database Admin | SQLite tables, saved records and summary queries. |
+| Tristan Dominic Urot - UI/GUI Developer | JavaFX controls, event handlers and charts. |
+| Joshua Brian S. Enovero - Backend & API Developer | Catalog requests, JSON parsing and import. |
+| Emanuelle De Paz - QA & Testing | Test cases, expected calculations and error checks. |
 
-Proposed roles for member confirmation; actual contributions will be recorded in each member’s own commits.
+<!-- pagebreak -->
 
-## 5. Public API You Plan to Use
+## 5. Public API
 
-FakeStoreAPI — GET https://fakestoreapi.com/products (no key): provides product titles, descriptions, categories and prices for editable category and reference-price suggestions. Docs: https://fakestoreapi.com/docs.
+FakeStoreAPI GET https://fakestoreapi.com/products returns product JSON without an API key. Electronics title matching supplies category and catalog reference-price suggestions. API currency is unspecified; the member enters the final PHP price. Unsupported or unmatched items keep manual entry available. See [API documentation](https://fakestoreapi.com/docs).
 
 ## 6. Risks / Open Questions
 
-How will we keep the interface responsive while importing a large CSV file?
+1. If FakeStoreAPI matches a new electronics product but gives no currency, how will we prevent a misleading PHP resale-price suggestion?
 
-How will recursive searches include listings from every nested subcategory?
+2. If a listing has several campus reviews, how will we stop its price from being counted several times in the category price average?
 
-What should the application show when FakeStoreAPI has no comparable product?
+3. If the same sales JSON file is imported twice, or cancellation occurs after some rows are processed, how will HistoricalSales avoid duplicate or partially saved sales?
 
-How will we calculate category ratings and average prices accurately?
-
----
-
-Submission copies, using the instructor template:
-
-[Revised Word proposal](https://docs.google.com/document/d/1WKe4Z_dsyzu8EQerr_-1qp6eYKJjS0pf/edit) · [Revised PDF proposal](https://drive.google.com/file/d/1kU4UM0kmT_17ppp3_ONYVf3K2j1lJfxE/view)
-
-Instructor sign-off remains pending. This document records proposed responsibilities, not completed contributions.
+4. If a Listings row loses its TextbookDetails, ElectronicsDetails or FurnitureDetails record, how will its owner restore the actual condition without replacing the listing or its reviews?
