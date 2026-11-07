@@ -24,7 +24,7 @@
 | Tristan Dominic Urot | 25243742 | Tristan-urot |
 | John Benedict Alaiza | 25268475 | JohnAlaiza |
 | Joshua Brian S. Enovero | PENDING | enovsjbs |
-| Eman De Paz | PENDING | PENDING |
+| Eman De Paz | 23261548 | Emanuelledepa-cyber |
 
 Details marked PENDING will be completed by the respective members.
 
