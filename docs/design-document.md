@@ -1,36 +1,27 @@
-# UC-B Campus Marketplace with Reviews
-
-Project Design Document
-
-CPE 314 - Software Design
+CPE 314 — Software Design
 
 University of Cebu
 
 Computer Engineering Department
 
-**Group Name / No.:** Group 1 / Team 01 - BSCPE 3B - EDP 69323
+# UC-B Campus Marketplace with Reviews
 
-**Members:**
+Project Design Document
 
-John Benedict Alaiza
+Table 1: Group information
 
-Acexion B. Mahigugmaon
-
-Glyde V. Arreglado
-
-Tristan Dominic Urot
-
-Joshua Brian S. Enovero
-
-Emanuelle De Paz
-
-**Instructor:** Richyll Son
-
-**Term:** First Semester, S.Y. 2026-2027
-
-**Document Version / Date:** V 0.3 / 7 November 2026
-
-**Repository:** [XionAce/cpe314-69323-capstone-team-01](https://github.com/XionAce/cpe314-69323-capstone-team-01)
+| Field | Details |
+|---|---|
+| Group Name / No. | Group 1 / Team 01 - BSCPE 3B - EDP 69323 |
+| Members | John Benedict Alaiza |
+|  | Acexion B. Mahigugmaon |
+|  | Glyde V. Arreglado |
+|  | Tristan Dominic Urot |
+|  | Joshua Brian S. Enovero |
+|  | Emanuelle De Paz |
+| Instructor | Richyll Son |
+| Term | First Semester, S.Y. 2026-2027 |
+| Document Version / Date | V 0.3 / 8 November 2026 |
 
 <!-- pagebreak -->
 
@@ -42,30 +33,34 @@ Emanuelle De Paz
 
 ## Revision History
 
-Table 1: Document revisions
+Table 2: Document revisions
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
-| 0.1 | 23 Oct 2026 | Group 1 | Initial Week 8 overview, ER sketch and responsibilities. |
-| 0.2 | 25 Oct 2026 | Group 1 | Week 9 classes, GUI and database design. |
-| 0.3 | 5 Nov 2026 | Group 1 | Week 10 API, background JSON import and category charts. |
+| 0.1 | 23 Oct 2026 | Group 1 | Initial project overview, ER sketch and responsibilities. |
+| 0.3 | 5 Nov 2026 | Group 1 | API, background JSON import and category charts. |
 | 0.3 | 7 Nov 2026 | XionAce | Instructor corrections: one Markdown master, complete ERD attributes, SQL statements, clearer setup and recovery for missing condition details. |
+| 0.3 | 8 Nov 2026 | Group 1 | Documented the classes, named the IDs and clarified the table connections. |
 
 <!-- pagebreak -->
 
 ## 1. Introduction & Project Overview
 
-UC-B Campus Marketplace with Reviews is a local Java desktop app for students, faculty and school groups to post and browse campus goods. Its theme is Campus Marketplace with Reviews (Option J). Textbook, Electronics and Furniture listings use different condition rules. Members can search categories, join waitlists, leave reviews and view category summaries.
+UC-B Campus Marketplace with Reviews is a local Java desktop app for students, faculty and school groups to post and browse campus goods. Textbook, Electronics and Furniture listings use different condition rules. Members can search categories, join waitlists and review listings. Category summaries show average prices and ratings.
 
-The prototype uses JavaFX, SQLite/JDBC and JSON sales-history files. Fictional demo members can both browse and sell; real login, online payments and a cloud server are outside its scope. The proposal was approved after the Week 8 revision.
+The prototype uses JavaFX, SQLite/JDBC and JSON sales-history files. A member selector lets users browse and sell under a demo profile. A login page and an updated interface are planned.
 
 ## 2. Preliminary ER Sketch & Team Roles
 
-The proposal model links members, sellers, categories, listings and reviews. One seller can post many listings, and one listing can receive many reviews. Section 4 replaces the preliminary sketch with the complete implemented ERD, including all ten tables and their attributes.
+Each box is a database table. A line joins a primary key (PK) to a foreign key (FK). The fork marks the many side of a 1:M relationship. Section 4 shows the complete database.
 
-The proposal and this document now show the same full diagrams to address the instructor's ERD feedback. PK identifies a row, FK points to a related row, and UK marks a unique value. A root category has no parent; other categories have one parent.
+![Ownership and review relationships](Figure_1_Preliminary_ER_Sketch.png)
 
-Table 2: Team responsibilities
+[Editable diagram](Figure_1_Preliminary_ER_Sketch.drawio)
+
+Figure 1: Preliminary ownership and review relationships
+
+Table 3: Team responsibilities
 
 | Member and role | Responsibility |
 |---|---|
@@ -91,7 +86,7 @@ Listing (abstract)
 
 The shared Listing fields are ID, seller/category IDs, title, price, currency and status. The abstract methods getType() and gradeCondition() are implemented by each subclass. A List<Listing> can hold all three types. Calling gradeCondition() through Listing runs the actual object's method; this is runtime polymorphism.
 
-Table 3: Model responsibilities and Single Responsibility Principle
+Table 4: Model responsibilities and Single Responsibility Principle
 
 | Class | Responsibility and reason to change |
 |---|---|
@@ -114,7 +109,7 @@ Keeping item rules separate from SQL and controls follows the Single Responsibil
 
 ### Supporting components
 
-Table 4: Supporting responsibilities
+Table 5: Supporting responsibilities
 
 | Component | Responsibility and reason to change |
 |---|---|
@@ -122,14 +117,20 @@ Table 4: Supporting responsibilities
 | MarketplaceView | Controls and event handlers; changes when the screen workflow changes. |
 | MarketplaceService | Coordinates use cases, category search, waitlists and recent views; changes when app rules change. |
 | Database | Schema setup, saved records and SQL summaries; changes when persistence changes. |
-| ProductCatalogClient / CatalogProduct | Catalog HTTP/parsing and returned product values; changes when the API contract changes. |
-| SalesHistoryImporter | Validates and imports sales JSON; changes when import rules change. |
 
 ### Collections and recursion
 
 Waitlists use Queue with ArrayDeque: offer() adds at the tail and poll() reads the first buyer. Stored joiningOrder values rebuild FIFO order. A Map stores each member's Stack of recently viewed IDs. push() adds the latest view; pop() reads a copy, preserving session history. At most 20 unique views are kept per member.
 
 collectCategoryIds() adds a category ID and recursively visits each child. A category without children is the base case. Validation rejects missing parents, duplicate IDs and cycles before traversal. Search includes the selected category and all descendants.
+
+### Application screen and supporting classes
+
+App opens MarketplaceView. Its controls call MarketplaceService to post, browse, view items and join waitlists. Database saves and loads the records.
+
+ProductCatalogClient requests catalog data. CatalogProduct holds one product. SalesHistoryImporter reads past sales. ProductCatalogClient.Response carries the request result. SalesHistoryImporter.Result reports import counts and errors. Database.CategorySummary carries category averages and counts. Database.ListingForRepair identifies an owner's listing with missing condition data. The owner selects the observed condition and the database restores its missing detail row in a transaction.
+
+<!-- pagebreak -->
 
 ### GUI workflow and recovery
 
@@ -141,26 +142,48 @@ If a listing has no condition-detail row, search reports its ID. Its owner can c
 
 <!-- pagebreak -->
 
+### Listing types and sample records
+
+Listing defines the shared item data. The application accepts three concrete types: Textbook, Electronics and Furniture. Database seeds one example of each when it creates the demo data. The user can post additional items of any supported type.
+
+Table 6: Listings supplied with the prototype
+
+| Listing and type | Category and price | Saved observations and result |
+|---|---|---|
+| Java textbook (demo) / TEXTBOOK | Textbooks / PHP 350.00 | No missing pages, light markings, intact cover. Grade: GOOD. |
+| Gaming laptop (demo) / ELECTRONICS | Gaming Laptops / PHP 18,000.00 | Powers on, no functional defect, cosmetic damage. Grade: GOOD. |
+| Study chair (demo) / FURNITURE | Furniture / PHP 650.00 | Stable, no structural damage, light surface wear. Grade: GOOD. |
+
+### Categories and listing rules
+
+All finds is the root category. Its direct children are Textbooks, Electronics and Furniture. Under Electronics, Computers contains Laptops, which contains Gaming Laptops. Searching a parent category includes items in its descendants.
+
+Each new listing requires a seller profile, a category, a nonblank title, a positive price representable in whole minor units and a three-letter uppercase currency. The listing model trims spaces from the title. A post starts as AVAILABLE and uses the active member's seller profile. The service supports owner withdrawal, which changes the status to WITHDRAWN. Marketplace search returns AVAILABLE items.
+
+<!-- pagebreak -->
+
 ## 4. Data Model & Database Design
 
 The schema defines ten application tables. The ERD is split into three views for readability; Listings is repeated to connect the views. Every table attribute is included. TEXT and INTEGER are SQLite types. The schema below specifies nullability and checks.
 
+Read 1:M as one parent to many children. A parent can have no children. M:N (also called M:M) means many-to-many. Members and Listings have this relationship through BuyerInterests for waitlists and through Reviews for ratings. Each connecting table has two 1:M links. Each individual listing subtype uses 1:1; only the matching subtype has a row.
+
 ```mermaid
 erDiagram
     Members {
-        INTEGER id PK
+        INTEGER id PK "Member ID"
         TEXT name
     }
     Sellers {
-        INTEGER id PK
-        INTEGER memberId FK
+        INTEGER id PK "Seller profile ID"
+        INTEGER memberId FK "Seller owner member ID"
         TEXT displayName
         TEXT sellerKind
     }
     Listings {
-        INTEGER id PK
-        INTEGER sellerId FK
-        INTEGER categoryId FK
+        INTEGER id PK "Listing ID"
+        INTEGER sellerId FK "Seller profile ID"
+        INTEGER categoryId FK "Listing category ID"
         TEXT type
         TEXT title
         INTEGER priceMinor
@@ -168,16 +191,16 @@ erDiagram
         TEXT status
     }
     Reviews {
-        INTEGER id PK
-        INTEGER listingId FK
-        INTEGER reviewerId FK
+        INTEGER id PK "Review ID"
+        INTEGER listingId FK "Reviewed listing ID"
+        INTEGER reviewerId FK "Reviewer member ID"
         INTEGER rating
         TEXT comment
     }
     BuyerInterests {
-        INTEGER id PK
-        INTEGER listingId FK
-        INTEGER buyerId FK
+        INTEGER id PK "Waitlist entry ID"
+        INTEGER listingId FK "Requested listing ID"
+        INTEGER buyerId FK "Buyer member ID"
         INTEGER joiningOrder
     }
     Members ||--o{ Sellers : owns
@@ -188,7 +211,7 @@ erDiagram
     Listings ||--o{ BuyerInterests : queues
 ```
 
-Figure 1: Members, sellers, listings, reviews and buyer interests
+Figure 2: Members, sellers, listings, reviews and buyer interests
 
 <!-- pagebreak -->
 
@@ -197,14 +220,14 @@ Figure 1: Members, sellers, listings, reviews and buyer interests
 ```mermaid
 erDiagram
     Categories {
-        INTEGER id PK
-        INTEGER parentId FK
+        INTEGER id PK "Category ID"
+        INTEGER parentId FK "Parent category ID"
         TEXT name
     }
     Listings {
-        INTEGER id PK
-        INTEGER sellerId FK
-        INTEGER categoryId FK
+        INTEGER id PK "Listing ID"
+        INTEGER sellerId FK "Seller profile ID"
+        INTEGER categoryId FK "Listing category ID"
         TEXT type
         TEXT title
         INTEGER priceMinor
@@ -212,9 +235,9 @@ erDiagram
         TEXT status
     }
     HistoricalSales {
-        INTEGER id PK
-        INTEGER categoryId FK
-        TEXT sourceRecordId UK
+        INTEGER id PK "Saved sale ID"
+        INTEGER categoryId FK "Sale category ID"
+        TEXT sourceRecordId UK "Source sale ID"
         INTEGER priceMinor
         TEXT currency
         TEXT soldAt
@@ -224,7 +247,7 @@ erDiagram
     Categories ||--o{ HistoricalSales : groups
 ```
 
-Figure 2: Categories, current listings and imported historical sales
+Figure 3: Categories, current listings and imported historical sales
 
 A root category has NULL parentId. A non-root category has one parent, and a parent can have zero or more children. HistoricalSales contains imported past sales, not new marketplace listings. sourceRecordId prevents duplicate imports.
 
@@ -235,9 +258,9 @@ A root category has NULL parentId. A non-root category has one parent, and a par
 ```mermaid
 erDiagram
     Listings {
-        INTEGER id PK
-        INTEGER sellerId FK
-        INTEGER categoryId FK
+        INTEGER id PK "Listing ID"
+        INTEGER sellerId FK "Seller profile ID"
+        INTEGER categoryId FK "Listing category ID"
         TEXT type
         TEXT title
         INTEGER priceMinor
@@ -245,19 +268,19 @@ erDiagram
         TEXT status
     }
     TextbookDetails {
-        INTEGER listingId PK,FK
+        INTEGER listingId PK,FK "Listing ID"
         INTEGER missingPages
         TEXT markingLevel
         INTEGER coverDamaged
     }
     ElectronicsDetails {
-        INTEGER listingId PK,FK
+        INTEGER listingId PK,FK "Listing ID"
         INTEGER powersOn
         INTEGER hasFunctionalDefect
         INTEGER hasCosmeticDamage
     }
     FurnitureDetails {
-        INTEGER listingId PK,FK
+        INTEGER listingId PK,FK "Listing ID"
         INTEGER structurallyStable
         INTEGER hasStructuralDamage
         TEXT surfaceWear
@@ -267,34 +290,59 @@ erDiagram
     Listings ||--o| FurnitureDetails : has
 ```
 
-Figure 3: Shared listing fields and type-specific condition evidence
+Figure 4: Shared listing fields and type-specific condition evidence
 
-Each listing has exactly one matching detail row overall. It has zero or one row in each individual detail table, depending on type. A detail row's listingId is both its primary key and its foreign key. The app saves the listing and detail row in one transaction, and checks the type when reading. Foreign keys alone do not guarantee exactly one matching subtype.
+A valid listing needs exactly one matching detail row overall. It has zero or one row in each individual detail table, depending on type. A detail row's listingId is both its primary key and its foreign key. The app saves the listing and detail row in one transaction, and checks the type when reading. Foreign keys alone do not guarantee exactly one matching subtype.
+
+<!-- pagebreak -->
+
+### Whose ID is it?
+
+A primary key (PK) identifies one row in its own table. A foreign key (FK) identifies a related row. In the diagrams, Member ID means Members.id, Seller profile ID means Sellers.id, and Listing ID means Listings.id. The SQLite name id always belongs to the table where it appears.
+
+Table 7: IDs used to connect marketplace records
+
+| SQLite field | What it identifies |
+|---|---|
+| Sellers.memberId | The member who owns the seller profile. Links to Members.id. |
+| Listings.sellerId | The seller profile that posted this item. Links to Sellers.id. |
+| Listings.categoryId | The item's category. Links to Categories.id. |
+| Categories.parentId | The parent category. Links to Categories.id; empty for a root category. |
+| Reviews.listingId | The listing being reviewed. Links to Listings.id. |
+| Reviews.reviewerId | The member who wrote the review. Links to Members.id. |
+| BuyerInterests.listingId | The listing whose waitlist the buyer joined. Links to Listings.id. |
+| BuyerInterests.buyerId | The member who joined the waitlist. Links to Members.id. |
+| HistoricalSales.categoryId | The category of the imported sale. Links to Categories.id. |
+| TextbookDetails.listingId, ElectronicsDetails.listingId, FurnitureDetails.listingId | In each table, this is both PK and FK. It identifies the listing whose condition is described and links to Listings.id. |
+
+Example: Review ID 7, Reviewed listing ID 12 and Reviewer member ID 3 mean that member 3 wrote review 7 about listing 12.
+
+HistoricalSales.id identifies the locally saved sale. HistoricalSales.sourceRecordId is the unique ID supplied by the JSON file to recognize a repeat import.
 
 <!-- pagebreak -->
 
 ### Relationships and storage rules
 
-Table 5: Relationship cardinalities
+Table 8: Relationship cardinalities
 
 | Parent | Child | Relationship |
 |---|---|---|
-| Members | Sellers | 1 to 0..* |
-| Members | Reviews | 1 to 0..* |
-| Members | BuyerInterests | 1 to 0..* |
-| Sellers | Listings | 1 to 0..* |
-| Categories | Listings | 1 to 0..* |
-| Categories | HistoricalSales | 1 to 0..* |
-| Categories | Categories | 0..1 parent to 0..* children |
-| Listings | Reviews | 1 to 0..* |
-| Listings | BuyerInterests | 1 to 0..* |
-| Listings | Each detail table | 1 to 0..1; exactly one matching subtype overall |
+| Members | Sellers | 1:M |
+| Members | Reviews | 1:M |
+| Members | BuyerInterests | 1:M |
+| Sellers | Listings | 1:M |
+| Categories | Listings | 1:M |
+| Categories | HistoricalSales | 1:M |
+| Categories | Categories | 1:M; a root has no parent |
+| Listings | Reviews | 1:M |
+| Listings | BuyerInterests | 1:M |
+| Listings | Each detail table | 1:1; only the matching subtype applies |
 
-Prices use integer minor units: PHP 350.50 is stored as priceMinor 35050 and currency PHP. Java uses BigDecimal. The app uses AVAILABLE and WITHDRAWN status values. Required names are nonblank; review ratings range from 1 to 5. Java prevents self-review and repeat reviews through the app's serialized transaction path.
+Prices use integer minor units: PHP 350.50 is stored as priceMinor 35050 and currency PHP. Java uses BigDecimal. The app uses AVAILABLE and WITHDRAWN status values. Required names are nonblank; review ratings range from 1 to 5. The application prevents self-review and repeat reviews through the app's serialized transaction path.
 
-Foreign keys are enabled on every SQLite connection. PreparedStatement binds input values to SQL. Each operation opens its own connection. Listing/detail insertion and detail restoration use transactions and roll back on failure.
+Foreign keys are enabled on every SQLite connection. PreparedStatement binds input values to SQL. Each operation opens its own connection. Saving a listing with its detail record and restoring missing details both use transactions and roll back on failure.
 
-The following CREATE TABLE statements match [schema.sql](../program/src/main/resources/db/schema.sql). Each snippet defines one table. Index statements remain in the linked schema file.
+The following CREATE TABLE statements match [schema.sql](https://github.com/XionAce/cpe314-69323-capstone-team-01/blob/74ce4ca1d734601c7832e2bba90ed5ed2f0025b7/program/src/main/resources/db/schema.sql). Each snippet defines one table. Index statements remain in the linked schema file.
 
 ### Members
 
@@ -480,7 +528,7 @@ Each database operation owns its connection. Closing the app requests cancellati
 
 The app summarizes saved marketplace data by category and displays counts alongside averages. The results help a member compare listing prices and campus review ratings.
 
-Table 6: Category calculations
+Table 9: Category calculations
 
 | Result | Calculation and data |
 |---|---|
@@ -504,7 +552,7 @@ Example: PHP 100 and PHP 200 average PHP 150. Adding PHP 300 makes the average P
 
 ## Appendix - References and reproduction
 
-The editable master is docs/design-document.md. docs/design-document.pdf is its exported copy. Edit the Markdown first, then run docs/export_documents.py with Python, ReportLab and Calibri fonts. Exported PDF text, tables, SQL and ERD fields come from this master.
+The editable master is docs/design-document.md. docs/design-document.pdf is its exported copy. Edit the Markdown first, then run docs/export_documents.py with Python, ReportLab and Calibri fonts. The preliminary sketch uses the linked draw.io file. Section 4 diagrams use the field definitions in this master.
 
 Use JDK 21 for the Java project and Maven launch. The enforcer range [21,22) intentionally rejects JDK 17 and 25. From program/, run `java -version`, `./mvnw.cmd -version`, then `./mvnw.cmd clean verify`. Both version checks must show Java 21; do not skip the enforcer to claim a normal build. The existing Eclipse Java Application and Antigravity Run profiles remain available.
 
