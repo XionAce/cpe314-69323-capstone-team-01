@@ -1,5 +1,0 @@
-[
-  {"sourceRecordId":"demo-001","categoryPath":["All finds","Textbooks"],"price":250.00,"currency":"PHP","soldAt":"2026-10-20T08:00:00Z"},
-  {"sourceRecordId":"demo-002","categoryPath":["All finds","Electronics","Computers","Laptops"],"price":15000.00,"currency":"PHP","soldAt":"2026-10-21T10:00:00Z"},
-  {"sourceRecordId":"demo-003","categoryPath":["All finds","Furniture"],"price":400.00,"currency":"PHP","soldAt":"2026-10-22T09:00:00Z"}
-]
