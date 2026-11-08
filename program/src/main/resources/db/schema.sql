@@ -1,10 +1,15 @@
--- Same ten tables and constraints as the approved V0.2 design.
--- Reviews and HistoricalSales are used by Milestone 2.
+-- The existing ten tables now include local login credentials on Members.
+-- Database.initialize upgrades existing databases without replacing their records.
 -- Prices are stored as centavos, and currency is stored separately.
 
 CREATE TABLE Members (
     id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL CHECK (length(trim(name)) > 0)
+    name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+    username TEXT,
+    passwordSalt TEXT,
+    passwordHash TEXT,
+    recoverySalt TEXT,
+    recoveryHash TEXT
 );
 
 CREATE TABLE Sellers (

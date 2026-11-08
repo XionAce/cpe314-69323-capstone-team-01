@@ -15,6 +15,14 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Base64;
+import java.util.Arrays;
+import java.util.Locale;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 
 /** SQL stays here. Each public operation opens and closes its own connection. */
 public class Database {
@@ -73,10 +81,12 @@ public class Database {
                 try (PreparedStatement statement = connection.prepareStatement("PRAGMA user_version");
                      ResultSet result = statement.executeQuery()) {
                     result.next();
-                    if (result.getInt(1) != 1 || tables != 10) {
+                    if (result.getInt(1) < 1 || result.getInt(1) > 3 || tables != 10) {
                         throw new SQLException("Unrecognized database. Choose a new data folder.");
                     }
+                    if (result.getInt(1) == 3) return;
                 }
+                initializeAccounts(connection);
                 return;
             }
             connection.setAutoCommit(false);
@@ -98,6 +108,177 @@ public class Database {
                 rollback(connection, error);
                 throw error;
             }
+            initializeAccounts(connection);
+        }
+    }
+
+    // Upgrade the existing member rows so their listings, reviews and waitlists keep their IDs.
+    private void initializeAccounts(Connection connection) throws SQLException {
+        connection.setAutoCommit(false);
+        try {
+            boolean hasLogin = false;
+            boolean hasRecovery = false;
+            try (var statement = connection.prepareStatement("PRAGMA table_info(Members)");
+                 var columns = statement.executeQuery()) {
+                while (columns.next()) {
+                    hasLogin |= columns.getString("name").equals("username");
+                    hasRecovery |= columns.getString("name").equals("recoveryHash");
+                }
+            }
+            if (!hasRecovery) {
+                for (String column : List.of("recoverySalt", "recoveryHash")) {
+                    try (var statement = connection.prepareStatement("ALTER TABLE Members ADD COLUMN " + column + " TEXT")) {
+                        statement.execute();
+                    }
+                }
+            }
+            if (!hasLogin) {
+                for (String column : List.of("username", "passwordSalt", "passwordHash")) {
+                    try (var statement = connection.prepareStatement("ALTER TABLE Members ADD COLUMN " + column + " TEXT")) {
+                        statement.execute();
+                    }
+                }
+            }
+            try (var statement = connection.prepareStatement(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS idx_Members_username ON Members(username)")) {
+                statement.execute();
+            }
+            String[] previousNames = {"Alex (demo)", "Bea (demo)", "Carlo (demo)"};
+            for (int i = 0; i < previousNames.length; i++) {
+                char letter = (char) ('A' + i);
+                String name = "Person " + letter;
+                byte[] salt = new byte[16];
+                new SecureRandom().nextBytes(salt);
+                char[] password = ("Campus" + letter + "123!").toCharArray();
+                try (var statement = connection.prepareStatement("""
+                        UPDATE Members SET username = ?, passwordSalt = ?, passwordHash = ?,
+                        name = CASE WHEN name = ? THEN ? ELSE name END
+                        WHERE id = ? AND username IS NULL
+                        """)) {
+                    statement.setString(1, "person_" + Character.toLowerCase(letter));
+                    statement.setString(2, Base64.getEncoder().encodeToString(salt));
+                    statement.setString(3, Base64.getEncoder().encodeToString(passwordHash(password, salt)));
+                    statement.setString(4, previousNames[i]);
+                    statement.setString(5, name);
+                    statement.setLong(6, i + 1);
+                    statement.executeUpdate();
+                } finally {
+                    Arrays.fill(password, '\0');
+                }
+                char[] recoveryCode = ("RESET-" + letter + "-2026").toCharArray();
+                try (var statement = connection.prepareStatement(
+                        "UPDATE Members SET recoverySalt = ?, recoveryHash = ? WHERE id = ? AND recoveryHash IS NULL")) {
+                    statement.setString(1, Base64.getEncoder().encodeToString(salt));
+                    statement.setString(2, Base64.getEncoder().encodeToString(passwordHash(recoveryCode, salt)));
+                    statement.setLong(3, i + 1);
+                    statement.executeUpdate();
+                } finally {
+                    Arrays.fill(recoveryCode, '\0');
+                }
+                try (var statement = connection.prepareStatement(
+                        "UPDATE Sellers SET displayName = ? WHERE memberId = ? AND displayName = ?")) {
+                    statement.setString(1, name);
+                    statement.setLong(2, i + 1);
+                    statement.setString(3, previousNames[i]);
+                    statement.executeUpdate();
+                }
+            }
+            try (var statement = connection.prepareStatement("PRAGMA user_version = 3")) { statement.execute(); }
+            connection.commit();
+        } catch (SQLException | RuntimeException error) {
+            rollback(connection, error);
+            throw error;
+        }
+    }
+
+    private byte[] passwordHash(char[] password, byte[] salt) throws SQLException {
+        PBEKeySpec specification = new PBEKeySpec(password, salt, 210_000, 256);
+        try {
+            return SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(specification).getEncoded();
+        } catch (GeneralSecurityException error) {
+            throw new SQLException("Password verification is unavailable.", error);
+        } finally {
+            specification.clearPassword();
+        }
+    }
+
+    public Member authenticate(String username, char[] password) throws SQLException {
+        if (username == null || username.isBlank() || password == null || password.length == 0) {
+            throw new IllegalArgumentException("Enter your username and password.");
+        }
+        try (var connection = open(); var statement = connection.prepareStatement(
+                "SELECT id, name, passwordSalt, passwordHash FROM Members WHERE username = ?")) {
+            statement.setString(1, username.strip().toLowerCase(Locale.ROOT));
+            try (var result = statement.executeQuery()) {
+                if (result.next()) {
+                    byte[] salt = Base64.getDecoder().decode(result.getString("passwordSalt"));
+                    byte[] expected = Base64.getDecoder().decode(result.getString("passwordHash"));
+                    if (MessageDigest.isEqual(expected, passwordHash(password, salt))) {
+                        return new Member(result.getLong("id"), result.getString("name"));
+                    }
+                }
+            }
+        }
+        throw new IllegalArgumentException("The username or password is incorrect.");
+    }
+
+    // Recovery codes are one-use secrets. A successful reset replaces both hashes atomically.
+    public String resetPassword(String username, char[] recoveryCode, char[] newPassword) throws SQLException {
+        if (username == null || username.isBlank() || recoveryCode == null || recoveryCode.length == 0) {
+            throw new IllegalArgumentException("Enter your username and recovery code.");
+        }
+        if (newPassword == null || newPassword.length < 8 || newPassword.length > 128) {
+            throw new IllegalArgumentException("Use a password between 8 and 128 characters.");
+        }
+        try (var connection = open()) {
+            connection.setAutoCommit(false);
+            try {
+                long memberId;
+                String previousHash;
+                try (var statement = connection.prepareStatement(
+                        "SELECT id, recoverySalt, recoveryHash FROM Members WHERE username = ?")) {
+                    statement.setString(1, username.strip().toLowerCase(Locale.ROOT));
+                    try (var result = statement.executeQuery()) {
+                        if (!result.next() || result.getString("recoveryHash") == null) {
+                            throw new IllegalArgumentException("The username or recovery code is incorrect.");
+                        }
+                        byte[] salt = Base64.getDecoder().decode(result.getString("recoverySalt"));
+                        previousHash = result.getString("recoveryHash");
+                        if (!MessageDigest.isEqual(Base64.getDecoder().decode(previousHash), passwordHash(recoveryCode, salt))) {
+                            throw new IllegalArgumentException("The username or recovery code is incorrect.");
+                        }
+                        memberId = result.getLong("id");
+                    }
+                }
+                SecureRandom random = new SecureRandom();
+                byte[] passwordSalt = new byte[16];
+                byte[] recoverySalt = new byte[16];
+                byte[] codeBytes = new byte[18];
+                random.nextBytes(passwordSalt);
+                random.nextBytes(recoverySalt);
+                random.nextBytes(codeBytes);
+                String nextCode = Base64.getUrlEncoder().withoutPadding().encodeToString(codeBytes);
+                char[] nextCodeChars = nextCode.toCharArray();
+                try (var statement = connection.prepareStatement("""
+                        UPDATE Members SET passwordSalt = ?, passwordHash = ?, recoverySalt = ?, recoveryHash = ?
+                        WHERE id = ? AND recoveryHash = ?
+                        """)) {
+                    statement.setString(1, Base64.getEncoder().encodeToString(passwordSalt));
+                    statement.setString(2, Base64.getEncoder().encodeToString(passwordHash(newPassword, passwordSalt)));
+                    statement.setString(3, Base64.getEncoder().encodeToString(recoverySalt));
+                    statement.setString(4, Base64.getEncoder().encodeToString(passwordHash(nextCodeChars, recoverySalt)));
+                    statement.setLong(5, memberId);
+                    statement.setString(6, previousHash);
+                    if (statement.executeUpdate() != 1) throw new SQLException("The recovery code has already been used.");
+                } finally {
+                    Arrays.fill(nextCodeChars, '\0');
+                }
+                connection.commit();
+                return nextCode;
+            } catch (SQLException | RuntimeException error) {
+                rollback(connection, error);
+                throw error;
+            }
         }
     }
 
@@ -111,7 +292,7 @@ public class Database {
     }
 
     private void seed(Connection connection) throws SQLException {
-        String[] names = {"Alex (demo)", "Bea (demo)", "Carlo (demo)"};
+        String[] names = {"Person A", "Person B", "Person C"};
         for (int i = 0; i < names.length; i++) {
             try (PreparedStatement statement = connection.prepareStatement("INSERT INTO Members(id, name) VALUES (?, ?)")) {
                 statement.setLong(1, i + 1);
@@ -203,7 +384,10 @@ public class Database {
         if (result.getObject("textbookId") != null) detailCount++;
         if (result.getObject("electronicsId") != null) detailCount++;
         if (result.getObject("furnitureId") != null) detailCount++;
-        if (detailCount != 1) throw new SQLException("Listing " + id + " needs exactly one matching detail row.");
+        if (detailCount == 0) throw new SQLException("Listing " + id
+                + " has no condition details. Select its owner and use Restore missing details.");
+        if (detailCount != 1) throw new SQLException("Listing " + id
+                + " has conflicting detail rows. Ask the database maintainer to review this record.");
         if (type.equals("TEXTBOOK") && result.getObject("textbookId") != null) {
             return new Textbook(id, seller, category, title, price, currency, status, result.getInt("missingPages"),
                     WearLevel.valueOf(result.getString("markingLevel")), result.getBoolean("coverDamaged"));
@@ -268,6 +452,11 @@ public class Database {
             statement.executeUpdate();
         }
         long id = lastId(connection);
+        insertDetails(connection, id, listing);
+        return id;
+    }
+
+    private void insertDetails(Connection connection, long id, Listing listing) throws SQLException {
         if (listing instanceof Textbook book) {
             try (PreparedStatement statement = connection.prepareStatement("INSERT INTO TextbookDetails VALUES (?, ?, ?, ?)")) {
                 statement.setLong(1, id); statement.setInt(2, book.getMissingPages());
@@ -287,7 +476,70 @@ public class Database {
                 statement.executeUpdate();
             }
         }
-        return id;
+    }
+
+    /** Shared values are known even when a listing's condition row is missing. */
+    public record ListingForRepair(long id, long sellerId, long categoryId, String title,
+                                   BigDecimal price, String currency, String status, String type) {
+        @Override public String toString() { return "#" + id + " - " + title + " (" + type + ")"; }
+    }
+
+    public List<ListingForRepair> listingsForRepair(long memberId) throws SQLException {
+        List<ListingForRepair> rows = new ArrayList<>();
+        String sql = """
+                SELECT l.* FROM Listings l JOIN Sellers s ON s.id = l.sellerId
+                LEFT JOIN TextbookDetails t ON t.listingId = l.id
+                LEFT JOIN ElectronicsDetails e ON e.listingId = l.id
+                LEFT JOIN FurnitureDetails f ON f.listingId = l.id
+                WHERE s.memberId = ? AND t.listingId IS NULL
+                  AND e.listingId IS NULL AND f.listingId IS NULL ORDER BY l.id
+                """;
+        try (Connection connection = open(); PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, memberId);
+            try (ResultSet result = statement.executeQuery()) {
+                while (result.next()) rows.add(new ListingForRepair(result.getLong("id"),
+                        result.getLong("sellerId"), result.getLong("categoryId"), result.getString("title"),
+                        BigDecimal.valueOf(result.getLong("priceMinor"), 2), result.getString("currency"),
+                        result.getString("status"), result.getString("type")));
+            }
+        }
+        return rows;
+    }
+
+    public void restoreDetails(long memberId, Listing observed) throws SQLException {
+        try (Connection connection = open()) {
+            connection.setAutoCommit(false);
+            try {
+                // Recheck ownership, type and missing rows at save time, not just in the dialog.
+                String sql = """
+                        SELECT s.memberId, l.type,
+                          (SELECT COUNT(*) FROM TextbookDetails WHERE listingId = l.id)
+                        + (SELECT COUNT(*) FROM ElectronicsDetails WHERE listingId = l.id)
+                        + (SELECT COUNT(*) FROM FurnitureDetails WHERE listingId = l.id) AS details
+                        FROM Listings l JOIN Sellers s ON s.id = l.sellerId WHERE l.id = ?
+                        """;
+                try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                    statement.setLong(1, observed.getId());
+                    try (ResultSet result = statement.executeQuery()) {
+                        if (!result.next()) throw new IllegalArgumentException("Listing does not exist.");
+                        if (result.getLong("memberId") != memberId)
+                            throw new IllegalArgumentException("Only the listing owner can restore details.");
+                        if (!result.getString("type").equals(observed.getType()))
+                            throw new IllegalArgumentException("Condition details must match the listing type.");
+                        if (result.getInt("details") != 0)
+                            throw new IllegalArgumentException("Details already exist. No record was replaced.");
+                    }
+                }
+                if (!(observed instanceof Textbook) && !(observed instanceof Electronics)
+                        && !(observed instanceof Furniture))
+                    throw new IllegalArgumentException("Unsupported listing type.");
+                insertDetails(connection, observed.getId(), observed);
+                connection.commit();
+            } catch (SQLException | RuntimeException error) {
+                rollback(connection, error);
+                throw error;
+            }
+        }
     }
 
     private long lastId(Connection connection) throws SQLException {
