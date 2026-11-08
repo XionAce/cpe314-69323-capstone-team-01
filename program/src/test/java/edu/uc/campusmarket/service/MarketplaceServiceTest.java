@@ -120,6 +120,66 @@ class MarketplaceServiceTest {
         assertEquals(List.of(3L, 2L), service.getWaitlist(id));
     }
 
+    @Test
+    void postingRejectsAnotherMembersSellerProfileAndWithdrawnNewItems() throws Exception {
+        Textbook wrongSeller = new Textbook(0, service.sellerFor(2), 2, "Wrong owner",
+                BigDecimal.ONE, "PHP", "AVAILABLE", 0, WearLevel.NONE, false);
+        Textbook withdrawn = new Textbook(0, service.sellerFor(1), 2, "Already withdrawn",
+                BigDecimal.ONE, "PHP", "WITHDRAWN", 0, WearLevel.NONE, false);
+        assertThrows(IllegalArgumentException.class, () -> service.post(1, wrongSeller));
+        assertThrows(IllegalArgumentException.class, () -> service.post(1, withdrawn));
+        assertEquals(3, service.search(1, "").size());
+    }
+
+    @Test
+    void unknownMemberCannotReadPrivateHistoryPostReviewOrWithdraw() {
+        assertThrows(IllegalArgumentException.class, () -> service.myListings(999));
+        assertThrows(IllegalArgumentException.class, () -> service.view(999, 1));
+        assertThrows(IllegalArgumentException.class, () -> service.recent(999));
+        assertThrows(IllegalArgumentException.class, () -> service.review(1, 999, 5, "Invalid member"));
+        assertThrows(IllegalArgumentException.class, () -> service.withdraw(999, 1));
+        assertThrows(IllegalArgumentException.class, () -> service.joinWaitlist(1, 999));
+    }
+
+    @Test
+    void waitlistsStaySeparateAndKeepTheirOrderAfterReopening() throws Exception {
+        service.joinWaitlist(1, 3);
+        service.joinWaitlist(1, 2);
+        service.joinWaitlist(2, 1);
+        MarketplaceService reopened = new MarketplaceService(new Database(folder.resolve("test.db")));
+        reopened.initialize();
+        assertEquals(List.of(3L, 2L), reopened.getWaitlist(1));
+        assertEquals(List.of(1L), reopened.getWaitlist(2));
+        assertTrue(reopened.getWaitlist(3).isEmpty());
+    }
+
+    @Test
+    void callersCannotEraseLoadedMembersOrCategoriesByEditingReturnedLists() throws Exception {
+        service.getMembers().clear();
+        service.getCategories().clear();
+        assertEquals(3, service.getMembers().size());
+        assertEquals(7, service.getCategories().size());
+        assertEquals(1, service.login("person_a", "CampusA123!".toCharArray()).getId());
+        assertEquals(3, service.search(1, "").size());
+    }
+
+    @Test
+    void existingSessionSearchSeesAnotherSessionsNewPostAndWithdrawal() throws Exception {
+        MarketplaceService other = new MarketplaceService(new Database(folder.resolve("test.db")));
+        other.initialize();
+        long id = postBook("Shared database update");
+        assertTrue(contains(other.search(1, "Shared database"), id));
+        service.withdraw(1, id);
+        assertFalse(contains(other.search(1, "Shared database"), id));
+        assertTrue(contains(other.myListings(1), id));
+    }
+
+    @Test
+    void missingListingCannotEnterRecentHistory() throws Exception {
+        assertThrows(IllegalArgumentException.class, () -> service.view(2, 999));
+        assertTrue(service.recent(2).isEmpty());
+    }
+
     private long postBook(String title) throws Exception {
         return service.post(1, new Textbook(0, service.sellerFor(1), 2, title,
                 new BigDecimal("150.00"), "PHP", "AVAILABLE", 0, WearLevel.LIGHT, false));

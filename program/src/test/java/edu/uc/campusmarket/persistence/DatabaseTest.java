@@ -31,7 +31,91 @@ class DatabaseTest {
         assertEquals(7, database.getCategories().size());
         assertEquals(3, database.getListings().size());
         assertEquals(1, number("PRAGMA foreign_keys"));
-        assertEquals(1, number("PRAGMA user_version"));
+        assertEquals(3, number("PRAGMA user_version"));
+    }
+
+    @Test
+    void verifiesEachAccountAndRejectsIncorrectPasswords() throws SQLException {
+        for (int i = 0; i < 3; i++) {
+            char letter = (char) ('A' + i);
+            Member member = database.authenticate("person_" + Character.toLowerCase(letter),
+                    ("Campus" + letter + "123!").toCharArray());
+            assertEquals(i + 1, member.getId());
+            assertEquals("Person " + letter, member.getName());
+        }
+        assertThrows(IllegalArgumentException.class, () -> database.authenticate("person_a", "wrong".toCharArray()));
+        assertThrows(IllegalArgumentException.class, () -> database.authenticate("unknown", "CampusA123!".toCharArray()));
+        assertThrows(IllegalArgumentException.class, () -> database.authenticate("person_a", new char[0]));
+    }
+
+    @Test
+    void resetsPasswordAndConsumesTheRecoveryCode() throws SQLException {
+        database.addInterest(1, 2);
+        String next = database.resetPassword("person_a", "RESET-A-2026".toCharArray(), "MyNewPass123!".toCharArray());
+        assertEquals(1, database.authenticate("person_a", "MyNewPass123!".toCharArray()).getId());
+        assertThrows(IllegalArgumentException.class, () -> database.authenticate("person_a", "CampusA123!".toCharArray()));
+        assertThrows(IllegalArgumentException.class, () -> database.resetPassword("person_a", "RESET-A-2026".toCharArray(), "OtherPass123!".toCharArray()));
+        assertEquals(24, next.length());
+        assertEquals(3, database.getListings().size());
+        assertEquals(List.of(2L), database.getWaitlist(1));
+        database.initialize();
+        database.resetPassword("person_a", next.toCharArray(), "NextPassword123!".toCharArray());
+        assertEquals(1, database.authenticate("person_a", "NextPassword123!".toCharArray()).getId());
+    }
+
+    @Test
+    void rejectsWrongRecoveryAndShortPasswordsWithoutChangingTheAccount() throws SQLException {
+        assertThrows(IllegalArgumentException.class, () -> database.resetPassword("person_b", "RESET-A-2026".toCharArray(), "NewPassword123!".toCharArray()));
+        assertThrows(IllegalArgumentException.class, () -> database.resetPassword("unknown", "RESET-A-2026".toCharArray(), "NewPassword123!".toCharArray()));
+        assertThrows(IllegalArgumentException.class, () -> database.resetPassword("person_a", "RESET-A-2026".toCharArray(), "short".toCharArray()));
+        assertEquals(1, database.authenticate("person_a", "CampusA123!".toCharArray()).getId());
+        assertEquals(2, database.authenticate("person_b", "CampusB123!".toCharArray()).getId());
+    }
+
+    @Test
+    void upgradesVersionTwoWithRecoveryWithoutResettingItsPassword() throws SQLException {
+        database.resetPassword("person_c", "RESET-C-2026".toCharArray(), "KeepThisPassword!".toCharArray());
+        try (var connection = database.open(); var statement = connection.createStatement()) {
+            statement.execute("ALTER TABLE Members DROP COLUMN recoverySalt");
+            statement.execute("ALTER TABLE Members DROP COLUMN recoveryHash");
+            statement.execute("PRAGMA user_version = 2");
+        }
+        database.initialize();
+        assertEquals(3, database.authenticate("person_c", "KeepThisPassword!".toCharArray()).getId());
+        assertEquals(3, number("PRAGMA user_version"));
+        database.resetPassword("person_c", "RESET-C-2026".toCharArray(), "AnotherPassword!".toCharArray());
+        assertEquals(3, database.authenticate("person_c", "AnotherPassword!".toCharArray()).getId());
+    }
+
+    @Test
+    void preservesExistingRowsWhenUpgradingDemoMembersToLoginAccounts() throws SQLException {
+        database.addInterest(1, 2);
+        database.addReview(1, 2, 4, "Keep this review");
+        try (var connection = database.open(); var statement = connection.createStatement()) {
+            statement.execute("DROP INDEX idx_Members_username");
+            statement.execute("ALTER TABLE Members DROP COLUMN username");
+            statement.execute("ALTER TABLE Members DROP COLUMN passwordSalt");
+            statement.execute("ALTER TABLE Members DROP COLUMN passwordHash");
+            statement.execute("UPDATE Members SET name = 'Alex (demo)' WHERE id = 1");
+            statement.execute("PRAGMA user_version = 1");
+        }
+        database.initialize();
+        assertEquals(1, database.authenticate("person_a", "CampusA123!".toCharArray()).getId());
+        assertEquals("Person A", database.getMembers().getFirst().getName());
+        assertEquals(3, database.getListings().size());
+        assertEquals(List.of(2L), database.getWaitlist(1));
+        assertTrue(database.reviews(1).contains("Keep this review"));
+        String hash;
+        try (var connection = database.open(); var statement = connection.createStatement();
+             var result = statement.executeQuery("SELECT passwordHash FROM Members WHERE id = 1")) {
+            hash = result.getString(1);
+        }
+        database.initialize();
+        try (var connection = database.open(); var statement = connection.createStatement();
+             var result = statement.executeQuery("SELECT passwordHash FROM Members WHERE id = 1")) {
+            assertEquals(hash, result.getString(1));
+            assertNotEquals("CampusA123!", hash);
+        }
     }
 
     @Test
@@ -124,7 +208,60 @@ class DatabaseTest {
     @Test
     void missingSubtypeDetailsAreReportedInsteadOfInventingACondition() throws SQLException {
         execute("DELETE FROM TextbookDetails WHERE listingId = 1");
-        assertThrows(SQLException.class, database::getListings);
+        SQLException error = assertThrows(SQLException.class, database::getListings);
+        assertTrue(error.getMessage().contains("Restore missing details"));
+    }
+
+    @Test
+    void ownerRestoresAllThreeTypesWithoutChangingSharedData() throws SQLException {
+        List<Listing> original = database.getListings();
+        database.addInterest(1, 2);
+        database.addReview(1, 2, 4, "Keep this review");
+        execute("DELETE FROM TextbookDetails");
+        execute("DELETE FROM ElectronicsDetails");
+        execute("DELETE FROM FurnitureDetails");
+        for (int i = 0; i < original.size(); i++) {
+            long owner = i + 1;
+            assertEquals(original.get(i).getId(), database.listingsForRepair(owner).getFirst().id());
+            database.restoreDetails(owner, original.get(i));
+            assertTrue(database.listingsForRepair(owner).isEmpty());
+        }
+        List<Listing> restored = new Database(database.getPath()).getListings();
+        for (int i = 0; i < original.size(); i++) {
+            assertEquals(original.get(i).getTitle(), restored.get(i).getTitle());
+            assertEquals(original.get(i).getPriceMinor(), restored.get(i).getPriceMinor());
+            assertEquals(original.get(i).gradeCondition(), restored.get(i).gradeCondition());
+        }
+        assertEquals(List.of(2L), database.getWaitlist(1));
+        assertTrue(database.reviews(1).contains("Keep this review"));
+    }
+
+    @Test
+    void restorationRejectsAnotherOwnerWrongTypeAndExistingDetails() throws SQLException {
+        Listing original = database.getListings().getFirst();
+        execute("DELETE FROM TextbookDetails WHERE listingId = 1");
+        assertTrue(database.listingsForRepair(2).isEmpty());
+        assertThrows(IllegalArgumentException.class, () -> database.restoreDetails(2, original));
+        Listing wrongType = new Electronics(1, 1, 2, "Wrong type", new BigDecimal("10.00"),
+                "PHP", "AVAILABLE", true, false, false);
+        assertThrows(IllegalArgumentException.class, () -> database.restoreDetails(1, wrongType));
+        assertEquals(0, number("SELECT COUNT(*) FROM TextbookDetails"));
+        database.restoreDetails(1, original);
+        assertThrows(IllegalArgumentException.class, () -> database.restoreDetails(1, original));
+        assertEquals(3, database.getListings().size());
+    }
+
+    @Test
+    void failedRestorationLeavesTheListingAndOtherDataIntact() throws SQLException {
+        Listing original = database.getListings().getFirst();
+        database.addInterest(1, 2);
+        execute("DELETE FROM TextbookDetails WHERE listingId = 1");
+        execute("CREATE TRIGGER reject_restore AFTER INSERT ON TextbookDetails BEGIN SELECT RAISE(ABORT, 'test failure'); END");
+        assertThrows(SQLException.class, () -> database.restoreDetails(1, original));
+        assertEquals(0, number("SELECT COUNT(*) FROM TextbookDetails"));
+        assertEquals(3, number("SELECT COUNT(*) FROM Listings"));
+        assertEquals(List.of(2L), database.getWaitlist(1));
+        assertEquals(1, database.listingsForRepair(1).size());
     }
 
     @Test
@@ -134,6 +271,73 @@ class DatabaseTest {
         assertEquals(sellerId, database.ensureSeller(4));
         assertEquals(4, number("SELECT COUNT(*) FROM Sellers"));
         assertThrows(IllegalArgumentException.class, () -> database.ensureSeller(999));
+    }
+
+    @Test
+    void loginNormalizesUsernameButKeepsPasswordCaseSensitive() throws SQLException {
+        assertEquals(1, database.authenticate("  PERSON_A  ", "CampusA123!".toCharArray()).getId());
+        assertThrows(IllegalArgumentException.class,
+                () -> database.authenticate("person_a", "campusa123!".toCharArray()));
+        assertThrows(IllegalArgumentException.class,
+                () -> database.authenticate("person_a", " CampusA123! ".toCharArray()));
+    }
+
+    @Test
+    void emptyCredentialsCannotAuthenticateAnAccount() {
+        assertThrows(IllegalArgumentException.class, () -> database.authenticate(null, "x".toCharArray()));
+        assertThrows(IllegalArgumentException.class, () -> database.authenticate("  ", "x".toCharArray()));
+        assertThrows(IllegalArgumentException.class, () -> database.authenticate("person_a", null));
+    }
+
+    @Test
+    void eachDatabaseUsesFreshSaltAndStoresOnlyCredentialHashes() throws SQLException {
+        Database other = new Database(folder.resolve("other.db"));
+        other.initialize();
+        try (var first = database.open(); var second = other.open();
+             var firstQuery = first.createStatement(); var secondQuery = second.createStatement();
+             var a = firstQuery.executeQuery("SELECT passwordSalt, passwordHash, recoveryHash FROM Members WHERE id = 1");
+             var b = secondQuery.executeQuery("SELECT passwordSalt, passwordHash FROM Members WHERE id = 1")) {
+            assertTrue(a.next());
+            assertTrue(b.next());
+            assertNotEquals(a.getString("passwordSalt"), b.getString("passwordSalt"));
+            assertNotEquals(a.getString("passwordHash"), b.getString("passwordHash"));
+            assertNotEquals("CampusA123!", a.getString("passwordHash"));
+            assertNotEquals("RESET-A-2026", a.getString("recoveryHash"));
+        }
+        assertEquals(1, other.authenticate("person_a", "CampusA123!".toCharArray()).getId());
+    }
+
+    @Test
+    void passwordResetAcceptsBothLengthLimitsAndRejectsAnOversizedPassword() throws SQLException {
+        assertThrows(IllegalArgumentException.class, () -> database.resetPassword(
+                "person_a", "RESET-A-2026".toCharArray(), "x".repeat(129).toCharArray()));
+        String code = database.resetPassword("person_a", "RESET-A-2026".toCharArray(), "abcdefgh".toCharArray());
+        assertEquals(1, database.authenticate("person_a", "abcdefgh".toCharArray()).getId());
+        database.resetPassword("person_a", code.toCharArray(), "x".repeat(128).toCharArray());
+        assertEquals(1, database.authenticate("person_a", "x".repeat(128).toCharArray()).getId());
+        assertEquals(2, database.authenticate("person_b", "CampusB123!".toCharArray()).getId());
+    }
+
+    @Test
+    void failedPasswordResetKeepsOldPasswordAndRecoveryCodeUsable() throws SQLException {
+        execute("CREATE TRIGGER reject_reset AFTER UPDATE OF passwordHash ON Members BEGIN SELECT RAISE(ABORT, 'test rollback'); END");
+        assertThrows(SQLException.class, () -> database.resetPassword(
+                "person_a", "RESET-A-2026".toCharArray(), "NewPassword123!".toCharArray()));
+        assertEquals(1, database.authenticate("person_a", "CampusA123!".toCharArray()).getId());
+        assertThrows(IllegalArgumentException.class,
+                () -> database.authenticate("person_a", "NewPassword123!".toCharArray()));
+        execute("DROP TRIGGER reject_reset");
+        database.resetPassword("person_a", "RESET-A-2026".toCharArray(), "RetryPassword123!".toCharArray());
+        assertEquals(1, database.authenticate("person_a", "RetryPassword123!".toCharArray()).getId());
+    }
+
+    @Test
+    void emptyRecoveryInputsKeepTheOriginalAccountUsable() throws SQLException {
+        assertThrows(IllegalArgumentException.class, () -> database.resetPassword(null, "x".toCharArray(), "NewPassword".toCharArray()));
+        assertThrows(IllegalArgumentException.class, () -> database.resetPassword("person_a", null, "NewPassword".toCharArray()));
+        assertThrows(IllegalArgumentException.class, () -> database.resetPassword("person_a", new char[0], "NewPassword".toCharArray()));
+        assertThrows(IllegalArgumentException.class, () -> database.resetPassword("person_a", "RESET-A-2026".toCharArray(), null));
+        assertEquals(1, database.authenticate("person_a", "CampusA123!".toCharArray()).getId());
     }
 
     private Textbook book(String title, int missingPages) {

@@ -26,6 +26,78 @@ class SalesHistoryImporterTest {
         }
     }
 
+    @Test
+    void progressCountsEveryValidInvalidAndDuplicateRecord() throws Exception {
+        var progress = new java.util.ArrayList<Long>();
+        var result = importer.importFile(file("[" + sale("first", "1") + "," + sale("invalid", "0")
+                + "," + sale("first", "2") + "]"), () -> false, progress::add);
+        assertEquals(java.util.List.of(1L, 2L, 3L), progress);
+        assertEquals(1, result.saved());
+        assertEquals(1, result.invalid());
+        assertEquals(1, result.duplicates());
+    }
+
+    @Test
+    void validationMessagesAreLimitedWhileEveryInvalidRowIsCounted() throws Exception {
+        String rows = java.util.stream.IntStream.range(0, 8).mapToObj(i -> sale("bad-" + i, "-1"))
+                .collect(java.util.stream.Collectors.joining(",", "[", "]"));
+        var result = importer.importFile(file(rows), () -> false, n -> {});
+        assertEquals(8, result.invalid());
+        assertEquals(5, result.errors().size());
+        assertEquals(0, count());
+    }
+
+    @Test
+    void cancellationBeforeTheFirstRowPreservesAlreadySavedSales() throws Exception {
+        importer.importFile(file("[" + sale("earlier", "10") + "]"), () -> false, n -> {});
+        Path next = file("[" + sale("later", "20") + "]");
+        assertThrows(CancellationException.class, () -> importer.importFile(next, () -> true, n -> {}));
+        assertEquals(1, count());
+        assertTrue(db.historyPreview().contains("earlier"));
+        assertFalse(db.historyPreview().contains("later"));
+    }
+
+    @Test
+    void missingInputFileLeavesExistingImportsIntact() throws Exception {
+        importer.importFile(file("[" + sale("earlier", "10") + "]"), () -> false, n -> {});
+        assertThrows(java.io.IOException.class, () -> importer.importFile(folder.resolve("missing.json"), () -> false, n -> {}));
+        assertEquals(1, count());
+    }
+
+    @Test
+    void anAmbiguousCategoryPathIsSkippedWithoutChoosingArbitrarily() throws Exception {
+        try (var connection = db.open(); var statement = connection.prepareStatement(
+                "INSERT INTO Categories(id, parentId, name) VALUES (99, 1, 'Textbooks')")) {
+            statement.executeUpdate();
+        }
+        var result = importer.importFile(file("[" + sale("ambiguous", "10") + "]"), () -> false, n -> {});
+        assertEquals(1, result.invalid());
+        assertEquals(0, count());
+    }
+
+    @Test
+    void stringPricesLowercaseCurrencyAndTimezoneFreeDatesAreInvalid() throws Exception {
+        String valid = sale("one", "10");
+        String rows = "[" + valid.replace("\"price\":10", "\"price\":\"10\"") + ","
+                + valid.replace("PHP", "php") + ","
+                + valid.replace("2026-10-20T08:00:00Z", "2026-10-20T08:00:00") + "]";
+        var result = importer.importFile(file(rows), () -> false, n -> {});
+        assertEquals(3, result.invalid());
+        assertEquals(0, count());
+    }
+
+    @Test
+    void savesExactMinorUnitsAndTheProvidedTimestamp() throws Exception {
+        importer.importFile(file("[" + sale("decimal", "19.99") + "]"), () -> false, n -> {});
+        try (var connection = db.open(); var statement = connection.prepareStatement(
+                "SELECT priceMinor, soldAt FROM HistoricalSales WHERE sourceRecordId = 'decimal'");
+             var result = statement.executeQuery()) {
+            assertTrue(result.next());
+            assertEquals(1999, result.getLong("priceMinor"));
+            assertEquals("2026-10-20T08:00:00Z", result.getString("soldAt"));
+        }
+    }
+
     @Test void savesValidRowsSkipsInvalidAndRejectsReimportDuplicates() throws Exception {
         Path path = file("[" + sale("one", "250.00") + "," + sale("bad", "-1") + "," + sale("one", "250") + "]");
         var result = importer.importFile(path, () -> false, n -> {});

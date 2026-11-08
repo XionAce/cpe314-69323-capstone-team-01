@@ -4,8 +4,28 @@ import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ListingValidationTest {
+
+    @Test
+    void categoryRejectsInvalidParentsAndKeepsRootParentEmpty() {
+        assertThrows(IllegalArgumentException.class, () -> new Category(0, null, "Root"));
+        assertThrows(IllegalArgumentException.class, () -> new Category(1, 1L, "Self parent"));
+        assertThrows(IllegalArgumentException.class, () -> new Category(1, 0L, "Invalid parent"));
+        assertThrows(IllegalArgumentException.class, () -> new Category(1, null, " "));
+        Category root = new Category(1, null, "  All finds  ");
+        assertEquals(null, root.getParentId());
+        assertEquals("All finds", root.getName());
+    }
+
+    @Test
+    void memberRejectsMissingIdentityAndTrimsAcceptedNames() {
+        assertThrows(IllegalArgumentException.class, () -> new Member(0, "Person"));
+        assertThrows(IllegalArgumentException.class, () -> new Member(1, null));
+        assertThrows(IllegalArgumentException.class, () -> new Member(1, " "));
+        assertEquals("Person A", new Member(1, "  Person A  ").getName());
+    }
 
     private Textbook textbook(String title, BigDecimal price) {
         return new Textbook(
