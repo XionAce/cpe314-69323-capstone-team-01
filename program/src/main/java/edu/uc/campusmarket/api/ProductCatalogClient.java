@@ -9,7 +9,9 @@ import java.net.http.*;
 import java.time.*;
 import java.util.*;
 
-/** Only this class knows how to request and parse the public product catalog. */
+/**
+ * Only this class knows how to request and parse the public product catalog.
+ */
 public class ProductCatalogClient {
     private final URI endpoint;
     private final Duration timeout;
@@ -19,14 +21,16 @@ public class ProductCatalogClient {
         this(URI.create("https://fakestoreapi.com/products"), Duration.ofSeconds(15));
     }
 
-    // A local HTTP server can be supplied by tests; the normal app uses the public URL.
+    // A local HTTP server can be supplied by tests; the normal app uses the public
+    // URL.
     public ProductCatalogClient(URI endpoint, Duration timeout) {
         this.endpoint = endpoint;
         this.timeout = timeout;
         http = HttpClient.newBuilder().connectTimeout(timeout).build();
     }
 
-    public record Response(List<CatalogProduct> products, String requestInfo) { }
+    public record Response(List<CatalogProduct> products, String requestInfo) {
+    }
 
     public Response fetch() throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder(endpoint).timeout(timeout)
@@ -34,7 +38,8 @@ public class ProductCatalogClient {
         HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
         String info = Instant.now() + " GET " + endpoint + " -> HTTP " + response.statusCode();
         System.out.println(info);
-        if (response.statusCode() != 200) throw new IOException(info + ". Retry or enter manually.");
+        if (response.statusCode() != 200)
+            throw new IOException(info + ". Retry or enter manually.");
         return new Response(parse(response.body()), info);
     }
 
@@ -62,13 +67,15 @@ public class ProductCatalogClient {
     }
 
     public static List<CatalogProduct> matches(List<CatalogProduct> products, String title, String type) {
-        if (!"ELECTRONICS".equals(type)) return List.of();
+        if (!"ELECTRONICS".equals(type))
+            return List.of();
         Set<String> words = new HashSet<>(Arrays.asList(title.toLowerCase(Locale.ROOT).split("\\W+")));
         words.removeIf(word -> word.length() < 3 || Set.of("the", "and", "for", "with").contains(word));
         return products.stream().filter(p -> p.category().equalsIgnoreCase("electronics"))
                 .filter(p -> score(p, words) > 0)
                 .sorted(Comparator.<CatalogProduct>comparingInt(p -> score(p, words)).reversed()
-                        .thenComparingLong(CatalogProduct::id)).limit(3).toList();
+                        .thenComparingLong(CatalogProduct::id))
+                .limit(3).toList();
     }
 
     private static int score(CatalogProduct product, Set<String> words) {
