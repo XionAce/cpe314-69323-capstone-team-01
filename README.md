@@ -23,7 +23,7 @@
 | Glyde V. Arreglado | 25248675 | Arreglado-A |
 | Tristan Dominic Urot | 25243742 | Tristan-urot |
 | John Benedict Alaiza | 25268475 | JohnAlaiza |
-| Joshua Brian S. Enovero | PENDING | enovsjbs |
+| Joshua Brian S. Enovero | 25261579 | enovsjbs |
 | Eman De Paz | 23261548 | emanuelledepa-cyber |
 
 Details marked PENDING will be completed by the respective members.
