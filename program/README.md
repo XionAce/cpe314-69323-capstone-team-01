@@ -41,7 +41,7 @@ are stored as salted PBKDF2 hashes. Failed verification keeps the saved credenti
 Marketplace opens with illustrated cards. Use **List** to switch to the table.
 Click an item card to load its details, reviews and waitlist.
 
-The current working version is **Milestone 2**. See [the Milestone 2 guide](../docs/MILESTONE_2.md) for API suggestions, reviews, JSON import, charts, sample data, test evidence and remaining demo checks. The source map and Week 9 demo below describe the retained foundation; Milestone 2 adds `api/CatalogProduct.java`, `api/ProductCatalogClient.java` and `service/SalesHistoryImporter.java`.
+The current working version is **Milestone 2**. See the [project design](../docs/design-document.pdf) for API suggestions, reviews, JSON import, charts and the program process map. The source map and Week 9 demo below describe the retained foundation; Milestone 2 adds `api/CatalogProduct.java`, `api/ProductCatalogClient.java` and `service/SalesHistoryImporter.java`.
 
 This folder is the complete Java 21 + JavaFX 21 + SQLite/JDBC Maven project. Keep `pom.xml`, `src`, `mvnw.cmd`, `mvnw` and the hidden `.mvn` folder together. Maven supplies JavaFX and the SQLite driver; do not add JARs by hand.
 
@@ -145,7 +145,7 @@ JOIN Categories ON Categories.id = Listings.categoryId;
 
 This is a read-only demonstration query. The Java code uses `PreparedStatement` with `?` placeholders for changing values. For Maven, add `-Dcampusmarket.dataDir=C:\your\folder` to the command. For an Eclipse Java Application profile, add it under **Arguments > VM arguments**. Tests use temporary directories and do not touch your demo records.
 
-The [study guide](../docs/STUDY_GUIDE.md) follows the code step by step. The [implementation note](../docs/DESIGN_V0.2_IMPLEMENTATION.md) maps the current classes and database to the Week 9 design requirements.
+The [project design](../docs/design-document.pdf) explains the classes, database, workflows and test coverage.
 
 ## Prototype limits
 
