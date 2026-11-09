@@ -37,6 +37,12 @@ public class MarketplaceService {
     }
 
     public Path databasePath() { return database.getPath(); }
+    public Member login(String username, char[] password) throws SQLException {
+        return database.authenticate(username, password);
+    }
+    public String resetPassword(String username, char[] recoveryCode, char[] newPassword) throws SQLException {
+        return database.resetPassword(username, recoveryCode, newPassword);
+    }
     public SalesHistoryImporter importer() { return new SalesHistoryImporter(database); }
     public List<Database.CategorySummary> prices(String currency) throws SQLException { return database.priceSummary(currency); }
     public List<Database.CategorySummary> ratings() throws SQLException { return database.ratingSummary(); }
@@ -48,6 +54,16 @@ public class MarketplaceService {
     }
     public List<Member> getMembers() { return new ArrayList<>(members); }
     public List<Category> getCategories() { return new ArrayList<>(categories); }
+
+    public List<Database.ListingForRepair> listingsForRepair(long memberId) throws SQLException {
+        requireMember(memberId);
+        return database.listingsForRepair(memberId);
+    }
+
+    public void restoreDetails(long memberId, Listing observed) throws SQLException {
+        requireMember(memberId);
+        database.restoreDetails(memberId, observed);
+    }
 
     public List<Listing> search(long categoryId, String keyword) throws SQLException {
         List<Long> categoryIds = categoryIdsUnder(categoryId, categories);

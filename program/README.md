@@ -1,8 +1,59 @@
 # Run and understand this program
 
+## Sign in
+
+The application opens on a login page. The three class accounts are:
+
+| Account | Username | Starting password |
+|---|---|---|
+| Person A | `person_a` | `CampusA123!` |
+| Person B | `person_b` | `CampusB123!` |
+| Person C | `person_c` | `CampusC123!` |
+
+Use the sidebar to open Marketplace, Sell an item, Sales history and Analytics.
+While signed in, the visible Marketplace or Analytics page checks the shared SQLite database
+every three seconds on the background worker. Multiple windows using the same database
+pick up posted and withdrawn listings and updated chart averages automatically.
+An unchanged result keeps the current table rows and selection. Search and My listings
+filters are preserved. Polling waits during another action or an open dialog and stops at sign-out.
+Marketplace has a **My listings** filter and an owner-checked **Withdraw my listing** action.
+Sign out before signing in as another person. These predefined accounts support the classroom prototype.
+Passwords are verified using salted PBKDF2 hashes stored in the local SQLite database.
+On first startup, existing databases upgrade to version 3. Members now stores username,
+passwordSalt, passwordHash, recoverySalt and recoveryHash. Account IDs and related records are preserved.
+
+## Password recovery
+
+Click **Forgot password?** on the sign-in screen. Enter the username, its recovery code,
+and a new password of 8 to 128 characters. Enter the new password again to confirm it.
+
+| Account | Starting recovery code |
+|---|---|
+| person_a | `RESET-A-2026` |
+| person_b | `RESET-B-2026` |
+| person_c | `RESET-C-2026` |
+
+The starter codes are for these three classroom accounts. A successful reset consumes that code,
+updates the password and displays a new random recovery code. Copy and save the new code before
+returning to sign in. Further resets require the replacement code. Passwords and recovery codes
+are stored as salted PBKDF2 hashes. Failed verification keeps the saved credentials unchanged.
+
+Marketplace opens with illustrated cards. Use **List** to switch to the table.
+Click an item card to load its details, reviews and waitlist.
+
 The current working version is **Milestone 2**. See [the Milestone 2 guide](../docs/MILESTONE_2.md) for API suggestions, reviews, JSON import, charts, sample data, test evidence and remaining demo checks. The source map and Week 9 demo below describe the retained foundation; Milestone 2 adds `api/CatalogProduct.java`, `api/ProductCatalogClient.java` and `service/SalesHistoryImporter.java`.
 
 This folder is the complete Java 21 + JavaFX 21 + SQLite/JDBC Maven project. Keep `pom.xml`, `src`, `mvnw.cmd`, `mvnw` and the hidden `.mvn` folder together. Maven supplies JavaFX and the SQLite driver; do not add JARs by hand.
+
+## Required Java version
+
+Use **JDK 21**, including for Eclipse's Maven launch. In this folder run `java -version` and `.\mvnw.cmd -version`; both must show Java 21. The enforcer range `[21,22)` deliberately rejects JDK 17 and 25. Select the installed JDK 21 in your editor and JAVA_HOME before reopening the terminal. Do not skip the enforcer to report a normal build. Once the version checks match, run `.\mvnw.cmd clean verify`.
+
+## Restore missing condition details
+
+If search reports that a listing has no condition details, sign in as that listing's owner. Click **Restore missing details**, choose the affected listing, then select the condition actually observed. No condition is selected automatically. Confirm to save and reload the listings. Cancel leaves the record unchanged.
+
+Restoration keeps the listing ID, title, price, reviews and waitlist. The database rechecks ownership and type, and rejects existing/conflicting details. A failure rolls back the restoration. Conflicting subtype rows require database-maintainer review rather than automatic replacement. Never delete the live database as a repair shortcut.
 
 ## Antigravity: Run button
 
@@ -71,7 +122,7 @@ The window has one listing table and one inline posting form. To demonstrate the
 1. Launch with the saved editor Run profile and wait for the sample listings.
 2. In the form, enter `Demo Java book`, price `150.00`, type TEXTBOOK, category Textbooks and an observation.
 3. Click **Post listing**. The new row appears selected in the table and the status says it was saved.
-4. Enter `Demo Java book` in the search box and click **Search / refresh**. The table shows the match.
+4. Enter `Demo Java book` in the search box and click **Search**. The table shows the match.
 
 In `MarketplaceView.java`, `post.setOnAction(event -> postListing())` wires the click to the handler. `postListing()` reads the form, creates a concrete listing, saves through the service/database and reloads the table with a SELECT. Search has its own explicit `setOnAction` handler.
 
@@ -98,4 +149,4 @@ The [study guide](../docs/STUDY_GUIDE.md) follows the code step by step. The [im
 
 ## Prototype limits
 
-The member selector is demo data, not login/authentication. Any selected member may post or join another member's waitlist. Queue entries persist; recent-view history belongs to one member and lasts only until the app closes. Owner withdrawal and My listings remain tested backend methods without buttons on this smaller screen. There are no online payments or shared multi-computer server.
+Each signed-in member may post items, review another member’s listing and join its waitlist. My listings shows that account’s items, including withdrawn listings. Withdraw my listing checks ownership before saving the status change. Queue entries persist. Recent-view history belongs to one member and lasts until the app closes. The app uses local predefined accounts and a local SQLite database.

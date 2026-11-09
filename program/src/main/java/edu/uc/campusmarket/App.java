@@ -16,11 +16,11 @@ public class App extends Application {
         Database database = new Database(Database.defaultPath());
         MarketplaceService service = new MarketplaceService(database);
         view = new MarketplaceView(service);
-        Scene scene = new Scene(view.getRoot(), 960, 660);
+        Scene scene = new Scene(view.getRoot(), 1200, 800);
         scene.getStylesheets().add(App.class.getResource("/ui/marketplace.css").toExternalForm());
-        stage.setTitle("UC-B Campus Marketplace - Milestone 2");
-        stage.setMinWidth(900);
-        stage.setMinHeight(620);
+        stage.setTitle("Campus Marketplace with Reviews");
+        stage.setMinWidth(1050);
+        stage.setMinHeight(700);
         stage.setScene(scene);
         stage.show();
         view.initialize();
