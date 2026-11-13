@@ -8,7 +8,7 @@
     <groupId>edu.uc</groupId>
     <artifactId>campus-marketplace</artifactId>
     <version>0.3.0-SNAPSHOT</version>
-    <name>UC-B Campus Marketplace with Reviews</name>
+    <name>Campus Marketplace with Reviews</name>
     <description>CPE 314 Group 1, Milestone 2 desktop prototype</description>
 
     <!-- Shared values: Java language level, text encoding and exact dependency versions. -->
