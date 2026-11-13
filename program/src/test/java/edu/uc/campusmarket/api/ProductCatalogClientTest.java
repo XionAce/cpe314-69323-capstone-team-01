@@ -15,11 +15,33 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProductCatalogClientTest {
+    @Test
+    void capturedPublicResponseParsesAndProvidesComparableElectronics() throws Exception {
+        String json;
+        try (var input = getClass().getResourceAsStream("/api/fakestore-products.json")) {
+            assertTrue(input != null, "Keep the actual captured API response in test resources.");
+            json = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        var products = ProductCatalogParser.parse(json);
+        assertEquals(20, products.size());
+        var first = products.getFirst();
+        assertEquals(1L, first.id());
+        assertEquals("men's clothing", first.category());
+        assertEquals(new BigDecimal("109.95"), first.price());
+        assertTrue(first.title().startsWith("Fjallraven"));
+        var matches = CatalogMapper.matches(products, "monitor", "ELECTRONICS");
+        assertFalse(matches.isEmpty());
+        assertTrue(matches.stream().allMatch(p -> p.category().equals("electronics")));
+        assertTrue(matches.stream().allMatch(p -> p.title().toLowerCase(java.util.Locale.ROOT)
+                .contains("monitor")));
+    }
+
     @Test
     void parserRejectsJsonTypesThatOnlyLookNumericOrTextual() {
         assertThrows(IOException.class, () -> ProductCatalogParser.parse(

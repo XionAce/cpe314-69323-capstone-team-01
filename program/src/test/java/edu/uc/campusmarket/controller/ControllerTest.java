@@ -32,6 +32,90 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class ControllerTest {
     @Test
+    void chatRejectsOldSessionResultsAndClearsPrivateDraftsOnLogout() {
+        Runner runner = new Runner();
+        UserSession session = new UserSession();
+        ChatController chat = new ChatController(new Chats(), runner, session);
+        session.signIn(new Member(2, "Buyer"));
+        runner.automatic = false;
+        chat.refresh(false);
+        chat.draftProperty().set("Private unsent text");
+        session.signOut();
+        runner.finish();
+        assertTrue(chat.threads().isEmpty());
+        assertTrue(chat.messages().isEmpty());
+        assertNull(chat.selectedProperty().get());
+        assertEquals("", chat.draftProperty().get());
+    }
+
+    @Test
+    void chatDefersNavigationAndDoesNotApplyThePreviousConversation() {
+        Runner runner = new Runner();
+        UserSession session = new UserSession();
+        ChatController chat = new ChatController(new Chats(), runner, session);
+        session.signIn(new Member(2, "Buyer"));
+        runner.automatic = false;
+        chat.refresh(false);
+        chat.open(3);
+        runner.finish();
+        assertTrue(chat.messages().isEmpty());
+        assertNotNull(runner.pending);
+        runner.finish();
+        assertEquals(3, chat.selectedProperty().get().listingId());
+        assertEquals("Item 3", chat.messages().getFirst().body());
+    }
+
+    @Test
+    void chatSendPreservesNewTypingAndKeepsTextWhenSavingFails() {
+        Runner runner = new Runner();
+        UserSession session = new UserSession();
+        Chats service = new Chats();
+        ChatController chat = new ChatController(service, runner, session);
+        session.signIn(new Member(2, "Buyer"));
+        chat.refresh(false);
+        runner.automatic = false;
+        chat.draftProperty().set("First message");
+        chat.send();
+        chat.draftProperty().set("Next message");
+        runner.finish();
+        assertEquals("First message", service.sent);
+        assertEquals("Next message", chat.draftProperty().get());
+        service.fail = true;
+        chat.send();
+        runner.finish();
+        assertEquals("Next message", chat.draftProperty().get());
+        assertEquals("Try again", runner.error.get());
+    }
+
+    private static class Chats extends edu.uc.campusmarket.service.ChatService {
+        String sent;
+        boolean fail;
+
+        Chats() {
+            super(null);
+        }
+
+        @Override
+        public edu.uc.campusmarket.model.ChatSnapshot load(long member, long listing, long buyer) {
+            long item = listing == 0 ? 1 : listing;
+            var thread = new edu.uc.campusmarket.model.ChatThread(item, member, 1, "Item " + item,
+                    "Buyer", "Seller", "ACTIVE", "", 0);
+            var message = new edu.uc.campusmarket.model.ChatMessage(item, member, "Buyer",
+                    "Item " + item, java.time.Instant.EPOCH);
+            return new edu.uc.campusmarket.model.ChatSnapshot(List.of(thread), thread,
+                    List.of(message));
+        }
+
+        @Override
+        public void send(long member, long listing, long buyer, String message) {
+            if (fail) {
+                throw new IllegalArgumentException("Try again");
+            }
+            sent = message;
+        }
+    }
+
+    @Test
     void personalHomeDefersBusyLoadAndRejectsResultsAfterLogout() {
         Runner runner = new Runner();
         UserSession session = new UserSession();

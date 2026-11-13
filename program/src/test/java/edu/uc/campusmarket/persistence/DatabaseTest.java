@@ -54,15 +54,15 @@ class DatabaseTest {
     }
 
     @Test
-    void createsTenTablesAndSeedOnlyOnce() throws SQLException {
+    void createsElevenTablesAndSeedOnlyOnce() throws SQLException {
         database.initialize();
-        assertEquals(10, number(
+        assertEquals(11, number(
                 "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"));
         assertEquals(3, database.getMembers().size());
         assertEquals(7, database.getCategories().size());
         assertEquals(3, database.getListings().size());
         assertEquals(1, number("PRAGMA foreign_keys"));
-        assertEquals(4, number("PRAGMA user_version"));
+        assertEquals(5, number("PRAGMA user_version"));
     }
 
     @Test
@@ -122,12 +122,13 @@ class DatabaseTest {
         try (var connection = database.open(); var statement = connection.createStatement()) {
             statement.execute("ALTER TABLE Members DROP COLUMN recoverySalt");
             statement.execute("ALTER TABLE Members DROP COLUMN recoveryHash");
+            statement.execute("DROP TABLE Messages");
             statement.execute("PRAGMA user_version = 2");
         }
         database.initialize();
         assertEquals(3,
                 database.authenticate("person_c", "KeepThisPassword!".toCharArray()).getId());
-        assertEquals(4, number("PRAGMA user_version"));
+        assertEquals(5, number("PRAGMA user_version"));
         database.resetPassword("person_c", account("person_c").recoveryCode().toCharArray(),
                 "AnotherPassword!".toCharArray());
         assertEquals(3,
@@ -147,6 +148,7 @@ class DatabaseTest {
             statement.execute("ALTER TABLE Members DROP COLUMN passwordSalt");
             statement.execute("ALTER TABLE Members DROP COLUMN passwordHash");
             statement.execute("UPDATE Members SET name = 'Alex (demo)' WHERE id = 1");
+            statement.execute("DROP TABLE Messages");
             statement.execute("PRAGMA user_version = 1");
         }
         database.initialize();
@@ -462,10 +464,11 @@ class DatabaseTest {
             statement.execute("PRAGMA ignore_check_constraints = ON");
             statement.execute("UPDATE Listings SET status = 'AVAILABLE' WHERE id = 1");
             statement.execute("UPDATE Listings SET status = 'WITHDRAWN' WHERE id = 2");
+            statement.execute("DROP TABLE Messages");
             statement.execute("PRAGMA user_version = 3");
         }
         database.initialize();
-        assertEquals(4, number("PRAGMA user_version"));
+        assertEquals(5, number("PRAGMA user_version"));
         assertEquals(1, database.authenticate("person_a", password.toCharArray()).getId());
         Listing active = find(database.getListings(), 1);
         assertEquals(Listing.ACTIVE, active.getStatus());
@@ -554,6 +557,7 @@ class DatabaseTest {
         try (var connection = database.open(); var statement = connection.createStatement()) {
             statement.execute("PRAGMA ignore_check_constraints = ON");
             statement.execute("UPDATE Listings SET status = 'AVAILABLE' WHERE id = 1");
+            statement.execute("DROP TABLE Messages");
             statement.execute("PRAGMA user_version = 3");
         }
         execute("""
@@ -567,7 +571,7 @@ class DatabaseTest {
                 """));
         execute("DROP TRIGGER reject_listing_upgrade");
         database.initialize();
-        assertEquals(4, number("PRAGMA user_version"));
+        assertEquals(5, number("PRAGMA user_version"));
         assertEquals(Listing.ACTIVE, find(database.getListings(), 1).getStatus());
     }
 
