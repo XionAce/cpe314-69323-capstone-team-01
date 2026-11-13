@@ -22,6 +22,9 @@ public final class ListingFactory {
      */
     public static Listing create(long id, long seller, long category, String title,
             BigDecimal price, String currency, String status, String type, String evidence) {
+        if (evidence == null || !observations(type).contains(evidence)) {
+            throw new IllegalArgumentException("Choose an observed condition for this item type.");
+        }
         if (type.equals("TEXTBOOK")) {
             WearLevel markings = WearLevel.NONE;
             if (evidence.equals("Light markings")) {
@@ -53,15 +56,18 @@ public final class ListingFactory {
 
     /** Provides the observations operation for this component. */
     public static List<String> observations(String itemType) {
-        if (itemType.equals("TEXTBOOK")) {
+        if ("TEXTBOOK".equals(itemType)) {
             return List.of("No visible damage", "Light markings", "Heavy markings", "Damaged cover",
                     "Missing pages");
         }
-        if (itemType.equals("ELECTRONICS")) {
+        if ("ELECTRONICS".equals(itemType)) {
             return List.of("No visible damage", "Cosmetic damage", "Functional defect",
                     "Does not power on");
         }
-        return List.of("No visible damage", "Light wear", "Heavy wear", "Structural damage",
-                "Unstable");
+        if ("FURNITURE".equals(itemType)) {
+            return List.of("No visible damage", "Light wear", "Heavy wear", "Structural damage",
+                    "Unstable");
+        }
+        throw new IllegalArgumentException("Choose Textbook, Electronics or Furniture.");
     }
 }

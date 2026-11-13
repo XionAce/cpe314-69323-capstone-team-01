@@ -1,11 +1,33 @@
 package edu.uc.campusmarket.model;
 
+import edu.uc.campusmarket.service.ListingFactory;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ListingValidationTest {
+
+    @Test
+    void factoryRejectsMissingOrUnsupportedTypeInsteadOfCreatingFurniture() {
+        for (String type : new String[] { null, "", "ARTWORK" }) {
+            assertThrows(IllegalArgumentException.class, () -> ListingFactory.create(
+                    0, 1, 2, "Item", BigDecimal.TEN, "PHP", Listing.ACTIVE,
+                    type, "No visible damage"));
+        }
+    }
+
+    @Test
+    void factoryRejectsMissingOrMismatchedEvidenceInsteadOfInventingAGoodCondition() {
+        for (String evidence : new String[] { null, "", "Light wear", "Unknown condition" }) {
+            assertThrows(IllegalArgumentException.class, () -> ListingFactory.create(
+                    0, 1, 2, "Book", BigDecimal.TEN, "PHP", Listing.ACTIVE,
+                    "TEXTBOOK", evidence));
+        }
+        Listing valid = ListingFactory.create(0, 1, 2, "Book", BigDecimal.TEN,
+                "PHP", Listing.ACTIVE, "TEXTBOOK", "Light markings");
+        assertEquals(ConditionGrade.GOOD, valid.gradeCondition());
+    }
 
     @Test
     void categoryRejectsInvalidParentsAndKeepsRootParentEmpty() {
