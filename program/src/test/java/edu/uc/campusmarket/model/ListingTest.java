@@ -2,29 +2,29 @@ package edu.uc.campusmarket.model;
 
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ListingTest {
     private Textbook book(int missingPages, WearLevel markings, boolean coverDamaged) {
-        return new Textbook(0, 1, 2, "Java Book", new BigDecimal("350.50"),
-                "PHP", "AVAILABLE", missingPages, markings, coverDamaged);
+        return new Textbook(0, 1, 2, "Java Book", new BigDecimal("350.50"), "PHP", "ACTIVE",
+                missingPages, markings, coverDamaged);
     }
 
     private Electronics laptop(boolean power, boolean defect, boolean scratches) {
-        return new Electronics(0, 1, 7, "Laptop", new BigDecimal("8000"),
-                "PHP", "AVAILABLE", power, defect, scratches);
+        return new Electronics(0, 1, 7, "Laptop", new BigDecimal("8000"), "PHP", "ACTIVE", power,
+                defect, scratches);
     }
 
     private Furniture chair(boolean stable, boolean damage, WearLevel wear) {
-        return new Furniture(0, 1, 4, "Chair", new BigDecimal("500"),
-                "PHP", "AVAILABLE", stable, damage, wear);
+        return new Furniture(0, 1, 4, "Chair", new BigDecimal("500"), "PHP", "ACTIVE", stable,
+                damage, wear);
     }
 
     @Test
     void sharedListingReferenceUsesEachSubclassRule() {
-        Listing[] items = {book(0, WearLevel.NONE, false),
-                laptop(true, false, true), chair(true, false, WearLevel.HEAVY)};
+        Listing[] items = { book(0, WearLevel.NONE, false), laptop(true, false, true),
+                chair(true, false, WearLevel.HEAVY) };
         assertEquals(ConditionGrade.LIKE_NEW, items[0].gradeCondition());
         assertEquals(ConditionGrade.GOOD, items[1].gradeCondition());
         assertEquals(ConditionGrade.FAIR, items[2].gradeCondition());
@@ -64,31 +64,42 @@ class ListingTest {
     void moneyUsesExactCentsWithoutFloatingPointRounding() {
         assertEquals(35050, book(0, WearLevel.NONE, false).getPriceMinor());
         assertEquals(new BigDecimal("350.50"), book(0, WearLevel.NONE, false).getPrice());
-        Textbook trailingZeros = new Textbook(0, 1, 2, "Book", new BigDecimal("1.2300"),
-                "PHP", "AVAILABLE", 0, WearLevel.NONE, false);
+        Textbook trailingZeros = new Textbook(0, 1, 2, "Book", new BigDecimal("1.2300"), "PHP",
+                "ACTIVE", 0, WearLevel.NONE, false);
         assertEquals(123, trailingZeros.getPriceMinor());
     }
 
     @Test
     void invalidMoneyIsRejectedBeforeItCanReachSqlite() {
-        String[] invalidPrices = {"0", "-1", "1.001", "92233720368547758.08"};
+        String[] invalidPrices = { "0", "-1", "1.001", "92233720368547758.08" };
         for (String price : invalidPrices) {
             assertThrows(IllegalArgumentException.class, () -> new Textbook(0, 1, 2, "Book",
-                    new BigDecimal(price), "PHP", "AVAILABLE", 0, WearLevel.NONE, false));
+                    new BigDecimal(price), "PHP", "ACTIVE", 0, WearLevel.NONE, false));
         }
     }
 
     @Test
     void commonFieldsRejectBadIdentityCurrencyAndStatus() {
         assertThrows(IllegalArgumentException.class, () -> new Textbook(-1, 1, 2, "Book",
-                BigDecimal.ONE, "PHP", "AVAILABLE", 0, WearLevel.NONE, false));
+                BigDecimal.ONE, "PHP", "ACTIVE", 0, WearLevel.NONE, false));
         assertThrows(IllegalArgumentException.class, () -> new Textbook(0, 0, 2, "Book",
-                BigDecimal.ONE, "PHP", "AVAILABLE", 0, WearLevel.NONE, false));
+                BigDecimal.ONE, "PHP", "ACTIVE", 0, WearLevel.NONE, false));
         assertThrows(IllegalArgumentException.class, () -> new Textbook(0, 1, 2, " ",
-                BigDecimal.ONE, "PHP", "AVAILABLE", 0, WearLevel.NONE, false));
+                BigDecimal.ONE, "PHP", "ACTIVE", 0, WearLevel.NONE, false));
         assertThrows(IllegalArgumentException.class, () -> new Textbook(0, 1, 2, "Book",
-                BigDecimal.ONE, "php", "AVAILABLE", 0, WearLevel.NONE, false));
+                BigDecimal.ONE, "php", "ACTIVE", 0, WearLevel.NONE, false));
         assertThrows(IllegalArgumentException.class, () -> new Textbook(0, 1, 2, "Book",
                 BigDecimal.ONE, "PHP", "UNKNOWN", 0, WearLevel.NONE, false));
+    }
+
+    @Test
+    void allThreeLifecycleStatesAreAcceptedAndRecordedDatesAreRetained() {
+        java.time.Instant created = java.time.Instant.parse("2026-11-12T12:00:00Z");
+        for (String status : java.util.List.of(Listing.ACTIVE, Listing.SOLD, Listing.REMOVED)) {
+            Textbook item = new Textbook(1, 1, 2, "Book", BigDecimal.ONE, "PHP", status, 0,
+                    WearLevel.NONE, false, created);
+            assertEquals(status, item.getStatus());
+            assertEquals(created, item.getCreatedAt());
+        }
     }
 }
