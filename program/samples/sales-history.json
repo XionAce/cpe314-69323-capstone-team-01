@@ -1,5 +1,8 @@
 [
   {"sourceRecordId":"demo-001","categoryPath":["All finds","Textbooks"],"price":250.00,"currency":"PHP","soldAt":"2026-10-20T08:00:00Z"},
   {"sourceRecordId":"demo-002","categoryPath":["All finds","Electronics","Computers","Laptops"],"price":15000.00,"currency":"PHP","soldAt":"2026-10-21T10:00:00Z"},
-  {"sourceRecordId":"demo-003","categoryPath":["All finds","Furniture"],"price":400.00,"currency":"PHP","soldAt":"2026-10-22T09:00:00Z"}
+  {"sourceRecordId":"demo-003","categoryPath":["All finds","Furniture"],"price":400.00,"currency":"PHP","soldAt":"2026-10-22T09:00:00Z"},
+  {"sourceRecordId":"demo-004","categoryPath":["All finds","Textbooks"],"price":200.00,"currency":"PHP","soldAt":"2026-10-27T08:00:00Z"},
+  {"sourceRecordId":"demo-005","categoryPath":["All finds","Furniture"],"price":450.00,"currency":"PHP","soldAt":"2026-10-28T09:00:00Z"},
+  {"sourceRecordId":"demo-006","categoryPath":["All finds","Electronics","Computers","Laptops"],"price":14000.00,"currency":"PHP","soldAt":"2026-11-03T10:00:00Z"}
 ]
