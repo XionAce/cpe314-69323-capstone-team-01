@@ -14,7 +14,7 @@
         <mxCell id="Members-0" value="PK" parent="Members" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontStyle=1;fontSize=9;" vertex="1">
           <mxGeometry as="geometry" x="0" y="18" width="160" height="18" />
         </mxCell>
-        <mxCell id="Members-0-field" value="Member ID (id)" parent="Members-0" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontSize=9.4;" vertex="1">
+        <mxCell id="Members-0-field" value="id" parent="Members-0" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontSize=9.4;" vertex="1">
           <mxGeometry as="geometry" x="23" y="0" width="137" height="18" />
         </mxCell>
         <mxCell id="Sellers" value="" parent="1" style="group;" vertex="1">
@@ -26,13 +26,13 @@
         <mxCell id="Sellers-0" value="PK" parent="Sellers" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontStyle=1;fontSize=9;" vertex="1">
           <mxGeometry as="geometry" x="0" y="18" width="160" height="18" />
         </mxCell>
-        <mxCell id="Sellers-0-field" value="Seller profile ID (id)" parent="Sellers-0" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontSize=9.4;" vertex="1">
+        <mxCell id="Sellers-0-field" value="id" parent="Sellers-0" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontSize=9.4;" vertex="1">
           <mxGeometry as="geometry" x="23" y="0" width="137" height="18" />
         </mxCell>
         <mxCell id="Sellers-1" value="FK" parent="Sellers" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontStyle=1;fontSize=9;" vertex="1">
           <mxGeometry as="geometry" x="0" y="36" width="160" height="18" />
         </mxCell>
-        <mxCell id="Sellers-1-field" value="Owner member ID (memberId)" parent="Sellers-1" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontSize=9.4;" vertex="1">
+        <mxCell id="Sellers-1-field" value="memberId" parent="Sellers-1" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontSize=9.4;" vertex="1">
           <mxGeometry as="geometry" x="23" y="0" width="137" height="18" />
         </mxCell>
         <mxCell id="Reviews" value="" parent="1" style="group;" vertex="1">
@@ -44,19 +44,19 @@
         <mxCell id="Reviews-0" value="PK" parent="Reviews" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontStyle=1;fontSize=9;" vertex="1">
           <mxGeometry as="geometry" x="0" y="18" width="160" height="18" />
         </mxCell>
-        <mxCell id="Reviews-0-field" value="Review ID (id)" parent="Reviews-0" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontSize=9.4;" vertex="1">
+        <mxCell id="Reviews-0-field" value="id" parent="Reviews-0" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontSize=9.4;" vertex="1">
           <mxGeometry as="geometry" x="23" y="0" width="137" height="18" />
         </mxCell>
         <mxCell id="Reviews-1" value="FK" parent="Reviews" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontStyle=1;fontSize=9;" vertex="1">
           <mxGeometry as="geometry" x="0" y="36" width="160" height="18" />
         </mxCell>
-        <mxCell id="Reviews-1-field" value="Reviewed listing ID (listingId)" parent="Reviews-1" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontSize=9.4;" vertex="1">
+        <mxCell id="Reviews-1-field" value="listingId" parent="Reviews-1" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontSize=9.4;" vertex="1">
           <mxGeometry as="geometry" x="23" y="0" width="137" height="18" />
         </mxCell>
         <mxCell id="Reviews-2" value="FK" parent="Reviews" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontStyle=1;fontSize=9;" vertex="1">
           <mxGeometry as="geometry" x="0" y="54" width="160" height="18" />
         </mxCell>
-        <mxCell id="Reviews-2-field" value="Reviewer member ID (reviewerId)" parent="Reviews-2" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontSize=9.4;" vertex="1">
+        <mxCell id="Reviews-2-field" value="reviewerId" parent="Reviews-2" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontSize=9.4;" vertex="1">
           <mxGeometry as="geometry" x="23" y="0" width="137" height="18" />
         </mxCell>
         <mxCell id="Listings" value="" parent="1" style="group;" vertex="1">
@@ -68,13 +68,13 @@
         <mxCell id="Listings-0" value="PK" parent="Listings" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontStyle=1;fontSize=9;" vertex="1">
           <mxGeometry as="geometry" x="0" y="18" width="160" height="18" />
         </mxCell>
-        <mxCell id="Listings-0-field" value="Listing ID (id)" parent="Listings-0" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontSize=9.4;" vertex="1">
+        <mxCell id="Listings-0-field" value="id" parent="Listings-0" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontSize=9.4;" vertex="1">
           <mxGeometry as="geometry" x="23" y="0" width="137" height="18" />
         </mxCell>
         <mxCell id="Listings-1" value="FK" parent="Listings" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontStyle=1;fontSize=9;" vertex="1">
           <mxGeometry as="geometry" x="0" y="36" width="160" height="18" />
         </mxCell>
-        <mxCell id="Listings-1-field" value="Seller profile ID (sellerId)" parent="Listings-1" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontSize=9.4;" vertex="1">
+        <mxCell id="Listings-1-field" value="sellerId" parent="Listings-1" style="rounded=0;fillColor=#FFFFFF;strokeColor=#1D2D50;strokeWidth=0.65;align=left;spacingLeft=4;fontFamily=Calibri;fontSize=9.4;" vertex="1">
           <mxGeometry as="geometry" x="23" y="0" width="137" height="18" />
         </mxCell>
         <mxCell id="edge-owns" value="" parent="1" source="Members-0" target="Sellers-1" style="edgeStyle=segmentEdgeStyle;rounded=0;exitX=1;exitY=0.5;exitPerimeter=0;entryX=0;entryY=0.5;entryPerimeter=0;startArrow=ERone;endArrow=ERmany;startSize=6;endSize=6;strokeWidth=1.1;strokeColor=#456281;" edge="1">

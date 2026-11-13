@@ -1,4 +1,4 @@
-CPE 314 — Software Design
+CPE 314 - Software Design
 
 University of Cebu
 
@@ -21,7 +21,7 @@ Table 1: Group information
 |  | Emanuelle De Paz |
 | Instructor | Richyll Son |
 | Term | First Semester, S.Y. 2026-2027 |
-| Document Version / Date | V 0.3 / 9 November 2026 |
+| Document Version / Date | V 0.3 / 13 November 2026 |
 
 <!-- pagebreak -->
 
@@ -39,7 +39,7 @@ Table 2: Document revisions
 |---|---|---|---|
 | 0.1 | 23 Oct 2026 | Group 1 | Initial project overview, ER sketch and responsibilities. |
 | 0.2 | 8 Nov 2026 | Group 1 | Documented the listing classes, named the IDs and clarified the table connections. |
-| 0.3 | 9 Nov 2026 | Group 1 | Added the finalized class hierarchy, account login and recovery, updated screens, API and background processing, analytics and 81 passing tests. |
+| 0.3 | 13 Nov 2026 | Group 1 | Registration, MVC, Java analysis, listing dates/status, safer detail handling and matching diagrams/tests. |
 
 <!-- pagebreak -->
 
@@ -47,7 +47,7 @@ Table 2: Document revisions
 
 Campus Marketplace with Reviews lets students, faculty and school groups buy and sell textbooks, electronics and furniture. Members search categories, join waitlists, review listings and compare category prices and ratings. Each item type calculates its own condition grade.
 
-The JavaFX app stores records in SQLite and imports JSON sales history. Person A, Person B and Person C log in separately, then use Marketplace, Sell an item, Sales history and Analytics.
+The JavaFX app stores records in SQLite and imports JSON sales history. Members register or use the initial local accounts, then sign in to Marketplace, Sell an item, Sales history and Analytics. Buyer-seller messages and offers are out of scope; the app has no message/offer table or chat screen.
 
 ## 2. Preliminary ER Sketch & Team Roles
 
@@ -74,7 +74,7 @@ Table 3: Team responsibilities
 
 ## 3. System Architecture & Object-Oriented Design
 
-Models hold item rules, MarketplaceService coordinates actions, Database handles SQL, and MarketplaceView handles the JavaFX screen. App connects these parts when the program starts.
+Models hold item rules. Views show controls, controllers coordinate actions, services apply rules and DAOs run feature SQL. Database opens SQLite and initializes records. App connects these parts when the program starts.
 
 ### Class hierarchy
 
@@ -89,9 +89,12 @@ classDiagram
         -BigDecimal price
         -String currency
         -String status
+        -Instant createdAt
         +getType() String*
         +gradeCondition() ConditionGrade*
         +getPriceMinor() long
+        +getCreatedAt() Instant
+        +hasConditionDetails() boolean
     }
     class Textbook {
         -int missingPages
@@ -136,7 +139,7 @@ The hollow triangle points to the parent class. A minus sign marks a private fie
 
 ### Class responsibilities
 
-The shared Listing fields are ID, seller/category IDs, title, price, currency and status. The abstract methods getType() and gradeCondition() are implemented by each subclass. A List<Listing> can hold all three types. Calling gradeCondition() through Listing runs the actual object's method; this is runtime polymorphism.
+The shared Listing fields are ID, seller/category IDs, title, price, currency, status and creation time. The abstract methods getType() and gradeCondition() are implemented by each subclass. A List<Listing> can hold all three types. Calling gradeCondition() through Listing runs the actual object's method; this is runtime polymorphism.
 
 Table 4: Model responsibilities and Single Responsibility Principle
 
@@ -161,63 +164,60 @@ Keeping item rules separate from SQL and controls follows the Single Responsibil
 
 ### Supporting components
 
-Table 5: Supporting responsibilities
+Table 5: Application layers and responsibilities
 
-| Component | Responsibility and reason to change |
+| Layer | Responsibility and reason to change |
 |---|---|
-| App | Starts and connects the app; changes when startup setup changes. |
-| MarketplaceView | Login, recovery, card/list screens, event handlers and refresh timer. Changes when the screen workflow changes. |
-| MarketplaceService | Connects login, password reset, posting, ownership checks, categories and collections to the database. Changes when app rules change. |
-| Database | Creates and upgrades tables, verifies credentials, resets passwords, saves records and queries summaries. Changes when storage rules change. |
-| ProductCatalogClient | Requests, parses and matches public catalog products. Changes when the API or matching rules change. |
-| CatalogProduct | Carries a catalog product's ID, title, category and price. Changes when the required product data changes. |
-| SalesHistoryImporter | Validates JSON sales and imports them in a transaction. Changes when import rules change. |
+| App | Creates the database, DAOs, services, controllers and views. Owns the shared worker and shutdown. |
+| Views in ui | Draw controls, bind state, show dialogs and forward actions. Contain no SQL, API calls or worker creation. |
+| Controllers | Hold observable state, obtain the active member from UserSession and request background work. |
+| Services | Apply account, listing, review and analysis rules. Convert data-access failures before they reach the screen. |
+| DAOs | Execute prepared SQL and return records. Recheck storage-sensitive rules in write transactions. |
+| Database / AccountSetup | Open connections, create tables, seed initial records and migrate account fields without erasing saved data. |
+| ProductCatalogClient / ProductCatalogParser | Download the catalog and validate its JSON in separate classes. |
+| CatalogProduct / CatalogResponse | Carry the parsed product subset and HTTP information in dto. |
+| CatalogMapper / CatalogService | Select supported comparable products and prepare reference information. |
+| SalesHistoryImporter / SalesAnalysis | Stream and validate JSON imports; group saved timestamps and count weekly activity in Java. |
 
-### Collections and recursion
-
-Waitlists use Queue with ArrayDeque: offer() adds at the tail and poll() reads the first buyer. Stored joiningOrder values rebuild FIFO order. A Map stores each member's Stack of recently viewed IDs. push() adds the latest view; pop() reads a copy, preserving session history. At most 20 unique views are kept per member.
-
-collectCategoryIds() adds a category ID and recursively visits each child. A category without children is the base case. Validation rejects missing parents, duplicate IDs and cycles before traversal. Search includes the selected category and all descendants.
-
-### Application screen and supporting classes
-
-App opens MarketplaceView. Its controls call MarketplaceService to post, browse, view items and join waitlists. Database saves and loads the records.
-
-The project has 15 top-level Java types, including its classes, records and enums. The responsibility tables name each type. Four nested records carry operation results.
-
-ProductCatalogClient requests catalog data. CatalogProduct holds one product. SalesHistoryImporter reads past sales. ProductCatalogClient.Response carries the request result. SalesHistoryImporter.Result reports import counts and errors. Database.CategorySummary carries category averages and counts. Database.ListingForRepair identifies an owner's listing with missing condition data. The owner selects the observed condition and the database restores its missing detail row in a transaction.
+The action path is View -> Controller -> Service -> DAO -> SQLite. Task results update controller properties on the JavaFX thread; bound views display them. Models contain no GUI or SQL. The Appendix lists every top-level Java type and the process map.
 
 <!-- pagebreak -->
 
-### Sign in and password recovery
+### Collections and recursion
 
-The app opens on the login page. The member enters a username and password. MarketplaceView.login() calls MarketplaceService.login(), which calls Database.authenticate(). Database trims the username, converts it to lowercase and reads its member row. It derives a password hash and compares it with the saved hash. A correct match opens the marketplace. An incorrect entry shows an error on the same form.
+Waitlists use Queue with ArrayDeque: offer() adds at the tail and poll() reads the first buyer. Stored joiningOrder values rebuild FIFO order. InterestDao assigns MAX(joiningOrder)+1 and inserts in one atomic INSERT ... SELECT, with eligibility rechecked in that same statement. SQLite serializes writers; ties do not receive the same position. A Map stores each member's Stack of recently viewed IDs. push() adds the latest view; pop() reads a copy, preserving session history. At most 20 unique views are kept per member.
 
-currentMember holds the signed-in Member object. Member contains only the member ID and display name. Credential values stay in Database and the Members table. Posting, reviews, waitlists, My listings and withdrawal use currentMember's ID. The three predefined accounts support the local classroom application. Their starting values are in the Appendix.
+collectCategoryIds() adds a category ID and recursively visits each child. A category without children is the base case. Validation rejects missing parents, duplicate IDs and cycles before traversal. Search includes the selected category and all descendants.
 
-Passwords use PBKDF2WithHmacSHA256 with 210,000 iterations and a 256-bit result. A salt is random data used when deriving that hash. The salt and hash are encoded as Base64 text for SQLite. Login derives another hash from the entered password and the saved salt. MessageDigest.isEqual() compares the results. The view clears the password field and clears its temporary character array after verification.
+### Application screens and state
 
-Forgot password opens a form for the username, recovery code, new password and confirmation. The screen checks that the two new passwords match. Database.resetPassword() requires a password of 8 to 128 characters and checks the code against recoverySalt and recoveryHash. Failed checks show an error and keep the saved credentials.
+MarketplaceView is the application shell. LoginView, RegistrationView and PasswordResetView contain account forms. ListingTableView and ListingCards display the same observable listing list. ListingFormView handles posting inputs, ReviewsView contains review/waitlist controls, ImportView displays import state and ChartsView renders the returned results.
 
-A successful reset runs in one transaction. It saves a new password salt and hash, generates a random 24-character recovery code, and saves a new recovery salt and hash. It checks the previous recovery hash in the UPDATE so a used code cannot reset the account again. Any failure rolls back the transaction. The success screen shows the replacement code to copy and save. The member then returns to login and uses the new password. The replacement code is needed for the next reset.
+UserSession holds the active Member and a generation number. AccountController, ListingController, ReviewController, WaitlistController and AnalyticsController coordinate their features. FxTaskRunner exposes busy, status and error properties. RefreshController decides whether to poll; FxRefreshSchedule supplies the timer. These per-window values are in memory, not new database columns.
 
-Sign out clears the current account, form entries, displayed items, import results and chart data, stops the refresh timer and returns to login. Each window keeps its own signed-in account. A password reset affects later logins. An already signed-in window keeps its account until sign-out or close.
+InitialAccount, Registration, ImportResult, CategorySummary, ListingForRepair, WeeklySales and AnalyticsSnapshot carry setup/action results. Review and Seller hold domain values. ItemArtwork draws category illustrations, and UiTools provides presentation helpers. Artwork is not a separate database entity.
+
+### Sign in, registration and password recovery
+
+Registration requires a display name of 1-80 characters, a username of 3-30 letters/digits/underscores and a password of 8-128 characters. MemberDao strips and lowercases the username and rejects duplicates through the unique index. It stores salted PBKDF2 hashes and returns a recovery code once. The member saves that code and then signs in; registration does not automatically sign in.
+
+A new database creates Person A, Person B and Person C with usernames person_a, person_b and person_c. Each receives a random password and recovery code. A local startup dialog shows newly issued credentials once. They are not published here or stored as plaintext in SQLite. Existing current accounts retain their credentials when reopened.
+
+Login verifies the password hash and sets UserSession. Forgot password verifies the saved recovery code and atomically replaces the password hash and recovery-code hash. The screen displays a replacement code to save; the old code cannot be reused. Failed resets preserve the previous credentials. This is local recovery, not email delivery.
+
+Hashes use PBKDF2WithHmacSHA256, 210,000 iterations and 256 bits. Random salts use 16 bytes; recovery values use 18 random bytes encoded to 24 URL-safe characters. CredentialSecurity holds these settings. Controllers clear submitted password/recovery character arrays after use.
 
 <!-- pagebreak -->
 
 ### Marketplace screens and ownership
 
-Marketplace shows illustrated cards with title, type, price and condition. Cards and List switch between a card grid and a table containing the same saved listings. Clicking a card or View details loads the item's reviews, FIFO waitlist and the member's latest three viewed items. JavaFX draws a category illustration for each listing type. Cards shorten the supplied sample titles for display by hiding their '(demo)' suffix.
+The app opens maximized with navigation across the top. Selecting a card or list row opens a closable details panel on the right. Cards and List show the same records, dates and statuses. Read reviews opens a right-positioned popup with names, stars and comments; Review listing opens a form on that side. Smaller panels scroll. View details loads the waitlist and recent views.
 
-Search filters titles within the selected category and its descendants. My listings shows all items from the signed-in member's seller profile, including withdrawn items. This view lists all of that owner's items. Turning it off returns to the category and title search.
+Each member may buy or sell. Posting uses the member's seller profile, created when needed. My listings filters to that owner and can show All statuses, Active, Sold or Removed. Mark as sold and Remove listing require confirmation and recheck ownership in SQL. Records, condition rows, reviews and waitlists are retained. Public search and current-listing means include ACTIVE items only.
 
-Sell an item opens the posting form. The member enters a title, positive PHP price, type, category and observed condition. The selected subclass calculates the condition grade. MarketplaceService obtains the signed-in member's seller profile. Database saves the listing and its matching detail row in one transaction. The screen reloads the records and returns to Marketplace.
+Join waitlist accepts an existing member different from the seller and saves joiningOrder. Repeated joins are rejected. Reviews require membership in that listing's waitlist, another owner and no earlier review by the same member/item. Ratings are 1-5; optional comments have at most 1,000 characters. The item must remain ACTIVE. Waitlist membership demonstrates interest, not proof of payment.
 
-Withdraw my listing asks for confirmation. Database.withdrawListing() checks the owner and AVAILABLE status in its UPDATE. A successful withdrawal changes the status to WITHDRAWN. The record remains visible under its owner's My listings. Available-item searches and chart calculations exclude it. Viewing details, joining its waitlist and reviewing it require an available listing.
-
-Join waitlist accepts an existing member who is different from the seller. It saves joiningOrder and returns buyers in FIFO order. A repeated join is rejected and the original waitlist entry is preserved. View details updates that member's recent-view stack. Review listing accepts one review per member/item, a rating from 1 to 5, and an optional comment of up to 1,000 characters. The owner cannot review their own item. An accepted review is saved and the item's reviews reload.
-
-If a listing has no condition-detail row, search reports its ID. Its owner can use Restore missing details, choose the item and explicitly choose its observed condition. The listing, reviews and waitlist are preserved. Database rechecks owner, type and missing details, and rolls back a failed save. Existing or conflicting detail rows require database-maintainer review.
+Restore missing details lets an owner choose a listing and the condition actually observed. No condition is selected automatically. Saving rechecks owner, type and missing subtype rows; it preserves the listing ID, common fields, reviews and waitlist. Cancel changes nothing. Conflicting existing details require maintainer review.
 
 <!-- pagebreak -->
 
@@ -237,7 +237,7 @@ Table 6: Listings supplied with the prototype
 
 All finds is the root category. Its direct children are Textbooks, Electronics and Furniture. Under Electronics, Computers contains Laptops, which contains Gaming Laptops. Searching a parent category includes items in its descendants.
 
-Each new listing requires a seller profile, a category, a nonblank title, a positive price representable in whole minor units and a three-letter uppercase currency. The listing model trims spaces from the title. A post starts as AVAILABLE and uses the signed-in member's seller profile. The service supports owner withdrawal, which changes the status to WITHDRAWN. Marketplace search returns AVAILABLE items.
+Each listing requires a seller profile, category, nonblank title, positive exact minor-unit price and three-letter uppercase currency. A post starts ACTIVE under the signed-in seller. ListingDao saves created_at as a UTC timestamp when inserting. The owner can change ACTIVE to SOLD or REMOVED; both leave public search. No payment or historical sale is created by marking an item sold.
 
 <!-- pagebreak -->
 
@@ -245,14 +245,77 @@ Each new listing requires a seller profile, a category, a nonblank title, a posi
 
 ### Finalized entity relationships
 
-The schema defines ten application tables with 49 stored fields. Members now includes five credential fields for login and password recovery. The ERD is split into three views for readability; Listings is repeated to connect the views. Every table attribute is included. TEXT and INTEGER are SQLite types. The schema below specifies nullability and checks.
+The schema defines ten application tables with 50 stored fields. The overview shows all tables and their PK/FK connections. The three detail views show every attribute at a larger size; Listings repeats to connect the views. Field names match SQLite exactly. The SQL below specifies types, nullability and checks.
+
+
+```mermaid
+erDiagram
+    Members {
+        INTEGER id PK
+    }
+    Sellers {
+        INTEGER id PK
+        INTEGER memberId FK
+    }
+    Listings {
+        INTEGER id PK
+        INTEGER sellerId FK
+        INTEGER categoryId FK
+    }
+    Reviews {
+        INTEGER id PK
+        INTEGER listingId FK
+        INTEGER reviewerId FK
+    }
+    BuyerInterests {
+        INTEGER id PK
+        INTEGER listingId FK
+        INTEGER buyerId FK
+    }
+    Categories {
+        INTEGER id PK
+        INTEGER parentId FK
+    }
+    HistoricalSales {
+        INTEGER id PK
+        INTEGER categoryId FK
+    }
+    TextbookDetails {
+        INTEGER listingId PK,FK
+    }
+    ElectronicsDetails {
+        INTEGER listingId PK,FK
+    }
+    FurnitureDetails {
+        INTEGER listingId PK,FK
+    }
+    Members ||--o{ Sellers : owns
+    Members ||--o{ Reviews : writes
+    Members ||--o{ BuyerInterests : joins
+    Sellers ||--o{ Listings : posts
+    Categories o|--o{ Categories : contains
+    Categories ||--o{ Listings : classifies
+    Categories ||--o{ HistoricalSales : groups
+    Listings ||--o{ Reviews : receives
+    Listings ||--o{ BuyerInterests : queues
+    Listings ||--o| TextbookDetails : has
+    Listings ||--o| ElectronicsDetails : has
+    Listings ||--o| FurnitureDetails : has
+```
+
+Figure 3: Ten-table overview with PK/FK connections
+
+The overview shows keys only. The detail views and SQL show all remaining attributes. A small bridge at a crossing means the lines do not join.
+
+<!-- pagebreak -->
+
 
 Read 1:M as one parent to many children. A parent can have no children. M:N (also called M:M) means many-to-many. Members and Listings have this relationship through BuyerInterests for waitlists and through Reviews for ratings. Each connecting table has two 1:M links. Each individual listing subtype uses 1:1; only the matching subtype has a row.
 
 ```mermaid
 erDiagram
     Members {
-        INTEGER id PK "Member ID"
+        INTEGER id PK
         TEXT name
         TEXT username UK
         TEXT passwordSalt
@@ -261,32 +324,33 @@ erDiagram
         TEXT recoveryHash
     }
     Sellers {
-        INTEGER id PK "Seller profile ID"
-        INTEGER memberId FK "Seller owner member ID"
+        INTEGER id PK
+        INTEGER memberId FK
         TEXT displayName
         TEXT sellerKind
     }
     Listings {
-        INTEGER id PK "Listing ID"
-        INTEGER sellerId FK "Seller profile ID"
-        INTEGER categoryId FK "Listing category ID"
+        INTEGER id PK
+        INTEGER sellerId FK
+        INTEGER categoryId FK
         TEXT type
         TEXT title
         INTEGER priceMinor
         TEXT currency
         TEXT status
+        TEXT created_at
     }
     Reviews {
-        INTEGER id PK "Review ID"
-        INTEGER listingId FK "Reviewed listing ID"
-        INTEGER reviewerId FK "Reviewer member ID"
+        INTEGER id PK
+        INTEGER listingId FK
+        INTEGER reviewerId FK
         INTEGER rating
         TEXT comment
     }
     BuyerInterests {
-        INTEGER id PK "Waitlist entry ID"
-        INTEGER listingId FK "Requested listing ID"
-        INTEGER buyerId FK "Buyer member ID"
+        INTEGER id PK
+        INTEGER listingId FK
+        INTEGER buyerId FK
         INTEGER joiningOrder
     }
     Members ||--o{ Sellers : owns
@@ -297,7 +361,7 @@ erDiagram
     Listings ||--o{ BuyerInterests : queues
 ```
 
-Figure 3: Members, sellers, listings, reviews and buyer interests
+Figure 4: Members, sellers, listings, reviews and buyer interests
 
 <!-- pagebreak -->
 
@@ -306,24 +370,25 @@ Figure 3: Members, sellers, listings, reviews and buyer interests
 ```mermaid
 erDiagram
     Categories {
-        INTEGER id PK "Category ID"
-        INTEGER parentId FK "Parent category ID"
+        INTEGER id PK
+        INTEGER parentId FK
         TEXT name
     }
     Listings {
-        INTEGER id PK "Listing ID"
-        INTEGER sellerId FK "Seller profile ID"
-        INTEGER categoryId FK "Listing category ID"
+        INTEGER id PK
+        INTEGER sellerId FK
+        INTEGER categoryId FK
         TEXT type
         TEXT title
         INTEGER priceMinor
         TEXT currency
         TEXT status
+        TEXT created_at
     }
     HistoricalSales {
-        INTEGER id PK "Saved sale ID"
-        INTEGER categoryId FK "Sale category ID"
-        TEXT sourceRecordId UK "Source sale ID"
+        INTEGER id PK
+        INTEGER categoryId FK
+        TEXT sourceRecordId UK
         INTEGER priceMinor
         TEXT currency
         TEXT soldAt
@@ -333,7 +398,7 @@ erDiagram
     Categories ||--o{ HistoricalSales : groups
 ```
 
-Figure 4: Categories, current listings and imported historical sales
+Figure 5: Categories, current listings and imported historical sales
 
 A root category has NULL parentId. A non-root category has one parent, and a parent can have zero or more children. HistoricalSales contains imported past sales, not new marketplace listings. sourceRecordId prevents duplicate imports.
 
@@ -344,29 +409,30 @@ A root category has NULL parentId. A non-root category has one parent, and a par
 ```mermaid
 erDiagram
     Listings {
-        INTEGER id PK "Listing ID"
-        INTEGER sellerId FK "Seller profile ID"
-        INTEGER categoryId FK "Listing category ID"
+        INTEGER id PK
+        INTEGER sellerId FK
+        INTEGER categoryId FK
         TEXT type
         TEXT title
         INTEGER priceMinor
         TEXT currency
         TEXT status
+        TEXT created_at
     }
     TextbookDetails {
-        INTEGER listingId PK,FK "Listing ID"
+        INTEGER listingId PK,FK
         INTEGER missingPages
         TEXT markingLevel
         INTEGER coverDamaged
     }
     ElectronicsDetails {
-        INTEGER listingId PK,FK "Listing ID"
+        INTEGER listingId PK,FK
         INTEGER powersOn
         INTEGER hasFunctionalDefect
         INTEGER hasCosmeticDamage
     }
     FurnitureDetails {
-        INTEGER listingId PK,FK "Listing ID"
+        INTEGER listingId PK,FK
         INTEGER structurallyStable
         INTEGER hasStructuralDamage
         TEXT surfaceWear
@@ -376,17 +442,17 @@ erDiagram
     Listings ||--o| FurnitureDetails : has
 ```
 
-Figure 5: Shared listing fields and type-specific condition evidence
+Figure 6: Shared listing fields and type-specific condition evidence
 
-A valid listing needs exactly one matching detail row overall. It has zero or one row in each individual detail table, depending on type. A detail row's listingId is both its primary key and its foreign key. The app saves the listing and detail row in one transaction, and checks the type when reading. Foreign keys alone do not guarantee exactly one matching subtype.
+A valid listing needs exactly one matching detail row overall. It has zero or one row in each individual detail table, depending on type. A detail row's listingId is both its primary key and its foreign key. The app saves the listing and detail row in one transaction, and checks the type when reading. Foreign keys alone do not guarantee exactly one matching subtype. If details are absent or inconsistent, Listing.incomplete() returns a read-only placeholder with the saved type and common fields. Cards, tables and details show Details unavailable; no grade or boolean flag is invented and healthy items still load. Owners can restore missing rows; conflicting rows require maintainer review.
 
-Some Java names are shorter than their SQL columns. Electronics.functionalDefect maps to hasFunctionalDefect, and cosmeticDamage maps to hasCosmeticDamage. Furniture.stable maps to structurallyStable, and structuralDamage maps to hasStructuralDamage. Database converts boolean values to SQLite 0/1 and wear enums to their text names.
+Some Java names are shorter than their SQL columns. Electronics.functionalDefect maps to hasFunctionalDefect, and cosmeticDamage maps to hasCosmeticDamage. Furniture.stable maps to structurallyStable, and structuralDamage maps to hasStructuralDamage. ListingDao converts boolean values to SQLite 0/1 and wear enums to their text names.
 
 <!-- pagebreak -->
 
 ### Whose ID is it?
 
-A primary key (PK) identifies one row in its own table. A foreign key (FK) identifies a related row. In the diagrams, Member ID means Members.id, Seller profile ID means Sellers.id, and Listing ID means Listings.id. The SQLite name id always belongs to the table where it appears.
+A primary key (PK) identifies one row in its own table. A foreign key (FK) identifies a related row. The name id belongs to its containing table: Members.id identifies a member, Sellers.id a seller profile and Listings.id an item. Boxes use exact column names; the table below explains them.
 
 Table 7: IDs used to connect marketplace records
 
@@ -403,7 +469,7 @@ Table 7: IDs used to connect marketplace records
 | HistoricalSales.categoryId | The category of the imported sale. Links to Categories.id. |
 | TextbookDetails.listingId, ElectronicsDetails.listingId, FurnitureDetails.listingId | In each table, this is both PK and FK. It identifies the listing whose condition is described and links to Listings.id. |
 
-Example: Review ID 7, Reviewed listing ID 12 and Reviewer member ID 3 mean that member 3 wrote review 7 about listing 12.
+Example: Reviews.id = 7, Reviews.listingId = 12 and Reviews.reviewerId = 3 mean that member 3 wrote review 7 about listing 12.
 
 HistoricalSales.id identifies the locally saved sale. HistoricalSales.sourceRecordId is the unique ID supplied by the JSON file to recognize a repeat import.
 
@@ -411,7 +477,9 @@ HistoricalSales.id identifies the locally saved sale. HistoricalSales.sourceReco
 
 Members.id identifies the member. username is marked UK because its unique index keeps login names distinct. passwordSalt and passwordHash verify the entered password. recoverySalt and recoveryHash verify a recovery code. Salts and hashes are saved as text. Member objects passed to the screen contain only id and name.
 
-Database.initialize() upgrades versions 1 and 2 to version 3 in a transaction. It adds missing account fields and the unique username index, keeps existing credentials and preserves the member IDs and related records. The default account names become Person A/B/C. PRAGMA user_version stores the schema version. The five account fields belong to Members.
+Database.initialize() calls AccountSetup.upgrade() to migrate versions 1-3 to version 4 in one transaction. It preserves credentials, IDs and related records; adds missing account fields, the username index and Listings.created_at; and maps old AVAILABLE/WITHDRAWN values to ACTIVE/REMOVED. PRAGMA user_version records version 4.
+
+Listings.created_at maps to Java Listing.createdAt (Instant) and records UTC creation time on insert. Legacy rows keep NULL because their original date is unknown; the UI shows Date not recorded. Status uses ACTIVE, SOLD or REMOVED. This adds one field, not another table.
 
 <!-- pagebreak -->
 
@@ -432,11 +500,13 @@ Table 8: Relationship cardinalities
 | Listings | BuyerInterests | 1:M |
 | Listings | Each detail table | 1:1; only the matching subtype applies |
 
-Prices use integer minor units: PHP 350.50 is stored as priceMinor 35050 and currency PHP. Java uses BigDecimal. The app uses AVAILABLE and WITHDRAWN status values. Required names are nonblank; review ratings range from 1 to 5. The application prevents self-review and repeat reviews through the app's serialized transaction path.
+Prices use integer minor units: PHP 350.50 is stored as priceMinor 35050 and currency PHP. Java uses BigDecimal. The app uses ACTIVE, SOLD and REMOVED status values. Required names are nonblank; review ratings range from 1 to 5. ReviewDao also rejects self-review, repeat reviews and members who have not joined the listing's waitlist inside its write transaction.
+
+BuyerInterests has UNIQUE(listingId, buyerId) to prevent repeated interest and UNIQUE(listingId, joiningOrder) to prevent tied positions within a waitlist. Members and Listings have an M:N interest relationship implemented through BuyerInterests.
 
 Foreign keys are enabled on every SQLite connection. PreparedStatement binds input values to SQL. Each operation opens its own connection. Saving a listing with its detail record and restoring missing details both use transactions and roll back on failure.
 
-The following CREATE TABLE statements match program/src/main/resources/db/schema.sql. Each snippet defines one table. The username index is created by Database.initializeAccounts().
+The following CREATE TABLE statements match program/src/main/resources/db/schema.sql. Each snippet defines one table. The username index is created during AccountSetup.upgrade().
 
 ### Members
 
@@ -452,7 +522,7 @@ CREATE TABLE Members (
 );
 ```
 
-Database.initializeAccounts() also runs this index statement.
+AccountSetup.upgrade() also runs this index statement.
 
 ```sql
 CREATE UNIQUE INDEX IF NOT EXISTS idx_Members_username ON Members(username);
@@ -495,7 +565,8 @@ CREATE TABLE Listings (
     currency TEXT NOT NULL
        
         CHECK (length(currency) = 3 AND currency NOT GLOB '*[^A-Z]*'),
-    status TEXT NOT NULL CHECK (length(trim(status)) > 0)
+    status TEXT NOT NULL CHECK (status IN ('ACTIVE', 'SOLD', 'REMOVED')),
+    created_at TEXT CHECK (created_at IS NULL OR length(trim(created_at)) > 0)
 );
 ```
 
@@ -605,9 +676,9 @@ CREATE TABLE FurnitureDetails (
 
 ### Catalog request and response
 
-The app consumes FakeStoreAPI to suggest an electronics category and show comparable catalog prices. Clicking Suggest category / price makes a fresh GET request to https://fakestoreapi.com/products. No API key is required.
+The public endpoint is GET https://fakestoreapi.com/products. It returns a JSON array and needs no API key. Suggest category / price makes a fresh request.
 
-Example response shape (illustrative values):
+Example response shape (illustrative values, not a captured live response):
 
 ```json
 [
@@ -620,125 +691,162 @@ Example response shape (illustrative values):
 ]
 ```
 
-ProductCatalogClient uses Java HttpClient with a 15-second timeout. It checks HTTP 200, parses the JSON with Gson and validates product values. CatalogProduct holds id, title, category and BigDecimal price. Other response fields are not used by this feature.
+ProductCatalogClient sends the request with a 15-second timeout, checks HTTP 200 and records request time/status. ProductCatalogParser validates one complete array with Gson: id must be a positive whole number, price a positive number, and title/category nonblank text. Trailing data, invalid shapes or missing required fields fail. CatalogProduct carries id, title, category and BigDecimal price. CatalogResponse carries products and request information. Unused description, image and rating fields are ignored.
 
-### How a suggestion reaches the listing form
+### Mapping and listing-form use
 
-ProductCatalogClient.matches() keeps electronics products that share a title word with the listing. It ignores words shorter than three characters and common words such as “the” and “for”. It ranks products by the number of shared words, breaks ties by product ID and returns up to three matches. The screen selects the local Electronics category and shows the matching product titles and the lowest and highest reference prices. The member may choose a child category and enters the final PHP price manually.
+CatalogMapper.matches() selects compatible electronics products sharing title words with the listing. It ignores short/common words, ranks by shared-word count, breaks ties by product ID and returns up to three references. CatalogService prepares titles and minimum/maximum reference price for ListingController. The member chooses the campus category and final PHP price manually.
 
-The API does not identify the price currency. The app labels the range as a catalog reference with unspecified currency and never silently converts it to PHP. Textbook/furniture or unmatched queries retain manual entry. A timeout, failed status or invalid JSON displays a retry/manual-entry message. A form changed during the request does not receive a stale suggestion. The screen shows request time and HTTP status.
+The API does not state currency, so prices are labeled currency unspecified. Unsupported clothing/jewelry categories are not converted into campus listing types. Textbooks, furniture and unmatched queries retain manual entry. Posting inputs are disabled during a request, preventing a stale response from being applied to changed inputs.
+
+### Errors and API verification
+
+HTTP failure, timeout or invalid JSON produces a retry/manual-entry message through task error state. It does not save a listing or erase entered values. Parser/client tests use local HTTP servers. Capturing a live response and demonstrating a network toggle are separate checks; an illustrative example is not live evidence.
 
 <!-- pagebreak -->
 
 ## 6. Concurrency Design
 
-Database setup, login verification, password reset, posting, reads, HTTP requests, JSON imports and database summaries run on a background worker. MarketplaceView.runTask() creates a JavaFX Task; one ExecutorService executes it. JavaFX reads form values before starting the task. Success and failure callbacks update controls on the JavaFX thread. Platform.runLater() delivers import progress to that thread.
+### Worker and controller state
+
+App creates one named ExecutorService, marketplace-database, shared by the controllers. Views create no threads and call no DAOs or HTTP clients. FxTaskRunner.run() wraps slow work in JavaFX Task. Success/failure handlers update controller state on the JavaFX thread; views bind that state.
+
+Initialization, registration, login, reset, listing actions, catalog requests, JSON import and analytics run on this worker. Controllers capture inputs and active member before starting. UserSession's generation number lets listing/analysis results reject a signed-out or changed session.
+
+TaskRunner is injectable: controller tests use a deterministic runner; the app uses FxTaskRunner. Services convert data-access failures into AppException, so views do not handle JDBC exceptions.
 
 ### Background JSON import
 
-SalesHistoryImporter streams a UTF-8 JSON array one row at a time. Each record contains sourceRecordId, categoryPath, price, currency and soldAt. Validation checks required values, an existing unique category path, a positive price with exact minor units, an uppercase currency and a timestamp with timezone.
+SalesHistoryImporter streams a UTF-8 JSON array one record at a time. Each record contains sourceRecordId, categoryPath, price, currency and soldAt. It validates required text, an unambiguous existing category path, positive exact minor-unit price, uppercase currency and an offset timestamp.
 
-Valid rows go into HistoricalSales. Duplicate source IDs and invalid field values are skipped and counted. One transaction commits the new rows only after the file is read successfully. Broken JSON, database failure or cancellation rolls back the new rows from that import. Existing saved sales remain.
+HistoryDao supplies a prepared insert. One transaction commits valid new rows after the file ends successfully. Invalid field values and duplicate source IDs are skipped and counted. Broken JSON, database failure or cancellation rolls back that import's new rows and preserves previous history.
+
+AnalyticsController dispatches progress to JavaFX after the first row and every 1,000 rows. An indeterminate spinner/bar shows real import activity without inventing a percentage. Cancel sets a flag checked between records. Success shows saved/invalid/duplicate totals, up to five validation messages and the latest 20 rows. Preview failure after commit still reports that the import was saved.
 
 ### Automatic updates between windows
 
-A JavaFX Timeline ticks every three seconds after login. autoRefresh() reads the visible Marketplace or Analytics page through runAutoRefresh() on the existing worker. Its success handler checks the account, page and filters before applying changed results. Unchanged rows and the selected item are preserved.
+FxRefreshSchedule supplies a three-second Timeline. RefreshController.tick() polls only while signed in, on Marketplace or Analytics, with no active work or open dialog. Listing results must still match the session, category, query and My listings filter. Unchanged values preserve rows and selection; equal analytics snapshots avoid redraw.
 
-The check uses the current category, title search, My listings choice and chart currency. It skips a tick during a busy action, an existing timer read or an open dialog. It stops at sign-out and close. A failed read shows a status message and allows retry.
+The timer stops on logout and close. Failed reads show a message and allow retry. Windows using one SQLite file see another connection's post/withdrawal on a successful check; separate laptop databases are not synchronized. Details/reviews/waitlists reload through their corresponding actions.
 
-Three windows using the same local database sign in separately. Person A's post or withdrawal reaches the other visible Marketplace/Analytics pages on their next successful check. A busy window updates after finishing its work. Sell an item and Sales history update through their own actions. View details or the related action reloads the selected item's review/waitlist text.
+### Responsiveness and shutdown
 
-The view stores busy, automaticRefreshRunning, ready, currentMember and analyticsSnapshot in memory. They track pending work, setup, the signed-in account and the last chart results. These per-window values add no database columns.
-
-### Responsiveness and cancellation
-
-The busy flag rejects overlapping operations. Only work buttons are disabled; tabs, loaded table selection/scrolling, form fields and About remain usable. The import panel displays progress and provides Cancel import. Cancel sets a flag checked between records, and the importer rolls back when it notices the flag. The progress label updates after the first record and every 1,000 records. After the transaction commits, the screen shows saved, invalid and duplicate counts, up to five validation messages, and the latest 20 imported sales. If the preview fails, the screen still reports that the import was saved.
-
-Each database operation owns its connection. Closing the app requests cancellation and shuts down the executor. 
+Work buttons and posting inputs are disabled while busy. Loaded views can scroll and navigation remains available. Cancel import stays available during import. App.stop() stops refresh, requests cancellation and shuts down the worker. Every database operation closes its resources. Polling very large databases still needs performance measurement.
 
 <!-- pagebreak -->
 
 ## 7. Data Mining & Visualization Design
 
-The Analytics tab reads saved marketplace data and calculates an average and a record count for each qualifying category. The results help a member compare listing prices and campus review ratings.
+### Weekly sales frequency in Java
 
-### How category averages are calculated
+The analysis asks how many imported sales occurred each week and which observed weeks were busiest. HistoryDao.soldDates() reads HistoricalSales.soldAt. SalesAnalysis.weeklyCounts() converts timestamps to UTC, finds the previous-or-same Monday and increments a TreeMap count. The map sorts the weeks. WeeklySales records carry the results, and summary() finds the total, largest count and all tied busiest weeks.
 
-Table 9: Category calculations
+This is Java aggregation, not SQL AVG/COUNT. Counts include all currencies because they count sales, not money. Duplicate source IDs are not inserted twice. Weeks without sales are not plotted; empty history has a no-history message. UTC grouping also handles offset and year boundaries consistently.
+
+The six sample sales produce counts 3, 2 and 1 for weeks beginning 19 October, 26 October and 2 November 2026. The first week is busiest; existing history can change the totals.
+
+### Category averages
+
+Table 9: Independent category calculations
 
 | Result | Calculation and data |
 |---|---|
-| Average listing price | AVAILABLE Listings in the selected currency, grouped by category: AVG(priceMinor) / 100.0; COUNT(*) gives listing count. |
-| Average review rating | Reviews joined to AVAILABLE Listings, grouped by category: AVG(rating); COUNT(*) gives review count. Highest average identifies the best-rated category; ties are shown. |
+| Average listing price | ACTIVE Listings in one selected currency: AVG(priceMinor) / 100.0 and COUNT(*), grouped by category. |
+| Average review rating | Individual Reviews on ACTIVE Listings: AVG(rating) and COUNT(*), grouped by category. Tied best-rated categories show review counts. |
 
-Separate queries prevent multiple reviews from counting the same listing price repeatedly. Different currencies remain separate. Imported HistoricalSales and external API prices/ratings are excluded from these two calculations. A category without campus reviews is unrated, not zero stars.
+AnalyticsDao runs separate queries so reviews do not multiply listing prices. Currencies remain separate. Historical sales and external API values do not enter these means. Categories without reviews are unrated, not zero stars.
 
 ### Charts and why they fit
 
-Two JavaFX bar charts compare category averages. Each bar represents one category, so bar height makes differences easy to see.
+Three discrete bar charts compare groups using separated colored bars, light dashed grid lines and exact-value tooltips:
 
-- Average listing price by category: X-axis Category; Y-axis Price in the selected currency, initially PHP.
-- Average review rating by category: X-axis Category; Y-axis Rating, on a 0-5 scale.
+- Weekly frequency: X-axis Week starting Monday (UTC); Y-axis Sales.
+- Listing means: X-axis Category; Y-axis Price in the selected currency, initially PHP.
+- Review means: X-axis Category; Y-axis Rating on a 0-5 scale.
 
-Both charts have titles and axis labels. Each uses one series, so a legend is unnecessary. Refresh analytics reads current database summaries. The three-second timer also refreshes this page while it is visible. Empty results show a no-data title; the screen reports the best-rated category with its review count.
+AnalyticsService returns an AnalyticsSnapshot; AnalyticsController publishes it and ChartsView only renders it. Titles, axes, busiest-week/tie summaries and no-data messages explain the result. Manual refresh and idle polling read current data.
 
-Example: PHP 100 and PHP 200 average PHP 150. Adding PHP 300 makes the average PHP 200. Review ratings 4 and 5 average 4.5. The app calculates these values from saved rows.
+### Checking that the analysis changes
+
+HistoryAnalysisTest imports, deletes and reimports saved rows and checks changed counts. SalesAnalysisTest checks ordering, UTC/year boundaries, ties, empty data and immutable results. Current listing-price means remain independent of historical frequencies.
 
 <!-- pagebreak -->
 
 ## Appendix - References and reproduction
 
-design-document.md is the editable text source. The class hierarchy and detailed ER diagrams are written in Mermaid in this file. The preliminary sketch uses the linked draw.io source and its PNG preview in assets/. Section 4 diagrams use the field definitions in this master.
+design-document.md is the editable master. Its Mermaid blocks define the hierarchy and database diagrams; assets/ contains the editable draw.io sketch and PNG. From the repository root, `python tools/export_design.py` rebuilds the PDF using Python, ReportLab and Calibri. Set CALIBRI_DIR for another font folder.
 
-Use JDK 21 for the Java project and Maven launch. The enforcer range [21,22) intentionally rejects JDK 17 and 25. From program/, run `java -version`, `./mvnw.cmd -version`, then `./mvnw.cmd clean verify`. Both version checks must show Java 21; do not skip the enforcer to claim a normal build. The existing Eclipse Java Application and Antigravity Run profiles remain available.
+Use JDK 21 and keep the version enforcer enabled. From program/, run `java -version`, `./mvnw.cmd -version` and `./mvnw.cmd clean verify`. Both version checks must show Java 21. The existing Eclipse and Antigravity Run profiles remain available.
 
-### Class accounts and recovery
+### Account setup and recovery
 
-The first setup supplies these local accounts. Later password resets replace the password and recovery code for that account.
+Initial local users are Person A / person_a, Person B / person_b and Person C / person_c. A new setup displays random passwords and recovery codes once in a local dialog. Save them privately. Existing accounts retain their credentials. A member can also register a new account.
 
-Table 10: Starting account details
-
-| Account and username | Starting password | Starting recovery code |
-|---|---|---|
-| Person A / person_a | CampusA123! | RESET-A-2026 |
-| Person B / person_b | CampusB123! | RESET-B-2026 |
-| Person C / person_c | CampusC123! | RESET-C-2026 |
-
-After a reset, copy the replacement code from the success screen before returning to login. It is needed for a later reset. This local application uses predefined accounts and recovery codes. It has no email-recovery service, registration screen or online payment flow.
+After registration or reset, save the displayed recovery code. A reset consumes the previous code and supplies a replacement. There are no published starter secrets or email-delivery promises.
 
 ### Verification
 
-On 9 November 2026, Maven verify passed 81 JUnit tests with zero failures, errors or skipped tests. They cover model rules, login and recovery boundaries, failed-reset rollback, database upgrades, account ownership, separate sessions, API response validation and timeouts, JSON import progress and rollback, and category price/review calculations. Database tests use temporary files. HTTP tests use local test servers.
+JDK 21 Maven verification on 13 November 2026 passed 119 JUnit tests in eleven classes: zero failures/errors/skips, enforcer enabled. Temporary databases and local HTTP servers are used. Added cases cover migration/rollback, creation dates, sold-state preservation, missing rows, two-thread waitlist joins and fast filter changes; earlier account, model, analysis and import checks remain.
 
-Separate app checks on 8 November covered 22 login, recovery and screen interactions and 13 checks across three windows for automatic refresh. These app checks are counted separately from the 81 JUnit tests.
+The 40 separate application checks passed: account/review flows, posting, sold/remove confirmations, archive filters, import/charts, cancellation rollback, external refresh, missing electronics/furniture details, owner repair and resizing. They use temporary data and are separate from the JUnit count.
+
+A new live public API check was unavailable because the checking session's proxy refused the connection. Repeat the response capture/network-toggle check on the normal connection; local server tests are separate evidence.
+
+### Limitations and requirement mapping
+
+Accounts and records are local to one SQLite file. There is no cloud synchronization, email recovery, payment processing or proof of completed purchases. Recent-view stacks last for the service session. A personal dashboard and waitlist leave/position screens are not implemented. Very large-dataset polling is not benchmarked.
+
+KNOWN_ISSUES.md and REQUIREMENT_MAP.md in the repository root list limits and map checklist requirements to classes, methods and tests. Splitting the code does not add database fields.
 
 - [Team repository](https://github.com/XionAce/cpe314-69323-capstone-team-01)
-- [Project proposal](https://drive.google.com/file/d/1YbkejbixAvcU1AAcr1zVOpNSHEY_54cH/view)
+- [Project proposal](proposal.pdf)
 - [FakeStoreAPI documentation](https://fakestoreapi.com/docs)
 - [Project Design Document Template](https://drive.google.com/file/d/1sRJ5rjciHBeYgBQmUbpJB12kWyD_sCkO/view)
 - [Project Design Document Checklist](https://drive.google.com/file/d/1QG1zJGib8TXtcc-Ur_awPQRklWvUheQa/view)
 
 <!-- pagebreak -->
 
+
 ### Program process map
 
-All Java classes below are in edu.uc.campusmarket or its listed subpackage. schema.sql is under src/main/resources/db. marketplace.css is under src/main/resources/ui.
+All types are in edu.uc.campusmarket or the listed subpackage.
 
-Table 11: Where the implemented processes are handled
+Table 10: Implemented process flow
 
-| Process | Screen or service entry | Stored result or purpose |
+| Process | Screen and controller | Service and storage result |
 |---|---|---|
-| Startup and upgrade | App / start(); Database / initialize() | Opens SQLite, upgrades accounts and loads categories. |
-| Login | MarketplaceView / login(); MarketplaceService / login() | Database / authenticate() verifies credentials and returns Member. |
-| Forgot password | MarketplaceView / showPasswordReset(); MarketplaceService / resetPassword() | Database / resetPassword() atomically replaces both credential hashes and returns a new recovery code. |
-| Cards and List | MarketplaceView / showListingCards(); createListings() | Both views use the same listing data. itemIllustration() draws category art. |
-| Search and recursion | MarketplaceService / search(); categoryIdsUnder() | collectCategoryIds() visits descendant categories before searching available items. |
-| Post and condition | MarketplaceView / postListing(); MarketplaceService / post() | Database / insertListing() saves Listing and the correct detail row. Subclass gradeCondition() calculates its grade. |
-| Owner items and withdrawal | MarketplaceService / myListings(); withdraw() | Database / withdrawListing() checks owner and sets WITHDRAWN. |
-| View history and waitlist | MarketplaceService / view(); recent(); joinWaitlist() | Recent views use a per-member stack. BuyerInterests saves FIFO joiningOrder. |
-| Reviews and repair | MarketplaceService / review(); restoreDetails() | Database / addReview() validates a review. restoreDetails() transactionally restores missing condition evidence. |
-| API suggestions | MarketplaceView / suggest(); ProductCatalogClient / fetch()/matches() | Parses CatalogProduct records and displays matching references in the selling form. |
-| JSON import | MarketplaceView / startImport(); SalesHistoryImporter / importFile() | Valid rows go to HistoricalSales in a transaction. Cancellation or malformed JSON rolls back that import. |
-| Automatic refresh | MarketplaceView / autoRefresh(); runAutoRefresh() | Reads the active listings/charts every three seconds and checks the account/page/filters before applying results. |
-| Charts | Database / priceSummary()/ratingSummary(); MarketplaceView / showAnalytics() | Separate averages and counts feed the two bar charts. |
-| Sign out and close | MarketplaceView / logout()/close() | Clears displayed account data, stops the timer, requests cancellation and shuts down the worker on close. |
+| Startup | App.start(); AccountController.initialize() | MemberService initializes Database/AccountSetup and returns newly issued credentials once. |
+| Register | RegistrationView; AccountController.register() | MemberDao saves a unique account and returns a recovery code. |
+| Login / reset | LoginView / PasswordResetView; AccountController.login()/reset() | MemberDao verifies or replaces hashes; UserSession holds active identity. |
+| Cards / search | ListingTableView / ListingCards; ListingController.refresh() | ListingService and MarketplaceService search available listings and category descendants. |
+| Post / sold / remove | ListingFormView; ListingController.post()/markSold()/withdraw() | ListingFactory creates a subtype; ListingDao records created_at or rechecks owner before changing ACTIVE to SOLD/REMOVED. |
+| History / waitlist | ListingController.viewDetails(); WaitlistController.join() | MarketplaceService uses LIFO/FIFO; InterestDao allocates and inserts joining order atomically. |
+| Review | ReviewsView; ReviewController.submit() | ReviewDao checks owner, status, interest, rating and duplicate before saving. |
+| Restore evidence | ListingTableView; ListingController.repairable()/restore() | ListingDao checks owner, type and missing details and saves observed evidence. |
+| API reference | ListingFormView; ListingController.suggest() | CatalogService -> client/parser -> DTOs -> CatalogMapper prepares references. |
+| Import | ImportView; AnalyticsController.importFile()/cancelImport() | Importer validates rows; HistoryDao supplies the insert; cancellation/failure rolls back. |
+| Analysis / charts | ChartsView; AnalyticsController.refresh() | AnalyticsService combines DAO means and Java weekly counts in AnalyticsSnapshot. |
+| Refresh | RefreshController.tick(); FxRefreshSchedule | Polls active idle pages; session/filter checks reject stale results. |
+| Sign out / close | AccountController.logout(); App.stop() | Clears session, stops timer, requests cancellation and shuts down the worker. |
+
+<!-- pagebreak -->
+
+### Complete Java type inventory
+
+The current source contains 69 top-level Java types. Every one is listed below; the database still contains ten tables. A DTO, controller or view is not an additional database table.
+
+Table 11: Java types by package
+
+| Package | Types |
+|---|---|
+| base | App |
+| model | AnalyticsSnapshot, Category, CategorySummary, ConditionGrade, Electronics, Furniture, ImportResult, InitialAccount, Listing, ListingForRepair, Member, Registration, Review, Seller, Textbook, WearLevel, WeeklySales |
+| dto | CatalogProduct, CatalogResponse |
+| api | ProductCatalogClient, ProductCatalogParser |
+| dao | AnalyticsDao, CategoryDao, HistoryDao, InterestDao, ListingDao, MemberDao, ReviewDao, SellerDao |
+| persistence | AccountSetup, Database |
+| service | AnalyticsService, AppException, CatalogMapper, CatalogService, CredentialSecurity, ListingFactory, ListingService, MarketplaceService, MemberService, ReviewService, SalesAnalysis, SalesHistoryImporter, ServiceCall, WaitlistService |
+| controller | AccountController, AnalyticsController, FxRefreshSchedule, FxTaskRunner, ListingController, RefreshController, RefreshSchedule, ReviewController, TaskRunner, UserSession, WaitlistController |
+| ui | ChartsView, ImportView, ItemArtwork, ListingCards, ListingFormView, ListingTableView, LoginView, MarketplaceView, PasswordResetView, RegistrationView, ReviewsView, UiTools |
+
+ServiceCall.Query is a nested SQL-operation interface. Anonymous Tasks execute background actions. Listing.incomplete() creates an anonymous read-only fallback for unavailable condition evidence; it is not a new posted item type or table.

@@ -1,53 +1,72 @@
 # Requirement-to-code and test map
 
-Campus Marketplace with Reviews. Source checked on 12 November 2026.
+Campus Marketplace with Reviews. Updated 13 November 2026.
 
-All main Java files listed below are under `program/src/main/java/edu/uc/campusmarket/`. Test files are under `program/src/test/java/edu/uc/campusmarket/`. Method names describe the current implementation and must be updated after refactoring.
+Main types are under `program/src/main/java/edu/uc/campusmarket/`; tests are under the corresponding `program/src/test/java/` package tree. Checked implementation is not a substitute for the instructor's live demonstration.
 
-## Implementation map
-
-| Checklist requirement | Current class and method | Evidence and remaining work |
+| Requirement | Current implementation | Evidence and remaining work |
 |---|---|---|
-| 1. Public API and meaningful JSON use | `api/ProductCatalogClient.fetch()`, `parse()`, `matches()`; `api/CatalogProduct`; `ui/MarketplaceView.suggest()` | Downloads products, validates JSON and displays matching electronics references. `api/ProductCatalogClientTest` covers parsing, matching, HTTP errors and timeout. Parser/mapper separation is pending. Repeat the live API check with the required network toggle at the demo. |
-| 2. Background processing and responsiveness | `ui/MarketplaceView.runTask()`, `runAutoRefresh()`, `startImport()`, `autoRefresh()`, `logout()`, `close()`; `service/SalesHistoryImporter.importFile()` | One named worker runs slow work. JavaFX Task handlers update UI state; import progress uses `Platform.runLater`. A flag requests cancellation; logout/close stop the timer. `service/SalesHistoryImporterTest` covers cancellation, progress and rollback. Automated timer/controller checks and a large-import responsiveness demonstration remain. |
-| 3. Collections and recursion | `service/MarketplaceService.categoryIdsUnder()`, `collectCategoryIds()`, `validateCategories()`, `getWaitlist()`, `view()`, `recent()` | Recursively searches descendants; ArrayDeque/Queue preserves FIFO; per-member Stack preserves LIFO. `service/MarketplaceServiceTest` covers deep descendants, cycles, missing parents, waitlist order and bounded history. Prepare a manual category-recursion trace for the demo. |
-| 4. Data analysis | `persistence/Database.priceSummary()`, `ratingSummary()`; `service/MarketplaceService.prices()`, `ratings()` | Current analysis uses SQL AVG/COUNT. `persistence/ReviewAnalyticsTest` checks arithmetic, review weighting, currencies and empty results. The instructor-requested Java grouping/frequency analysis of historical sales is still open (KI-01). |
-| 5. Charts and labels | `ui/MarketplaceView.createAnalytics()`, `showAnalytics()`, `chart()`, `fillChart()` | Two bar charts show average listing price and review rating by category, with titles and axes. Update the view for the new analysis and verify its data, labels and empty state. A JUnit test of summary arithmetic is not proof of chart rendering. |
-| 6. Interactive GUI controls | `ui/MarketplaceView.login()`, `postListing()`, `refresh()`, `reviewListing()`, `joinWaitlist()`, `startImport()`, `createListings()` | Login, search, post, review, waitlist, import and owner withdrawal have handlers. Previous separate application checks were recorded; repeat the required demonstrations after the refactor. |
-| 7. JUnit and edge cases | Seven existing test classes, listed below | Prior verification recorded 81 passing tests. Add direct service login/reset tests, Java-analysis tests and controller state/timer coverage after implementation. Run the complete suite on JDK 21 without bypassing the enforcer. |
-| 8. Contribution and understanding | Git history plus individual explanations | Preserve each member's actual commits. The supplied pre-check records at least one commit for all six members. Each member must explain their own contribution live; assignments and passing tests do not establish that understanding. |
-| 9. Known issues and requirement map | Root `KNOWN_ISSUES.md` and this file | These files identify current behavior, open corrections and remaining checks. Keep both consistent with the code and actual results. |
-| 10. Design document, Sections 5-7 | `docs/design-document.md` and `docs/design-document.pdf` | Section 5 covers API requests, response shape and use; Section 6 covers worker/tasks, JSON import and refresh; Section 7 covers current summaries and charts. Update the source/PDF for the parser split, MVC and Java analysis after they are implemented. |
+| 1. Public API and meaningful JSON | `api/ProductCatalogClient.fetch()`, `api/ProductCatalogParser.parse()`, `dto/CatalogProduct`, `service/CatalogMapper.matches()`, `service/CatalogService.suggest()`, `controller/ListingController.suggest()` | Validated products supply supported electronics references. `api/ProductCatalogClientTest` covers shape/type validation, matching, HTTP failure and timeout. Public-network toggle demonstration and a freshly captured real response remain (KI-03). |
+| 2. Background work and responsiveness | `controller/FxTaskRunner.run()`; `controller/AnalyticsController.importFile()/cancelImport()`; `service/SalesHistoryImporter.importFile()`; `App.stop()` | One named worker, JavaFX Task result/error handlers, UI-thread progress dispatch, a cancel flag and transaction rollback. Importer tests cover progress, malformed documents and cancellation; the app check exercises the wired controls. |
+| 3. Collections and recursion | `service/MarketplaceService.categoryIdsUnder()/collectCategoryIds()/validateCategories()/getWaitlist()/view()/recent()` | Recursive descendants with cycle/parent validation; ArrayDeque/Queue FIFO; per-member Stack LIFO. `MarketplaceServiceTest` covers deep paths, invalid hierarchies and ordering. Prepare the manual recursion trace at demo. |
+| 4. Java analysis | `dao/HistoryDao.soldDates()` -> `service/SalesAnalysis.weeklyCounts()/summary()` -> `service/AnalyticsService.load()` | Java TreeMap groups UTC timestamps into Monday-starting weeks, counts and sorts them, then identifies tied busiest weeks. `SalesAnalysisTest` covers offsets, year/week boundaries, ties, ordering and empty history. `HistoryAnalysisTest` changes actual saved rows and proves the result changes. |
+| 5. Charts and labels | `controller/AnalyticsController.refresh()` -> `ui/ChartsView` | Weekly frequency bars plus price and rating bars. Axes state week/timezone, sales count, category, currency or rating. Snapshot equality avoids unnecessary redraws. App checks verify weekly data/labels. Empty weeks are not invented. |
+| 6. Interactive GUI | `ui/LoginView`, `RegistrationView`, `PasswordResetView`, `ListingTableView`, `ListingFormView`, `ReviewsView`, `ImportView`, `ChartsView` call their feature controllers | Login, register, reset, search, post, review, join, withdraw, import, cancel and chart-refresh actions are wired. Small views contain controls/bindings/dialogs; services and DAOs handle rules/storage. |
+| 7. JUnit and edge cases | Eleven test classes listed below | **119 tests passed** in the recorded JDK 21 verification, zero failures/errors/skips. Repeat relevant tests after any further code change. GUI and real-network checks are separate evidence. |
+| 8. Contribution and understanding | Existing Git history plus individual explanations | Earlier member commits are retained. Each person must understand and explain their actual contribution. Assigned ownership and passing tests do not prove individual understanding. |
+| 9. Known issues and mapping | Root `KNOWN_ISSUES.md` and this file | Current corrections, limitations and remaining verification are explicit. Update status from evidence, not from planned work. |
+| 10. Design Sections 5-7 | `docs/design-document.md`, `docs/design-document.pdf` and `tools/export_design.py` | Source and PDF describe the separated API layers, controllers, background import, Java weekly analysis and charts. Earlier context, account/review rules, Appendix and all 69 Java types are included. All ten tables/50 fields/twelve FKs match the schema; an overview and three detail views use exact field names. The exported layout was checked visually. |
 
-## Existing test classes
+## Tests
 
-| File | Examples already covered |
+| Test class | Main coverage |
 |---|---|
-| `api/ProductCatalogClientTest.java` | Valid/invalid JSON, empty responses, matching order, decimal prices, failed HTTP status and timeout. |
-| `model/ListingTest.java` | Subclass condition rules, polymorphism, prices, currency, identities and status. |
-| `model/ListingValidationTest.java` | Category/member validation, title trimming and the maximum representable price. |
-| `persistence/DatabaseTest.java` | Tables and initialization, wrong passwords, recovery-code consumption, migrations, salted hashes, ownership, rollback and restoration of missing condition details. |
-| `persistence/ReviewAnalyticsTest.java` | Invalid/self/duplicate reviews, weighted category averages, currency separation, empty results and exclusion of historical sales from current listing averages. |
-| `service/MarketplaceServiceTest.java` | Category recursion, FIFO/LIFO, account ownership, unknown members, separate sessions and search seeing another session's changes. |
-| `service/SalesHistoryImporterTest.java` | Valid/invalid records, duplicates, malformed JSON, missing files, timestamps, progress, cancellation and transaction rollback. |
+| `api/ProductCatalogClientTest` | Strict JSON shape/types, valid/empty/invalid responses, compatible matching, HTTP errors and timeout. |
+| `model/ListingTest` | Subclass condition rules, polymorphism, exact money, identity/currency/status validation. |
+| `model/ListingValidationTest` | Category/member validation, title trimming and the storage price boundary. |
+| `persistence/DatabaseTest` | Ten-table initialization, account upgrades, hashes, wrong passwords, recovery/rollback, saved subtypes, ownership and condition restoration. It uses generated credentials from the test database. Additional cases cover creation dates, version-3 migration and rollback, sold-state preservation, missing subtype rows and two-thread waitlist races. |
+| `persistence/ReviewAnalyticsTest` | Review validation/duplicates, weighted ratings, currency separation, empty summaries and keeping historical sales out of current listing averages. Successful-review fixtures explicitly join the waitlist. Sold/removed rows are excluded from current listing means. |
+| `service/MarketplaceServiceTest` | Category recursion, FIFO/LIFO, ownership, unknown members, session separation and cross-session reads. |
+| `service/SalesHistoryImporterTest` | Valid/invalid/duplicate rows, malformed JSON, timestamps, progress, cancellation and rollback. |
+| `service/AccountAndReviewTest` | First-start credentials shown once, preserved accounts, registration uniqueness/validation, service login/reset and waitlist eligibility for reviews. |
+| `service/SalesAnalysisTest` | Java weekly grouping, UTC boundaries, chronological ordering, ties and immutable/empty results. |
+| `service/HistoryAnalysisTest` | Real JSON import and changed stored rows producing changed Java analysis without altering current-price means. |
+| `controller/ControllerTest` | Service-to-session login/registration, secret clearing, active-member posting, observable results, selection preservation, stale-result rejection and busy/dialog/logout/close refresh policy. Also covers incomplete rows, archive status filters and retrying a quick filter change after an older request. Uses a fake clock/runner; opens no window. |
 
-These are coverage descriptions from reading the tests, not a claim that a fresh test run happened during this documentation step.
+## Account and data flow
 
-## Accounts, schema and ownership
+- `App` constructs the database, DAOs, services, controllers and views and owns the shared worker. `UserSession` supplies the active member identity.
+- `AccountController` calls `MemberService`, which uses `MemberDao` for login, registration and password reset. `CredentialSecurity` implements salted PBKDF2. `AccountSetup` adds missing account fields without erasing existing data.
+- `ListingController` calls `ListingService`; `ListingFactory` creates the chosen subtype. `MarketplaceService` preserves category/queue/stack and ownership rules. `ListingDao`, `SellerDao` and `CategoryDao` execute the queries. ListingDao records created_at and applies owner-checked ACTIVE-to-SOLD/REMOVED transitions; the controller exposes archive filters and safe incomplete-detail state.
+- `WaitlistController` uses `WaitlistService`; `InterestDao` validates and saves joining order. The schema retains `UNIQUE(listingId,buyerId)` and `UNIQUE(listingId,joiningOrder)`.
+- `ReviewController` uses `ReviewService`; `ReviewDao.addReview()` rechecks owner, member, status, interest and duplicates in its write transaction.
+- `AnalyticsController` uses `AnalyticsService`, `AnalyticsDao`, `HistoryDao` and `SalesHistoryImporter`. Java computes the weekly frequencies; the chart only renders the returned records.
+- `RefreshController.tick()` applies the polling policy. `FxRefreshSchedule` supplies the production timer; tests inject a deterministic clock. `FxTaskRunner` exposes busy/status/error properties; views bind them without knowing JDBC.
 
-- `App.start()` connects `persistence/Database`, `service/MarketplaceService` and `ui/MarketplaceView`.
-- `Database.initialize()` loads/upgrades the schema; `initializeAccounts()` creates account fields/indexes and initializes classroom credentials.
-- `MarketplaceService.login()` and `resetPassword()` call `Database.authenticate()` and `resetPassword()`.
-- `MarketplaceService.post()` and `myListings()` use the member's seller profile. `Database.withdrawListing()` rechecks listing ownership.
-- `MarketplaceService.review()` validates member existence; `Database.addReview()` checks rating/comment, owner, listing status and duplicate reviews in its transaction.
-- `Database.addInterest()` validates the buyer and item and stores joining order. `program/src/main/resources/db/schema.sql` enforces both BuyerInterests composite unique rules.
+## Remaining submission checks
 
-## Verification to complete after corrections
+Capture a real API response into `program/src/test/resources` and use it in a parser contract test, then repeat the live network-toggle demonstration. The existing local-server tests use constructed responses; they are not a captured public response (KI-03).
 
-- Run the documented Maven command using JDK 21; report the actual test count and failures/skips.
-- Launch the app and exercise sign-in, recovery, posting, ownership, reviews, import, charts and logout with temporary data.
-- Demonstrate API access and failure recovery with the required network change.
-- Demonstrate a large import, responsive controls, progress and cancellation rollback.
-- Trace one recursive category search and explain FIFO/LIFO using actual records.
-- Change the analysis inputs and show that the Java result and chart change correctly; check empty data and week boundaries.
-- Compare the final design's class diagram, ERDs, fields and processes with the final source. Close known issues only when the corresponding evidence exists.
+Review the remaining style items (KI-07) and the instructor's request to clean up stale ERD images on older branches (KI-06). Prepare the recursion trace and each member's explanation. Review and commit the local corrections, push, then create the replacement PR titled **Milestone 2 - Team 01**. GitHub confirmed the required branch exists on 13 November; a PR search for that head branch returned none. Preserve the existing branches and member history. No PR creation or merge is claimed here. The 40 actual-application checks are separate from the 119 JUnit tests.
+
+The double-check confirms all four Additional B1 requests are implemented. The nine long methods were subsequently split into helpers; the syntax-tree audit now reports zero main-source methods over 50 lines. This is a progress checkpoint: the real-response fixture/live network demonstration, older-branch image cleanup and final formatting/constants/Javadoc review remain. Personal home, listing editing, waitlist leave/position and large-database polling measurement are unfinished. The user chose to commit current work before continuing those follow-ups.
+
+## Additional feedback mapping
+
+| Additional request | Implementation and evidence |
+|---|---|
+| Listing creation date and lifecycle | Listings.created_at; model/Listing.getCreatedAt(); AccountSetup.upgradeListings(); ListingDao.markSold()/withdrawListing(); ListingController.markSold()/statusFilterProperty(); UI cards/table/details and owner confirmations. DatabaseTest covers persistence, preservation and migration. |
+| Messaging/offer scope | Explicitly out of scope in design Section 1 and program README. No message table or chat behavior is claimed. |
+| Simultaneous waitlist joins | InterestDao.addInterest() performs one atomic INSERT ... SELECT with MAX(joiningOrder)+1 and eligibility predicates. DatabaseTest.concurrentBuyersReceiveDistinctAtomicWaitlistPositions() and simultaneousRepeatJoinSavesOnlyOneInterest() run two threads on independent connections. |
+| Missing electronics/furniture details | ListingDao returns Listing.incomplete() with common fields and a warning; getConditionLabel() avoids invented grades. Controller refresh, cards, list and details stay usable. DatabaseTest/MarketplaceServiceTest/ControllerTest and the application checks cover missing rows and owner restoration. |
+
+## Answers to the instructor's four questions
+
+| Question | Current factual answer |
+|---|---|
+| Branch name | The earlier submission used `feature/milestone-2-program`. The required `project/milestone-2` branch now exists; the latest local corrections still need committing and pushing before its PR is created. |
+| What is the Java analysis? | `SalesAnalysis.weeklyCounts()` groups saved historical sale timestamps into Monday-starting UTC weeks with a TreeMap. `summary()` finds the total and tied busiest weeks. The weekly bar chart displays those counts. Category SQL averages remain separate. |
+| How does a member receive the recovery code? | Registration shows it once in a read-only field. First-time seeded credentials appear in a local startup dialog. A successful password reset shows a replacement code and consumes the previous code. The member must save the code; there is no email delivery. |
+| Why is the program in a subfolder? | The existing Eclipse/Antigravity Maven layout is retained. Root README commands explicitly use `./program/mvnw.cmd -f ./program/pom.xml` to build or run from the repository root. |
+
+UI presentation follow-up: App.start() maximizes the stage; MarketplaceView builds top navigation; ReviewsView uses ReviewController.load() for saved star/comment cards in a right-side popup; ImportView binds its loader to importingProperty(); ChartsView spaces/colors bars and shows tooltips. The final application harness passed 40 checks, separately from JUnit.

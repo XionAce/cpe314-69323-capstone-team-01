@@ -7,6 +7,8 @@ bin/
 .settings/
 .idea/
 .vscode/
+__pycache__/
+*.pyc
 
 # Local runtime data and configuration
 *.db
