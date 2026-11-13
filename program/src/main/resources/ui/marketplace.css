@@ -138,3 +138,52 @@
 #listing-details { -fx-font-size: 11px; }
 #listing-details .content { -fx-padding: 6 10; }
 .toggle-button:selected { -fx-background-color: #ede5fb; -fx-text-fill: #6c48b0; -fx-border-color: #d7c7f1; }
+.login-title { -fx-font-size: 30px; -fx-font-weight: bold; -fx-text-fill: #443063; }
+.login-hero-title { -fx-font-size: 43px; -fx-font-weight: bold; -fx-text-fill: #443063; }
+.login-hero-copy { -fx-font-size: 16px; -fx-text-fill: #81669d; -fx-max-width: 330px; }
+.login-layout { -fx-padding: 25px; -fx-background-color: #f5f1fb; }
+.error-text { -fx-text-fill: #ad4e3b; -fx-wrap-text: true; }
+
+/* Listing lifecycle, readable recovery codes and a two-panel marketplace. */
+.marketplace-split { -fx-background-color: transparent; -fx-padding: 0; }
+.marketplace-split > .split-pane-divider {
+    -fx-background-color: transparent;
+    -fx-padding: 0 7;
+}
+.status-badge {
+    -fx-background-radius: 20;
+    -fx-padding: 5 10;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+.status-active { -fx-background-color: #dcf5e8; -fx-text-fill: #236447; }
+.status-sold { -fx-background-color: #fff0cc; -fx-text-fill: #825814; }
+.status-removed { -fx-background-color: #eeedf2; -fx-text-fill: #676172; }
+.item-date { -fx-font-size: 10px; -fx-text-fill: #81768e; }
+.condition-warning { -fx-background-color: #fff2d9; -fx-text-fill: #805b1d; }
+.success-button { -fx-background-color: #e0f3e9; -fx-border-color: #badfcb; -fx-text-fill: #236447; }
+.success-button:hover { -fx-background-color: #cde9dc; }
+.danger-button { -fx-background-color: white; -fx-border-color: #eac9c7; -fx-text-fill: #9b4945; }
+.danger-button:hover { -fx-background-color: #fcefed; }
+.recovery-code { -fx-font-family: "Consolas"; -fx-font-size: 13px; -fx-background-color: #f4f0ff; }
+
+.top-navigation {
+    -fx-padding: 14 25;
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #e9e4f2 transparent;
+}
+.top-brand { -fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #503577; -fx-padding: 0 22 0 0; }
+.top-navigation .nav-button { -fx-padding: 11 16; }
+.top-navigation .account-name { -fx-padding: 0 12; }
+.sell-preview { -fx-background-color: #ece5fb; -fx-background-radius: 12; -fx-padding: 26; }
+.loading-card { -fx-background-color: #eee9fc; -fx-border-color: #d9cef4; -fx-alignment: center-left; }
+.progress-bar > .track { -fx-background-color: #ded6f2; -fx-background-radius: 8; }
+.progress-bar > .bar { -fx-background-color: #8161d8; -fx-background-radius: 8; }
+.progress-indicator { -fx-progress-color: #8161d8; }
+.review-dialog { -fx-padding: 20; -fx-background-color: #faf8ff; }
+.review-dialog .text-area { -fx-pref-height: 150; }
+.chart-horizontal-grid-lines { -fx-stroke: #e6e8f1; -fx-stroke-dash-array: 3 5; }
+.axis { -fx-tick-label-fill: #5d5b70; -fx-font-size: 12px; }
+.chart-title { -fx-font-size: 19px; }
+.review-stars { -fx-font-size: 23px; -fx-text-fill: #d19a24; }
+.review-comment { -fx-text-fill: #554d65; -fx-font-size: 14px; }
