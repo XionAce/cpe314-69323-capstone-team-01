@@ -32,16 +32,16 @@ You can also click **Create an account**. Enter a display name, a unique usernam
 2. Sign out and use another account. Select the item and try to review it before joining its waitlist: the app rejects the review. Click **Join waitlist**, then review it with a rating from 1 to 5. Self-reviews and duplicate reviews are still rejected.
 3. In **My listings**, select an active item and use **Mark as sold** or **Remove listing**. Confirm to set SOLD or REMOVED. Both leave public search and remain in the owner's archive with reviews/waitlists. Use **All statuses / Active / Sold / Removed** to filter the archive. Another member cannot change its status.
 4. In **Sales history**, import `samples/sales-history.json`. It contains six demonstration sales over three weeks. A repeated import skips matching source IDs. Cancel requests rollback of the unfinished import.
-5. In **Analytics**, view the weekly sales counts and busiest-week summary, then the current-listing price and review charts. With only the six sample sales imported, the weekly counts are 3, 2 and 1. Existing history may change these totals.
+5. In **Analytics**, view the weekly sales counts and busiest-week summary, then the current-listing price and review charts. With only the six sample sales imported, the weekly counts are 3, 2 and 1. For a controlled change, next import `samples/sales-history-followup.json`: counts become 3, 2 and 4, with the last week busiest. Both files contain synthetic demo records. Existing history may change these totals.
 6. For catalog suggestions, enter an electronics title such as `laptop` and click **Suggest category / price**. This makes a new HTTP request. Catalog prices have unspecified currency; enter the final PHP price manually. Unsupported categories retain manual entry.
 
 Weekly analysis is written in Java: convert each sold timestamp to UTC, find its Monday, increment a `Map` count, sort the weeks and report all tied busiest weeks. Weeks with no sales are not plotted. This chart counts sales across currencies; it does not add their monetary values. The separate current-price chart filters by currency.
 
 My home, Marketplace and Analytics check the same local database every three seconds while signed in. Polling skips busy work and dialogs, preserves filters/selection and avoids redrawing unchanged results. It stops at sign-out or application close. This is synchronization between windows reading the same file, not between separate laptops.
 
-Listings record `created_at` as UTC on insertion. Cards and the list show the date; details show a readable UTC time. Existing databases upgrade to schema version 4 without deleting accounts or records. Old AVAILABLE/WITHDRAWN statuses become ACTIVE/REMOVED. Older records without creation dates show **Date not recorded**. Marking sold does not automatically import a historical sale or process payment.
+Listings record `created_at` as UTC on insertion. Cards and the list show the date; details show a readable UTC time. Existing databases upgrade to schema version 5 without deleting accounts or records. Old AVAILABLE/WITHDRAWN statuses become ACTIVE/REMOVED. Older records without creation dates show **Date not recorded**. Marking sold does not automatically import a historical sale or process payment.
 
-Messages and offers are out of scope. There is no chat screen or message/offer table.
+Private listing chats are available in Messages. Buyers start a conversation with the seller on an active item; each buyer has a separate thread. Existing sold-item conversations continue for pickup arrangements; removed-item history is read-only. Offers and payment processing remain outside the application.
 
 ## Run buttons in Antigravity and Eclipse
 
@@ -84,10 +84,19 @@ If a listing lacks its subtype evidence, it remains visible with **Details unava
 
 ## Submission records
 
-See the root [known issues](../KNOWN_ISSUES.md) and [requirement map](../REQUIREMENT_MAP.md) for actual status and verification. The [editable design](../docs/design-document.md) and [design PDF](../docs/design-document.pdf) describe the refactor, registration/review rules, weekly analysis and all current Java types. The [optional PDF exporter](../tools/export_design.py) requires Python, ReportLab and Calibri; it is separate from running the application. Recorded verification is 128 passing JUnit tests and 46 separate application checks. A fresh public-network/API demonstration remains outstanding.
+See the root [known issues](../KNOWN_ISSUES.md) and [requirement map](../REQUIREMENT_MAP.md) for actual status and verification. The [editable design](../docs/design-document.md) and [design PDF](../docs/design-document.pdf) describe the refactor, registration/review rules, weekly analysis and all current Java types. The [optional PDF exporter](../tools/export_design.py) requires Python, ReportLab and Calibri; it is separate from running the application. Recorded verification is 142 passing JUnit tests and 50 separate application checks. The real public response is captured and tested; a live GUI network on/off demonstration remains outstanding.
 
 The application opens maximized. Navigation is across the top; saved reviews open as star/comment cards in a right-side popup. The selling screen includes a type illustration, imports show an indeterminate spinner/bar during actual work, and analytics use spaced colored bars with value tooltips.
 
 ### Personal home, editing and waitlists
 
 After login, My home shows your active items, interested buyers, received rating average and personal queue positions. Use Marketplace -> My listings -> select an active item -> Edit title / price to revise your own title or price. Other fields and saved relations remain. Details shows your current waitlist position; Leave waitlist removes only your interest and keeps existing reviews. Rejoining places you at the tail.
+
+
+## Private listing chat
+
+Open an item and choose **Open chat**. The buyer writes first; the seller replies in **Messages**. Only that buyer and the item's seller can read or send through the app. A different buyer gets a separate conversation. Messages are plain text, 1-2000 characters, saved with UTC timestamps and ordered by database ID. They do not change waitlists, reserve items or process payments.
+
+To demonstrate automatic updates, run the current program twice against the same data folder and sign in with two different accounts. Keep both Messages pages open. The existing three-second refresh displays saved replies without a manual refresh and preserves unsent text. Separate laptops do not share local messages. Existing sold-item chats stay usable for pickup; removed-item chats retain read-only history.
+
+Schema version 5 adds Messages and indexes while preserving earlier accounts and records. The current design includes eleven tables, 56 columns, fifteen foreign keys and 82 main Java types. Eight chat service tests and three chat-controller tests were added. A real two-process GUI test passed seventeen assertions, separately from JUnit.

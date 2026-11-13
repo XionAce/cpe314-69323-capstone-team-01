@@ -167,9 +167,16 @@ def design_erd(source):
     for table, body in re.findall(r'(\w+)\s*\{([^}]+)\}',source):
         fields[table] = [re.fullmatch(r'(\w+) (\w+)(?: ([A-Z,]+))?(?: "([^"]+)")?',s.strip()).groups()
                          for s in body.splitlines() if s.strip()]
-    if len(fields) == 10:
+    if len(fields) >= 10:
         return overview_erd(fields)
-    if 'Members' in fields:
+    if 'Messages' in fields:
+        xy = {'Members':(30,6),'Sellers':(260,6),'Listings':(260,195),'Messages':(30,220)}
+        links = [('Members','Sellers','memberId',1,0,235),
+                 ('Sellers','Listings','sellerId',1,1,457),
+                 ('Listings','Messages','listingId',0,1,245),
+                 ('Members','Messages','buyerId',0,0,16),
+                 ('Members','Messages','senderId',0,0,5)]
+    elif 'Members' in fields:
         xy = {'Members':(31,6),'Sellers':(261,6),'Reviews':(31,200),'Listings':(261,200),'BuyerInterests':(31,340)}
         links = [('Members','Sellers','memberId',1,0,232),('Members','Reviews','reviewerId',0,0,17),
                  ('Members','BuyerInterests','buyerId',0,0,4),('Sellers','Listings','sellerId',1,1,457),
@@ -204,7 +211,9 @@ def design_erd(source):
             line(fork,ey,ex,ey-4);line(fork,ey,ex,ey+4)
         else:
             line(fork,ey-3.5,fork,ey+3.5)
-        if 'Members' in fields and fk in ('reviewerId','buyerId','sellerId'):
+        if 'Messages' in fields and child == 'Messages' and parent == 'Members':
+            txt(lane+3,190 if fk=='buyerId' else 210,cardinality,9,True)
+        elif 'Members' in fields and fk in ('reviewerId','buyerId','sellerId'):
             txt(lane+4 if not side else lane-4,328 if fk=="buyerId" else 181,cardinality,10,True,'start' if not side else 'end')
         elif parent=='Listings' and child=='Reviews':
             txt(lane+3,ey-3,cardinality,9,True)
@@ -227,15 +236,16 @@ def design_erd(source):
     return d
 
 def overview_erd(fields):
-    """All twelve FK links use exact PK/FK row ports; bridges denote crossings."""
+    """Overview FK links use exact PK/FK row ports; bridges denote crossings."""
     from reportlab.graphics.shapes import Path as VectorPath, Circle
     xy = {
         'Members': (12, 6), 'Sellers': (174, 6), 'Listings': (336, 6),
         'Reviews': (12, 146), 'BuyerInterests': (174, 146), 'Categories': (336, 146),
         'TextbookDetails': (12, 290), 'ElectronicsDetails': (174, 290),
         'HistoricalSales': (336, 290), 'FurnitureDetails': (174, 405),
+        'Messages': (12, 405),
     }
-    width, height, head, row = 468, 452, 20, 14
+    width, height, head, row = 468, 488, 20, 14
     boxw = 120
     drawing = Drawing(width, height)
     ink = colors.HexColor('#456281')
@@ -262,6 +272,9 @@ def overview_erd(fields):
         ('Listings', 'TextbookDetails', 'listingId', 0, 1, None, (48, 251)),
         ('Listings', 'ElectronicsDetails', 'listingId', 0, 1, 321, (299, 278)),
         ('Listings', 'FurnitureDetails', 'listingId', 1, 1, 464, (441, 389)),
+        ('Listings', 'Messages', 'listingId', 1, 1, 464, (334, 460)),
+        ('Members', 'Messages', 'buyerId', 0, 0, 4, (2, 370)),
+        ('Members', 'Messages', 'senderId', 0, 0, 4, (2, 392)),
     ]
     segments = []
     for index, (parent, child, key, side, entry, lane, label) in enumerate(edges):

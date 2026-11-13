@@ -21,7 +21,7 @@ Table 1: Group information
 |  | Emanuelle De Paz |
 | Instructor | Richyll Son |
 | Term | First Semester, S.Y. 2026-2027 |
-| Document Version / Date | V 0.3 / 13 November 2026 |
+| Document Version / Date | V 1.0 / 14 November 2026 |
 
 <!-- pagebreak -->
 
@@ -40,6 +40,7 @@ Table 2: Document revisions
 | 0.1 | 23 Oct 2026 | Group 1 | Initial project overview, ER sketch and responsibilities. |
 | 0.2 | 8 Nov 2026 | Group 1 | Documented the listing classes, named the IDs and clarified the table connections. |
 | 0.3 | 13 Nov 2026 | Group 1 | Registration, MVC, Java analysis, listing dates/status, safer detail handling and matching diagrams/tests. |
+| 1.0 | 14 Nov 2026 | Group 1 | Compiled Sections 1-9; documented private listing chats, database upgrade, testing evidence and commit-linked contributions; checked diagrams and page navigation. |
 
 <!-- pagebreak -->
 
@@ -47,7 +48,7 @@ Table 2: Document revisions
 
 Campus Marketplace with Reviews lets students, faculty and school groups buy and sell textbooks, electronics and furniture. Members search categories, join waitlists, review listings and compare category prices and ratings. Each item type calculates its own condition grade.
 
-The JavaFX app stores records in SQLite and imports JSON sales history. Members register or use the initial local accounts, then sign in to Marketplace, Sell an item, Sales history and Analytics. Buyer-seller messages and offers are out of scope; the app has no message/offer table or chat screen.
+The JavaFX app stores records in SQLite and imports JSON sales history. Members register or use the initial local accounts, then sign in to Marketplace, Sell an item, Sales history, Analytics and Messages. Messages lets a buyer and seller discuss an item and arrange a meeting. Messages are local to the shared SQLite file; separate laptops are not synchronized. Offers and payment processing remain outside the application.
 
 ## 2. Preliminary ER Sketch & Team Roles
 
@@ -177,6 +178,7 @@ Table 5: Application layers and responsibilities
 | ProductCatalogClient / ProductCatalogParser | Download the catalog and validate its JSON in separate classes. |
 | CatalogProduct / CatalogResponse | Carry the parsed product subset and HTTP information in dto. |
 | CatalogMapper / CatalogService | Select supported comparable products and prepare reference information. |
+| ChatController / ChatService / ChatDao | Load private conversations, validate messages and save participant-filtered results. |
 | SalesHistoryImporter / SalesAnalysis | Stream and validate JSON imports; group saved timestamps and count weekly activity in Java. |
 
 The action path is View -> Controller -> Service -> DAO -> SQLite. Task results update controller properties on the JavaFX thread; bound views display them. Models contain no GUI or SQL. The Appendix lists every top-level Java type and the process map.
@@ -191,11 +193,19 @@ collectCategoryIds() adds a category ID and recursively visits each child. A cat
 
 ### Application screens and state
 
-MarketplaceView is the application shell. LoginView, RegistrationView and PasswordResetView contain account forms. HomeView shows the signed-in member's personal summary. ListingTableView and ListingCards display the same observable listing list. ListingFormView handles posting inputs, ReviewsView contains review/waitlist controls, ImportView displays import state and ChartsView renders the returned results.
+MarketplaceView is the application shell. LoginView, RegistrationView and PasswordResetView contain account forms. HomeView shows the signed-in member's personal summary. ListingTableView and ListingCards display the same observable listing list. ListingFormView handles posting inputs, ReviewsView contains review/waitlist controls, ImportView displays import state and ChartsView renders the returned results. ChatView displays ChatController conversation state.
 
 UserSession holds the active Member and a generation number. AccountController, ListingController, ReviewController, WaitlistController, HomeController and AnalyticsController coordinate their features. FxTaskRunner exposes busy, status and error properties. RefreshController decides whether to poll; FxRefreshSchedule supplies the timer. These per-window values are in memory, not new database columns.
 
 InitialAccount, Registration, ImportResult, CategorySummary, ListingForRepair, WeeklySales and AnalyticsSnapshot carry setup/action results. HomeItem and HomeSummary carry the personal dashboard snapshot. Review and Seller hold domain values. ItemArtwork draws category illustrations, and UiTools provides presentation helpers. Artwork is not a separate database entity.
+
+### Buyer-seller conversations
+
+Open chat on an item opens its conversation in Messages. A buyer starts a conversation on an ACTIVE item; its seller sees that buyer in the private inbox and replies there. The seller cannot start a conversation with a buyer who has not written first. Each listing/buyer pair is separate, so two buyers cannot read each other's messages. Starting a chat does not join a waitlist, reserve an item, mark it sold or process a payment.
+
+ChatView displays incoming/outgoing bubbles, names, local-time labels, a text box and Send message. Ctrl+Enter also sends. ChatController takes the sender from UserSession. ChatService strips surrounding whitespace and requires 1-2000 characters. ChatDao uses prepared statements and rechecks participants and listing status in the INSERT. Text is displayed as plain text. SQLite IDs define the saved message order; sentAt records the UTC timestamp.
+
+The Messages page refreshes every three seconds while signed in and idle. Separate application processes using the same database see saved replies automatically. Polling preserves unsent text; switching conversations clears the draft, and logout clears private chat state. Stale results from an older account or selection are ignored. Existing conversations remain usable after an item becomes SOLD for pickup arrangements; new conversations cannot start on sold items. REMOVED listings retain read-only history.
 
 ### Sign in, registration and password recovery
 
@@ -225,7 +235,7 @@ Restore missing details lets an owner choose a listing and the condition actuall
 
 ### Listing types and sample records
 
-Listing defines the shared item data. The application accepts three concrete types: Textbook, Electronics and Furniture. Database seeds one example of each when it creates the demo data. The user can post additional items of any supported type.
+Listing defines the shared item data. The application accepts three concrete types: Textbook, Electronics and Furniture. ListingFactory rejects unsupported types and missing or mismatched condition observations instead of creating a default furniture item or inventing a condition grade. Database seeds one example of each when it creates the demo data. The user can post additional items of any supported type.
 
 Table 6: Listings supplied with the prototype
 
@@ -247,7 +257,7 @@ Each listing requires a seller profile, category, nonblank title, positive exact
 
 ### Finalized entity relationships
 
-The schema defines ten application tables with 50 stored fields. The overview shows all tables and their PK/FK connections. The three detail views show every attribute at a larger size; Listings repeats to connect the views. Field names match SQLite exactly. The SQL below specifies types, nullability and checks.
+The schema defines eleven application tables with 56 stored fields and fifteen foreign-key connections. The overview shows every table and its PK/FK connections. Four detail views show every attribute at a larger size; Listings repeats to connect the views. Field names match SQLite exactly. The SQL below specifies types, nullability and checks.
 
 
 ```mermaid
@@ -291,6 +301,15 @@ erDiagram
     FurnitureDetails {
         INTEGER listingId PK,FK
     }
+    Messages {
+        INTEGER id PK
+        INTEGER listingId FK
+        INTEGER buyerId FK
+        INTEGER senderId FK
+    }
+    Members ||--o{ Messages : buyer
+    Members ||--o{ Messages : sender
+    Listings ||--o{ Messages : discusses
     Members ||--o{ Sellers : owns
     Members ||--o{ Reviews : writes
     Members ||--o{ BuyerInterests : joins
@@ -305,7 +324,7 @@ erDiagram
     Listings ||--o| FurnitureDetails : has
 ```
 
-Figure 3: Ten-table overview with PK/FK connections
+Figure 3: Eleven-table overview with PK/FK connections
 
 The overview shows keys only. The detail views and SQL show all remaining attributes. A small bridge at a crossing means the lines do not join.
 
@@ -452,6 +471,55 @@ Some Java names are shorter than their SQL columns. Electronics.functionalDefect
 
 <!-- pagebreak -->
 
+### Private message records
+
+```mermaid
+erDiagram
+    Members {
+        INTEGER id PK
+        TEXT name
+        TEXT username UK
+        TEXT passwordSalt
+        TEXT passwordHash
+        TEXT recoverySalt
+        TEXT recoveryHash
+    }
+    Sellers {
+        INTEGER id PK
+        INTEGER memberId FK
+        TEXT displayName
+        TEXT sellerKind
+    }
+    Listings {
+        INTEGER id PK
+        INTEGER sellerId FK
+        INTEGER categoryId FK
+        TEXT type
+        TEXT title
+        INTEGER priceMinor
+        TEXT currency
+        TEXT status
+        TEXT created_at
+    }
+    Messages {
+        INTEGER id PK
+        INTEGER listingId FK
+        INTEGER buyerId FK
+        INTEGER senderId FK
+        TEXT body
+        TEXT sentAt
+    }
+    Members ||--o{ Sellers : owns
+    Sellers ||--o{ Listings : posts
+    Listings ||--o{ Messages : discusses
+    Members ||--o{ Messages : buyer
+    Members ||--o{ Messages : sender
+```
+
+Figure 7: Listing messages and the buyer, sender and seller identities
+
+Messages.listingId identifies the item and buyerId identifies the buyer whose conversation this is. senderId identifies the member who wrote that individual message; it can be the buyer or the listing's owner. The seller is found through Listings.sellerId and Sellers.memberId, so a second seller ID is not copied into Messages. A conversation is the set of rows sharing listingId and buyerId. Each row stores one plain-text body and a UTC sentAt timestamp.
+
 ### Whose ID is it?
 
 A primary key (PK) identifies one row in its own table. A foreign key (FK) identifies a related row. The name id belongs to its containing table: Members.id identifies a member, Sellers.id a seller profile and Listings.id an item. Boxes use exact column names; the table below explains them.
@@ -468,6 +536,9 @@ Table 7: IDs used to connect marketplace records
 | Reviews.reviewerId | The member who wrote the review. Links to Members.id. |
 | BuyerInterests.listingId | The listing whose waitlist the buyer joined. Links to Listings.id. |
 | BuyerInterests.buyerId | The member who joined the waitlist. Links to Members.id. |
+| Messages.listingId | The item discussed in this message. Links to Listings.id. |
+| Messages.buyerId | The buyer participating in this private conversation. Links to Members.id. |
+| Messages.senderId | The member who wrote this message, buyer or listing owner. Links to Members.id. |
 | HistoricalSales.categoryId | The category of the imported sale. Links to Categories.id. |
 | TextbookDetails.listingId, ElectronicsDetails.listingId, FurnitureDetails.listingId | In each table, this is both PK and FK. It identifies the listing whose condition is described and links to Listings.id. |
 
@@ -479,7 +550,7 @@ HistoricalSales.id identifies the locally saved sale. HistoricalSales.sourceReco
 
 Members.id identifies the member. username is marked UK because its unique index keeps login names distinct. passwordSalt and passwordHash verify the entered password. recoverySalt and recoveryHash verify a recovery code. Salts and hashes are saved as text. Member objects passed to the screen contain only id and name.
 
-Database.initialize() calls AccountSetup.upgrade() to migrate versions 1-3 to version 4 in one transaction. It preserves credentials, IDs and related records; adds missing account fields, the username index and Listings.created_at; and maps old AVAILABLE/WITHDRAWN values to ACTIVE/REMOVED. PRAGMA user_version records version 4.
+Database.initialize() calls AccountSetup.upgrade() to migrate versions 1-4 to version 5 in one transaction. It preserves credentials, IDs and related records; adds missing account fields, the username index and Listings.created_at; and maps old AVAILABLE/WITHDRAWN values to ACTIVE/REMOVED. The version-5 step creates Messages and its indexes from the schema definitions. Versions 1-4 contain ten tables; version 5 contains eleven. PRAGMA user_version records version 5.
 
 Listings.created_at maps to Java Listing.createdAt (Instant) and records UTC creation time on insert. Legacy rows keep NULL because their original date is unknown; the UI shows Date not recorded. Status uses ACTIVE, SOLD or REMOVED. This adds one field, not another table.
 
@@ -500,6 +571,9 @@ Table 8: Relationship cardinalities
 | Categories | Categories | 1:M; a root has no parent |
 | Listings | Reviews | 1:M |
 | Listings | BuyerInterests | 1:M |
+| Listings | Messages | 1:M |
+| Members | Messages as buyer | 1:M |
+| Members | Messages as sender | 1:M |
 | Listings | Each detail table | 1:1; only the matching subtype applies |
 
 Prices use integer minor units: PHP 350.50 is stored as priceMinor 35050 and currency PHP. Java uses BigDecimal. The app uses ACTIVE, SOLD and REMOVED status values. Required names are nonblank; review ratings range from 1 to 5. ReviewDao also rejects self-review, repeat reviews and members who have not joined the listing's waitlist inside its write transaction.
@@ -674,6 +748,21 @@ CREATE TABLE FurnitureDetails (
 
 <!-- pagebreak -->
 
+### Messages
+
+```sql
+CREATE TABLE IF NOT EXISTS Messages (
+    id INTEGER PRIMARY KEY,
+    listingId INTEGER NOT NULL REFERENCES Listings(id),
+    buyerId INTEGER NOT NULL REFERENCES Members(id),
+    senderId INTEGER NOT NULL REFERENCES Members(id),
+    body TEXT NOT NULL CHECK (length(trim(body)) BETWEEN 1 AND 2000),
+    sentAt TEXT NOT NULL CHECK (length(trim(sentAt)) > 0)
+);
+CREATE INDEX IF NOT EXISTS idx_Messages_thread ON Messages(listingId, buyerId, id);
+CREATE INDEX IF NOT EXISTS idx_Messages_buyerId ON Messages(buyerId);
+```
+
 ## 5. API Integration Design
 
 ### Catalog request and response
@@ -703,7 +792,7 @@ The API does not state currency, so prices are labeled currency unspecified. Uns
 
 ### Errors and API verification
 
-HTTP failure, timeout or invalid JSON produces a retry/manual-entry message through task error state. It does not save a listing or erase entered values. Parser/client tests use local HTTP servers. Capturing a live response and demonstrating a network toggle are separate checks; an illustrative example is not live evidence.
+HTTP failure, timeout or invalid JSON produces a retry/manual-entry message through task error state. It does not save a listing or erase entered values. Parser/client tests use local HTTP servers and the saved real HTTP-200 response containing 20 products. The team captured it on a working connection; its metadata records timestamp and SHA-256. A live GUI network toggle remains a separate check; the illustrative JSON above is not the captured response.
 
 <!-- pagebreak -->
 
@@ -727,9 +816,9 @@ AnalyticsController dispatches progress to JavaFX after the first row and every 
 
 ### Automatic updates between windows
 
-FxRefreshSchedule supplies a three-second Timeline. RefreshController.tick() polls only while signed in, on My home, Marketplace or Analytics, with no active work or open dialog. Listing results must still match the session, category, query and My listings filter. Unchanged values preserve rows and selection; equal analytics snapshots avoid redraw.
+FxRefreshSchedule supplies a three-second Timeline. RefreshController.tick() polls only while signed in, on My home, Marketplace, Analytics or Messages, with no active work or open dialog. Listing results must still match the session, category, query and My listings filter. Unchanged values preserve rows and selection; equal analytics snapshots avoid redraw.
 
-The timer stops on logout and close. Failed reads show a message and allow retry. Windows using one SQLite file see another connection's post/withdrawal on a successful check; separate laptop databases are not synchronized. Details/reviews/waitlists reload through their corresponding actions.
+The timer stops on logout and close. Failed reads show a message and allow retry. Windows using one SQLite file see another connection's post/withdrawal on a successful check; separate laptop databases are not synchronized. Details/reviews/waitlists reload through their corresponding actions. ChatController refreshes the selected conversation and inbox without clearing a draft; changing account or selected conversation invalidates older results.
 
 ### Responsiveness and shutdown
 
@@ -774,6 +863,78 @@ HistoryAnalysisTest imports, deletes and reimports saved rows and checks changed
 
 <!-- pagebreak -->
 
+## 8. Testing Summary
+
+### Recorded JUnit result
+
+The recorded JDK 21 Maven verification on 14 November 2026 passed 142 JUnit tests in thirteen test classes, with zero failures, errors or skipped tests. The Java/Maven enforcer was enabled. The latest pass adds chat privacy, message-boundary, migration and concurrent-reply tests, plus controller checks for stale conversations and draft preservation. The earlier readiness regressions and real-response parser/mapper test remain. TestDatabase is a shared fixture, not a thirteenth test class.
+
+Tests use temporary SQLite files and local HTTP servers. They do not change the personal database. From the repository root, run `./program/mvnw.cmd -o -f ./program/pom.xml verify` to repeat the suite after dependencies are available. First-time dependency downloads need a connection.
+
+### Coverage and meaningful edge cases
+
+Table 10: JUnit coverage and edge cases
+
+| Test class and count | What it checks | Meaningful edge case |
+|---|---|---|
+| ProductCatalogClientTest (11) | Catalog JSON parsing, matching, HTTP failures and timeout. | Reject numeric strings; timeouts stop waiting; the real 20-product capture supplies valid electronics references. |
+| ControllerTest (16) | Session identity, background results, selection, refresh and personal home. | A search or home result arriving after logout cannot refill the screen. |
+| ListingTest (9) | Three condition subclasses, lifecycle states and exact money. | One missing textbook page overrides otherwise good appearance; fractional cents are rejected. |
+| ListingValidationTest (6) | Member/category identity, title cleanup and money limits. | Accept the largest stored price; reject invalid parents, unknown item types and mismatched condition observations. |
+| DatabaseTest (31) | Initialization, migrations, credentials, subtype storage, recovery and concurrent queues. | Two buyers joining simultaneously receive distinct positions; migration failure rolls back schema/version changes. |
+| ReviewAnalyticsTest (9) | Review rules, averages, currency separation and historical-data exclusion. | Weight every review equally instead of averaging per-item averages; separate different currencies. |
+
+<!-- pagebreak -->
+
+### Further test coverage
+
+Table 11: Remaining JUnit coverage and edge cases
+
+| Test class and count | What it checks | Meaningful edge case |
+|---|---|---|
+| AccountAndReviewTest (8) | Registration, recovery codes and waitlist-before-review rules. | A repeated normalized username inserts no extra member; a consumed recovery code cannot be reused. |
+| HistoryAnalysisTest (1) | JSON import through saved data to Java weekly analysis. | Deleting and reimporting stored history changes weekly counts while current listing means remain unchanged. |
+| MarketplaceServiceTest (17) | Recursive categories, FIFO waitlists, LIFO history and ownership. | Reject category cycles/missing parents; one member cannot read another member's private recent history. |
+| PersonalFeaturesTest (8) | Account-scoped home, owner edits, leaving/rejoining and position changes. | Reject an edit after an item becomes sold; leaving advances remaining positions and retains saved reviews. |
+| SalesAnalysisTest (6) | UTC Monday grouping, sorting, empty results and tied busiest weeks. | A timestamp offset can cross a Monday/year boundary; report all tied busiest weeks. |
+| ChatServiceTest (8) | Private buyer/seller messages, message limits, saved order and version-4 migration. | An unrelated buyer cannot read/send to another conversation; concurrent replies remain ordered; existing account hashes survive upgrade. |
+| SalesHistoryImporterTest (12) | Streaming validation, duplicates, progress and transaction rollback. | Malformed JSON or cancellation after a valid row rolls back the unfinished import and preserves earlier data. |
+
+### Application checks and remaining verification
+
+A separate two-process chat demonstration passed seventeen GUI assertions. Buyer and seller signed in through the real screens in independent JVMs, exchanged three saved messages, and received replies through the normal three-second refresh. New message bubbles scrolled fully into view. Incoming replies preserved unsent drafts. An additional buyer's message did not switch the seller's selected recipient, clear its draft or enter the other buyer's history. These checks used a temporary database, not the personal database.
+
+Earlier, 50 application checks passed on 13 November using temporary data: account/home flows, reviews, posting, owner edits, queue changes, sold/removal, filters, imports/charts, rollback, refresh, recovery, missing-detail restoration and resizing. These checks are separate from the 142 JUnit tests.
+
+A real public response was captured from the team laptop on 13 November 2026 at 15:45 UTC: HTTP 200 with 20 products. The saved response and timestamp/hash metadata are test resources. ProductCatalogClientTest parses that fixture and checks electronics matching. Local HTTP tests cover failures/timeouts. Six additional online GUI checks passed with the real API; the offline/reconnection demonstration remains open. Older-branch ERD image cleanup and very large screen-rendering measurements also remain explicit follow-ups.
+
+<!-- pagebreak -->
+
+## 9. Individual Contributions
+
+### Contributions linked to repository history
+
+The table identifies concrete changes recorded under each member's Git identity. Section 2 lists responsibility assignments; assignment alone does not prove authorship of later changes. The latest integration, MVC, analysis and personal-feature corrections are recorded under Acexion's account. Each member should explain the actual changes referenced below during questions.
+
+Table 12: Member contributions recorded in Git
+
+| Member and responsibility | Recorded change and commit references |
+|---|---|
+| Joshua Brian S. Enovero - Backend and API | Catalog product data (3445979), HTTP catalog requests/parsing (ac9a812), and JSON sales-history importer (ca7b4d7). Later client/importer formatting: 321dfda. |
+| Glyde V. Arreglado - Database | Review persistence and category summaries (e44d82d); schema description (9c5f51d); account login/recovery and database updates (10d57ed). |
+| Tristan Dominic Urot - UI and GUI | Connected review, import, suggestion and chart actions (d71e56b); redesigned login/recovery screens, styles and automatic refresh (507f2de). |
+| John Benedict Alaiza - Listing models | Listing title/money-boundary validation tests (f66a8d3); textbook-model formatting (665d922). The formatting commit is not described as new condition logic. |
+| Emanuelle De Paz - QA and testing | Expanded account, import, API, analytics, model-validation and service tests across six files (5a8d3c3). Earlier README team-member update: 7855ef9. |
+| Acexion B. Mahigugmaon - Project leader and integration | Application/service integration (98f2509); MVC/domain separation (7c2554c, e7ff854, 935659a); Java weekly analysis (c00274c); lifecycle/atomic queue persistence (ec36b77); personal home/edit/queue corrections (65ef65b, 4dc1a9c, a0208ff); follow-up tests (72088f5) and design synchronization (e80c4cf). |
+
+### Finding and explaining a contribution
+
+Open the team repository, select a listed commit and inspect Files changed. For example, `git show f66a8d3` shows John's validation tests. Explain one changed line: its input, rule or action, result, and the test or screen that demonstrates it. Earlier file names can differ after the MVC refactor; use the commit view for the original change and the current type inventory for today's file location.
+
+Git references above are checked against the current branch's history. They identify recorded changes, not a peer rating or a guarantee of individual understanding.
+
+<!-- pagebreak -->
+
 ## Appendix - References and reproduction
 
 design-document.md is the editable master. Its Mermaid blocks define the hierarchy and database diagrams; assets/ contains the editable draw.io sketch and PNG. From the repository root, `python tools/export_design.py` rebuilds the PDF using Python, ReportLab and Calibri. Set CALIBRI_DIR for another font folder.
@@ -788,15 +949,15 @@ After registration or reset, save the displayed recovery code. A reset consumes 
 
 ### Verification
 
-JDK 21 verification on 13 November 2026 passed 128 JUnit tests in twelve classes, with zero failures/errors/skips and the enforcer enabled. Cases cover models, account rules, migration, concurrent queues, imports, analysis, personal scope, owner edits and stale results. Tests use temporary databases and local HTTP servers.
+JDK 21 verification on 14 November 2026 passed 142 JUnit tests in thirteen classes, with zero failures/errors/skips and the enforcer enabled. Cases cover models, account rules, migration, concurrent queues, imports, analysis, personal scope, owner edits and stale results. Tests use temporary databases and local HTTP servers.
 
-Separately, 46 application checks passed using temporary data: account/home/review flows, owner edits, queue positions, posting, sold/removal, filters, import/charts, cancellation rollback, external refresh, missing-detail recovery and resizing.
+Earlier, 50 application checks passed on 13 November using temporary data: account/home/review flows, owner edits, queue positions, posting, sold/removal, filters, import/charts, cancellation rollback, external refresh, missing-detail recovery and resizing.
 
-A new live public API check was unavailable because the checking session's proxy refused the connection. Repeat the response capture/network-toggle check on the normal connection; local server tests are separate evidence.
+The public response capture and parser/mapper test are complete. Six additional live API screen checks passed: HTTP 200, parsed electronics references, currency labeling, preserved manual price, background state and available navigation. The offline/reconnection demonstration remains to be checked on the presentation machine.
 
 ### Limitations and requirement mapping
 
-Accounts use one local SQLite file; cloud sync, email recovery and payments are excluded. Recent views last for the session. Five warm runs with 10,003 listings, 10,000 interests and 50,000 sales measured search at 80.2-348.6 ms, analysis at 169.9-286.4 ms and home at 49.5-63.0 ms. These laptop data-read timings exclude rendering and cold startup; they are not a capacity guarantee.
+Accounts and private chats use one local SQLite file; cloud sync, email recovery and payments are excluded. Chat history is available to participants through the app, including across two processes on the same file. Recent views last for the session. Five warm runs with 10,003 listings, 10,000 interests and 50,000 sales measured search at 80.2-348.6 ms, analysis at 169.9-286.4 ms and home at 49.5-63.0 ms. These laptop data-read timings exclude rendering and cold startup; they are not a capacity guarantee.
 
 KNOWN_ISSUES.md and REQUIREMENT_MAP.md in the repository root list limits and map checklist requirements to classes, methods and tests. Splitting the code does not add database fields.
 
@@ -804,7 +965,7 @@ KNOWN_ISSUES.md and REQUIREMENT_MAP.md in the repository root list limits and ma
 - [Project proposal](proposal.pdf)
 - [FakeStoreAPI documentation](https://fakestoreapi.com/docs)
 - [Project Design Document Template](https://drive.google.com/file/d/1sRJ5rjciHBeYgBQmUbpJB12kWyD_sCkO/view)
-- [Project Design Document Checklist](https://drive.google.com/file/d/1QG1zJGib8TXtcc-Ur_awPQRklWvUheQa/view)
+- [Final design document checklist](https://drive.google.com/file/d/1LywRsBWB2ol6xxJS_RbutuDbKJI7k7tc/view)
 
 <!-- pagebreak -->
 
@@ -813,7 +974,7 @@ KNOWN_ISSUES.md and REQUIREMENT_MAP.md in the repository root list limits and ma
 
 All types are in edu.uc.campusmarket or the listed subpackage.
 
-Table 10: Implemented process flow
+Table 13: Implemented process flow
 
 | Process | Screen and controller | Service and storage result |
 |---|---|---|
@@ -827,6 +988,7 @@ Table 10: Implemented process flow
 | Review | ReviewsView; ReviewController.submit() | ReviewDao checks owner, status, interest, rating and duplicate before saving. |
 | Restore evidence | ListingTableView; ListingController.repairable()/restore() | ListingDao checks owner, type and missing details and saves observed evidence. |
 | API reference | ListingFormView; ListingController.suggest() | CatalogService -> client/parser -> DTOs -> CatalogMapper prepares references. |
+| Private chat | ChatView; ChatController.open()/select()/send()/refresh() | ChatService validates text; ChatDao filters participants and saves to Messages. |
 | Import | ImportView; AnalyticsController.importFile()/cancelImport() | Importer validates rows; HistoryDao supplies the insert; cancellation/failure rolls back. |
 | Analysis / charts | ChartsView; AnalyticsController.refresh() | AnalyticsService combines DAO means and Java weekly counts in AnalyticsSnapshot. |
 | Refresh | RefreshController.tick(); FxRefreshSchedule | Polls active idle pages; session/filter checks reject stale results. |
@@ -836,20 +998,20 @@ Table 10: Implemented process flow
 
 ### Complete Java type inventory
 
-The current source contains 75 top-level Java types. Every one is listed below; the database still contains ten tables. A DTO, controller or view is not an additional database table.
+The current source contains 82 top-level Java types. Every one is listed below; the database contains eleven tables. A DTO, controller or view is not an additional database table.
 
-Table 11: Java types by package
+Table 14: Java types by package
 
 | Package | Types |
 |---|---|
 | base | App |
-| model | AnalyticsSnapshot, Category, CategorySummary, ConditionGrade, Electronics, Furniture, HomeItem, HomeSummary, ImportResult, InitialAccount, Listing, ListingForRepair, Member, Registration, Review, Seller, Textbook, WearLevel, WeeklySales |
+| model | ChatMessage, ChatSnapshot, ChatThread, AnalyticsSnapshot, Category, CategorySummary, ConditionGrade, Electronics, Furniture, HomeItem, HomeSummary, ImportResult, InitialAccount, Listing, ListingForRepair, Member, Registration, Review, Seller, Textbook, WearLevel, WeeklySales |
 | dto | CatalogProduct, CatalogResponse |
 | api | ProductCatalogClient, ProductCatalogParser |
-| dao | AnalyticsDao, CategoryDao, HistoryDao, HomeDao, InterestDao, ListingDao, MemberDao, ReviewDao, SellerDao |
+| dao | ChatDao, AnalyticsDao, CategoryDao, HistoryDao, HomeDao, InterestDao, ListingDao, MemberDao, ReviewDao, SellerDao |
 | persistence | AccountSetup, Database |
-| service | AnalyticsService, AppException, CatalogMapper, CatalogService, CredentialSecurity, HomeService, ListingFactory, ListingService, MarketplaceService, MemberService, ReviewService, SalesAnalysis, SalesHistoryImporter, ServiceCall, WaitlistService |
-| controller | AccountController, AnalyticsController, FxRefreshSchedule, FxTaskRunner, HomeController, ListingController, RefreshController, RefreshSchedule, ReviewController, TaskRunner, UserSession, WaitlistController |
-| ui | ChartsView, HomeView, ImportView, ItemArtwork, ListingCards, ListingFormView, ListingTableView, LoginView, MarketplaceView, PasswordResetView, RegistrationView, ReviewsView, UiTools |
+| service | ChatService, AnalyticsService, AppException, CatalogMapper, CatalogService, CredentialSecurity, HomeService, ListingFactory, ListingService, MarketplaceService, MemberService, ReviewService, SalesAnalysis, SalesHistoryImporter, ServiceCall, WaitlistService |
+| controller | ChatController, AccountController, AnalyticsController, FxRefreshSchedule, FxTaskRunner, HomeController, ListingController, RefreshController, RefreshSchedule, ReviewController, TaskRunner, UserSession, WaitlistController |
+| ui | ChatView, ChartsView, HomeView, ImportView, ItemArtwork, ListingCards, ListingFormView, ListingTableView, LoginView, MarketplaceView, PasswordResetView, RegistrationView, ReviewsView, UiTools |
 
 ServiceCall.Query is a nested SQL-operation interface. Anonymous Tasks execute background actions. Listing.incomplete() creates an anonymous read-only fallback for unavailable condition evidence; it is not a new posted item type or table.

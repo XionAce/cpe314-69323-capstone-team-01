@@ -8,7 +8,7 @@
 
 | Detail | Information |
 |---|---|
-| Course | CPE 314 â€” Software Design & Software Design Laboratory |
+| Course | CPE 314 - Software Design & Software Design Laboratory |
 | Section | BSCPE 3B |
 | EDP | 69323 |
 | Group | Group 1 / Team 01 |
@@ -34,7 +34,7 @@ Campus Marketplace with Reviews is a Java desktop prototype for posting and brow
 
 The current implementation also provides listing reviews, FakeStoreAPI suggestions, background JSON sales-history import and category charts. The correction adds registration, waitlist eligibility for reviews, Java weekly-sales analysis and smaller MVC components. The editable design and PDF describe these implemented features and the current classes and schema.
 
-The marketplace now uses top navigation and a closable right-side details panel, creation-date labels and Active/Sold/Removed badges. My home shows personal listings, waiting buyers, received ratings and queue positions. Buyers can leave their own waitlist rows; current positions advance. In My listings, owners can edit title/price, mark an item sold or remove it without deleting reviews or waitlists. Missing subtype rows show a warning while the remaining listings stay usable. Messages and offers are out of scope.
+The marketplace now uses top navigation and a closable right-side details panel, creation-date labels and Active/Sold/Removed badges. My home shows personal listings, waiting buyers, received ratings and queue positions. Buyers can leave their own waitlist rows; current positions advance. In My listings, owners can edit title/price, mark an item sold or remove it without deleting reviews or waitlists. Missing subtype rows show a warning while the remaining listings stay usable. Private listing chats are available in Messages; offers and payment processing remain outside the application.
 
 ## Build and run
 
@@ -60,7 +60,7 @@ The SQLite database is created outside the repository on first startup. Tests us
 
 ## Verification status
 
-JDK 21 Maven verification on 13 November 2026 passed **128 JUnit tests**, with zero failures, errors or skipped tests and the enforcer enabled. **46 separate application checks passed**, including registration, review eligibility, weekly charts and large-import cancellation/rollback. Temporary databases were used. The revised design was checked against the code and schema, and its PDF was visually reviewed. A fresh live public-API/network-toggle demonstration remains; see [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+JDK 21 Maven verification on 14 November 2026 passed **142 JUnit tests**, with zero failures, errors or skipped tests and the enforcer enabled. **50 earlier application checks passed on 13 November**, including registration, review eligibility, weekly charts and large-import cancellation/rollback. Temporary databases were used. The revised design was checked against the code and schema, and its PDF was visually reviewed. The real HTTP-200/20-product response is captured and tested; the live GUI network-toggle demonstration remains; see [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ## Project files
 
@@ -72,6 +72,15 @@ JDK 21 Maven verification on 13 November 2026 passed **128 JUnit tests**, with z
 - [Known issues and correction status](KNOWN_ISSUES.md)
 - [Requirement-to-code and test map](REQUIREMENT_MAP.md)
 
-This submission uses `project/milestone-2`. The required pull request title is **Milestone 2 - Team 01**. Keep the existing milestone branches and their commit history. Review and commit the local corrections before submitting; creating the PR remains the user's step.
+The current integration branch is `project/milestone-2`, with PR #14 titled **Milestone 2 - Team 01**. For final defense, the instructor grades **main after merging Milestone 2**. No new branch is required. Commit/push the verified corrections, review the existing PR, and merge manually before the defense. Then verify a fresh clone of main on the presentation machine. Keep the existing branches/history. See [SETUP.md](SETUP.md) for rehearsal and capture steps.
 
 The application opens maximized. Navigation is across the top; saved reviews open as star/comment cards in a right-side popup. The selling screen includes a type illustration, imports show an indeterminate spinner/bar during actual work, and analytics use spaced colored bars with value tooltips.
+
+
+## Private listing chat
+
+Open an item and choose **Open chat**. The buyer writes first; the seller replies in **Messages**. Only that buyer and the item's seller can read or send through the app. A different buyer gets a separate conversation. Messages are plain text, 1-2000 characters, saved with UTC timestamps and ordered by database ID. They do not change waitlists, reserve items or process payments.
+
+To demonstrate automatic updates, run the current program twice against the same data folder and sign in with two different accounts. Keep both Messages pages open. The existing three-second refresh displays saved replies without a manual refresh and preserves unsent text. Separate laptops do not share local messages. Existing sold-item chats stay usable for pickup; removed-item chats retain read-only history.
+
+Schema version 5 adds Messages and indexes while preserving earlier accounts and records. The current design includes eleven tables, 56 columns, fifteen foreign keys and 82 main Java types. Eight chat service tests and three chat-controller tests were added. A real two-process GUI test passed seventeen assertions, separately from JUnit.

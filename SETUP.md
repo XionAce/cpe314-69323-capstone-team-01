@@ -1,89 +1,54 @@
-# Computer and repository setup
+# Set up and verify Campus Marketplace
 
-Status: preparation only. User-provided terminal output verifies java and javac 21.0.12.1. Eclipse installation is shown in screenshots; project import, compilation and launch remain pending.
+Use the current checkout containing `program/pom.xml`. The approved project uses Java 21, JavaFX, SQLite/JDBC, JUnit 5 and JSON sales history. Maven manages its libraries; no CSV library or standalone SQLite server is required.
 
-The earlier automated JDK download failed, but the user subsequently installed Temurin JDK 21 successfully. The steps below remain setup guidance for teammates.
+## Open the correct project
 
-## 1. Install JDK 21
+In Antigravity, open this checkout's `CampusMarketplace.code-workspace` or `program` folder. In Eclipse, import `program/pom.xml` through Existing Maven Projects. Select JDK 21 for the project and Maven launch. Avoid opening a different older copy at the same time.
 
-Official source: https://adoptium.net/temurin/releases/?version=21
+## Check Java and build
 
-Choose Windows, x64, JDK, version 21 LTS. Download the maintained JDK 21 patch available when installing. Use the installer options for JAVA_HOME and PATH, or set them explicitly. JAVA_HOME points to the JDK directory, not its bin directory. Reopen terminals and coding tools after changing environment variables.
-
-Verify in a new PowerShell terminal:
+From the repository root in PowerShell:
 
 ```powershell
 java -version
-javac -version
+.\program\mvnw.cmd -version
+.\program\mvnw.cmd -f .\program\pom.xml clean verify
+.\program\mvnw.cmd -f .\program\pom.xml javafx:run
 ```
 
-Both must report major version 21. Later, `./mvnw.cmd -version` must report that same project JDK. Eclipse itself may use a newer bundled runtime; its project and Maven launches still use JDK 21.
+Both version checks must report Java 21. Keep the enforcer enabled. The first build needs internet for Maven/dependencies; after they are cached, add `-o` for offline builds. A fresh checkout must retain the hidden `program/.mvn` directory and both wrapper scripts. A build does not prove public API access.
 
-## 2. Install Eclipse IDE for Java Developers
+## Use separate presentation data
 
-Official source: https://www.eclipse.org/downloads/packages/
+The default database is outside Git, under `.ucb-campus-marketplace-simple` in the user's home folder. Startup creates its schema and initial data automatically. Existing databases retain their credentials and records. Do not delete an existing database to refresh the UI.
 
-Select the maintained Eclipse IDE for Java Developers Windows x86_64 package. It includes Maven integration. Keep the Eclipse workspace outside the Git repository.
-
-In Eclipse, use Window > Preferences > Java > Installed JREs > Add > Standard VM and select the JDK 21 installation. Select JavaSE-21 for the project execution environment.
-
-## 3. Git and Antigravity
-
-Git 2.54.0.windows.1 was found. An Antigravity IDE installation directory was found. Launch and login state were not tested. Keep them; reinstalling is unnecessary based on this audit.
-
-Every teammate needs their own GitHub account. Confirm local commit identity before the first commit:
+For an isolated rehearsal, choose a new data folder and launch:
 
 ```powershell
-git config user.name
-git config user.email
+.\program\mvnw.cmd -f .\program\pom.xml '-Dcampusmarket.dataDir=C:\CampusMarketplaceDemo' javafx:run
 ```
 
-Set missing identity to the real contributor's values. Do not use another teammate's identity.
+Save the random first-start credentials and recovery codes privately when shown, or register a new account. Close and restart the app to load changed code. A different database does not change the UI version.
 
-## 4. Team remote repository
+## Rehearse the requirements
 
-EDP 69323 and Group 1 are confirmed. The user created https://github.com/XionAce/cpe314-69323-capstone-team-01; it is Public. The user will add teammates later. Add members as contributors once their accounts are available and include the instructor as the course requires.
+1. Sign in, post an item, search its category and view its condition. Try an empty title or invalid price and show the error without a crash.
+2. Use another account to join the waitlist and review. Show a rejected self-review or duplicate, My home and the buyer's queue position.
+3. Import `program/samples/sales-history.json` through the file chooser. With only this sample imported, weekly counts are 3, 2 and 1. A repeat skips duplicates. Prepare a larger JSON file to demonstrate responsiveness and cancellation.
+4. Show Analytics, then import `program/samples/sales-history-followup.json`. Starting with only the first sample, counts change from 3, 2, 1 to 3, 2, 4; the last observed week becomes busiest. These are synthetic demonstration records. Marking a listing sold does not create historical sales.
+5. Request an electronics catalog reference online. Repeat with the network unavailable: show the error and continue manual posting. Restore the connection afterward. Backup screenshots support, but do not replace, a live demo.
+6. Keep the IDE ready on `Listing.gradeCondition()`, its three subclasses, `MarketplaceService.collectCategoryIds()`, a DAO, `FxTaskRunner`, `SalesAnalysis` and a meaningful test. Keep the exact demo database path ready for schema inspection after closing the app.
 
-This preparation folder can become the local checkout. Before regular development, keep a durable checkout outside the synced ChatGPT project mirror, for example a user-chosen Projects folder. Transfer by cloning the eventual remote, preserving commits. Do not make several independently edited copies.
+For the instructor's real-response fixture follow-up, run `./tools/capture-catalog.ps1` on a working connection. It saves a real HTTP response and timestamp/hash metadata under `program/src/test/resources/api`, without replacing an existing capture. The Java parser contract test must then be added against that actual file. The helper does not claim the response was captured or the live network demo completed.
 
-Follow the provided proposal workflow: `project/proposal` integration branch; smaller feature branches feed into it; submission PR into main titled `Proposal — Team 01`. Leave that checkpoint PR open for grading. Resolve the initial main/proposal bootstrap against any instructor-provided repository template before publishing these drafts.
+## Final submission
 
-## 5. Maven bootstrap after proposal sign-off
+The final-defense checklist grades **main**, after Milestone 2 is merged. It does not require another branch. Keep the existing branches/history. The user handles commits, pushes and merging; an open PR alone does not put code on main. After merging, verify a fresh clone of main on the presentation machine with the commands above. Every member reviews their own commits and prepares to explain actual changed lines.
 
-One maintainer can use a temporary system Maven installation or Eclipse's Maven tooling to create the initial build and generate the official Maven Wrapper. Commit mvnw, mvnw.cmd and .mvn/wrapper files. Subsequent contributors use the wrapper. Do not handwrite replacement wrapper scripts.
+The design, requirement map and known issues must describe the same program. The revised Word document and matching PDF were rendered and checked on 14 November: 30 pages, 50 contents entries, 82 Java types and eleven database tables. Verified copies replace the existing files in SirNos/WEEK11 file. See [README.md](README.md), [REQUIREMENT_MAP.md](REQUIREMENT_MAP.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
-https://maven.apache.org/tools/wrapper/
 
-Configure compiler release 21, UTF-8, exact dependency/plugin versions, JUnit 5, JavaFX Maven plugin, and a JDK Enforcer rule. Select JavaFX 21-compatible dependencies rather than copying latest-version examples blindly.
+## Demonstrate buyer-seller chat
 
-Dependencies: javafx-controls, sqlite-jdbc, a JSON parser, Commons CSV, JUnit Jupiter (test scope). JDBC, HttpClient and Java collections come from the JDK. A standalone SQLite server or manual JavaFX SDK download is unnecessary for this Maven design.
-
-Future shared commands, from repository root:
-
-```powershell
-.\mvnw.cmd -version
-.\mvnw.cmd clean verify
-.\mvnw.cmd javafx:run
-```
-
-The wrapper pins Maven, not the JDK. First build needs internet to download Maven and dependencies. Offline launches need previously cached dependencies plus application API fallback behavior.
-
-## 6. First Eclipse acceptance check
-
-After the minimal application exists: File > Import > Maven > Existing Maven Projects; select pom.xml's folder; allow dependency resolution. Maven > Update Project refreshes configuration. Create Maven Build launches for clean verify and javafx:run, using JDK 21. Check this before adding marketplace features.
-
-Accept only after a fresh checkout builds, a minimal JavaFX window opens, and tests run in both the shared command workflow and Eclipse. Repeat on the actual presentation computer.
-
-## Preparation completion checklist
-
-- [x] Existing tool audit recorded.
-- [x] Planning documents and repository guidance prepared.
-- [x] JDK 21 installed; java and javac verified in user-provided output.
-- [x] Eclipse installed and project JDK configured.
-- [x] EDP 69323 and Group 1 confirmed.
-- [x] Six names and proposed roles recorded; member confirmation and GitHub invitations pending.
-- [x] Option J assigned, as confirmed by the user.
-- [x] Proposal and initial design document reviewed by the group.
-- [x] Public API accessibility/coverage and currency convention resolved.
-- [ ] Required proposal submitted and instructor sign-off recorded.
-- [ ] After sign-off: Maven Wrapper, dependency resolution, minimal JavaFX launch and Eclipse import verified.
+Open two PowerShell terminals in this repository. In each, run `.\program\mvnw.cmd -f .\program\pom.xml javafx:run`. Both use the same default data folder. Sign in with two different existing accounts. As buyer, open the other account's active item and choose **Open chat**. Send a message. As seller, open **Messages**, select that buyer and reply. Keep both Messages pages open; saved replies appear on the three-second refresh. Chat does not require internet, reserve the item or change its waitlist. Separate laptops use separate local databases and do not share chats.
