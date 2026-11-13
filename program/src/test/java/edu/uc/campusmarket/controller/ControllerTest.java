@@ -31,6 +31,35 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class ControllerTest {
+    @Test
+    void personalHomeDefersBusyLoadAndRejectsResultsAfterLogout() {
+        Runner runner = new Runner();
+        UserSession session = new UserSession();
+        var service = new edu.uc.campusmarket.service.HomeService(null) {
+            @Override
+            public edu.uc.campusmarket.model.HomeSummary loadFor(long member) {
+                return new edu.uc.campusmarket.model.HomeSummary(List.of(), List.of(), (int) member,
+                        4.0);
+            }
+        };
+        HomeController home = new HomeController(service, runner, session);
+        session.signIn(new Member(1, "One"));
+        runner.busy.set(true);
+        home.load(false);
+        assertNull(home.summaryProperty().get());
+        runner.busy.set(false);
+        assertEquals(1, home.summaryProperty().get().reviewCount());
+        runner.automatic = false;
+        home.load(false);
+        session.signOut();
+        runner.finish();
+        assertNull(home.summaryProperty().get());
+        runner.automatic = true;
+        session.signIn(new Member(2, "Two"));
+        home.load(false);
+        assertEquals(2, home.summaryProperty().get().reviewCount());
+    }
+
     private static Listing book(long id, String title) {
         return new Textbook(id, 1, 2, title, BigDecimal.TEN, "PHP", "ACTIVE", 0, WearLevel.NONE,
                 false);
