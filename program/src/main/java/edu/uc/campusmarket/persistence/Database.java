@@ -26,8 +26,9 @@ import java.util.List;
  * upgrades.
  */
 public class Database {
-    private static final int SCHEMA_VERSION = 4;
-    private static final int TABLE_COUNT = 10;
+    private static final int SCHEMA_VERSION = 5;
+    private static final int TABLE_COUNT = 11;
+    private static final int LEGACY_TABLE_COUNT = 10;
     private static final int BUSY_TIMEOUT_MS = 5000;
     private final Path file;
     private final List<InitialAccount> initialAccounts = new ArrayList<>();
@@ -89,8 +90,10 @@ public class Database {
                         .prepareStatement("PRAGMA user_version");
                         ResultSet result = statement.executeQuery()) {
                     result.next();
+                    int expectedTables = result.getInt(1) < SCHEMA_VERSION
+                            ? LEGACY_TABLE_COUNT : TABLE_COUNT;
                     if (result.getInt(1) < 1 || result.getInt(1) > SCHEMA_VERSION
-                            || tables != TABLE_COUNT) {
+                            || tables != expectedTables) {
                         throw new SQLException("Unrecognized database. Choose a new data folder.");
                     }
                     if (result.getInt(1) == SCHEMA_VERSION) {
@@ -124,7 +127,7 @@ public class Database {
         }
     }
 
-    private String readSchema() throws SQLException {
+    private static String readSchema() throws SQLException {
         try (InputStream input = Database.class.getResourceAsStream("/db/schema.sql")) {
             if (input == null) {
                 throw new IOException("Missing /db/schema.sql resource.");
@@ -132,6 +135,19 @@ public class Database {
             return new String(input.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException error) {
             throw new SQLException("Cannot read the table definitions.", error);
+        }
+    }
+
+    /** Reuses the current message DDL when upgrading an existing classroom database. */
+    static void ensureMessages(Connection connection) throws SQLException {
+        for (String part : readSchema().split(";")) {
+            String sql = part.strip();
+            if (sql.startsWith("CREATE TABLE IF NOT EXISTS Messages")
+                    || sql.startsWith("CREATE INDEX IF NOT EXISTS idx_Messages_")) {
+                try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                    statement.execute();
+                }
+            }
         }
     }
 

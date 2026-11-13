@@ -1,4 +1,4 @@
--- The existing ten tables now include local login credentials on Members.
+-- Marketplace tables include local login credentials and private listing messages.
 -- Database.initialize upgrades existing databases without replacing their records.
 -- Prices are stored as centavos, and currency is stored separately.
 
@@ -98,6 +98,18 @@ CREATE TABLE FurnitureDetails (
         CHECK (typeof(hasStructuralDamage) = 'integer' AND hasStructuralDamage IN (0, 1)),
     surfaceWear TEXT NOT NULL CHECK (surfaceWear IN ('NONE', 'LIGHT', 'HEAVY'))
 );
+
+CREATE TABLE IF NOT EXISTS Messages (
+    id INTEGER PRIMARY KEY,
+    listingId INTEGER NOT NULL REFERENCES Listings(id),
+    buyerId INTEGER NOT NULL REFERENCES Members(id),
+    senderId INTEGER NOT NULL REFERENCES Members(id),
+    body TEXT NOT NULL CHECK (length(trim(body)) BETWEEN 1 AND 2000),
+    sentAt TEXT NOT NULL CHECK (length(trim(sentAt)) > 0)
+);
+
+CREATE INDEX IF NOT EXISTS idx_Messages_thread ON Messages(listingId, buyerId, id);
+CREATE INDEX IF NOT EXISTS idx_Messages_buyerId ON Messages(buyerId);
 
 CREATE INDEX idx_Sellers_memberId ON Sellers(memberId);
 CREATE INDEX idx_Categories_parentId ON Categories(parentId);

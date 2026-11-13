@@ -23,6 +23,7 @@ final class AccountSetup {
         try {
             ensureColumns(connection);
             upgradeListings(connection);
+            Database.ensureMessages(connection);
             String[] oldNames = { "Alex (demo)", "Bea (demo)", "Carlo (demo)" };
             for (int i = 0; i < oldNames.length; i++) {
                 char letter = (char) ('A' + i);
@@ -36,7 +37,7 @@ final class AccountSetup {
                             recovery));
                 }
             }
-            try (var statement = connection.prepareStatement("PRAGMA user_version = 4")) {
+            try (var statement = connection.prepareStatement("PRAGMA user_version = 5")) {
                 statement.execute();
             }
             connection.commit();
