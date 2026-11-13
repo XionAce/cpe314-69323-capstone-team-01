@@ -1,6 +1,9 @@
 package edu.uc.campusmarket;
 
 import edu.uc.campusmarket.api.ProductCatalogClient;
+import edu.uc.campusmarket.controller.HomeController;
+import edu.uc.campusmarket.dao.HomeDao;
+import edu.uc.campusmarket.service.HomeService;
 import edu.uc.campusmarket.controller.AccountController;
 import edu.uc.campusmarket.controller.AnalyticsController;
 import edu.uc.campusmarket.controller.FxRefreshSchedule;
@@ -44,7 +47,7 @@ public class App extends Application {
     private AnalyticsController analytics;
     private TaskRunner tasks;
 
-    /** Provides the start operation for this component. */
+    /** Wires the application dependencies and opens the maximized JavaFX window. */
     @Override
     public void start(Stage stage) {
         Database database = new Database(Database.defaultPath());
@@ -78,12 +81,18 @@ public class App extends Application {
         ReviewController reviewController = new ReviewController(reviewService, tasks, session);
         WaitlistController waitlistController = new WaitlistController(waitlistService, tasks,
                 session);
+        HomeController home = new HomeController(new HomeService(new HomeDao(database)), tasks,
+                session);
         analytics = new AnalyticsController(analysisService, tasks, session);
         refresh = new RefreshController(tasks, session, listingController, analytics,
-                new FxRefreshSchedule());
+                new FxRefreshSchedule(), home);
         MarketplaceView view = new MarketplaceView(accountController, listingController,
                 reviewController, waitlistController, analytics, refresh, session, tasks,
-                database.getPath().toString());
+                database.getPath().toString(), home);
+        openWindow(stage, view);
+    }
+
+    private void openWindow(Stage stage, MarketplaceView view) {
         Scene scene = new Scene(view.getRoot(), 1200, 800);
         scene.getStylesheets().add(App.class.getResource("/ui/marketplace.css").toExternalForm());
         stage.setTitle("Campus Marketplace with Reviews");
@@ -109,7 +118,9 @@ public class App extends Application {
         }
     }
 
-    /** Provides the main operation for this component. */
+    /**
+     * Launches the JavaFX application; arguments are passed to the JavaFX runtime.
+     */
     public static void main(String[] args) {
         launch(args);
     }

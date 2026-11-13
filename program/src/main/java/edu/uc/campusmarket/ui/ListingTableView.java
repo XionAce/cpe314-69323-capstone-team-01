@@ -85,7 +85,8 @@ public class ListingTableView extends VBox {
         table.getColumns().add(column);
     }
 
-    private HBox filters(ListingController listings, TaskRunner tasks, CheckBox mine, ComboBox<String> status) {
+    private HBox filters(ListingController listings, TaskRunner tasks, CheckBox mine,
+            ComboBox<String> status) {
         TextField search = new TextField();
         search.setId("search-box");
         search.setPromptText("Find textbooks, electronics, furniture...");
@@ -146,7 +147,8 @@ public class ListingTableView extends VBox {
         return table;
     }
 
-    private StackPane browser(ListingController listings, TableView<Listing> table, CheckBox mine, ComboBox<String> status, FlowPane heading) {
+    private StackPane browser(ListingController listings, TableView<Listing> table, CheckBox mine,
+            ComboBox<String> status, FlowPane heading) {
         ScrollPane cards = new ScrollPane(new ListingCards(listings));
         cards.setId("listing-cards");
         cards.setFitToWidth(true);
@@ -175,7 +177,8 @@ public class ListingTableView extends VBox {
         return browser;
     }
 
-    private Button restoreButton(ListingController listings, TaskRunner tasks, RefreshController refresh, Supplier<Window> owner) {
+    private Button restoreButton(ListingController listings, TaskRunner tasks,
+            RefreshController refresh, Supplier<Window> owner) {
         Button restore = UiTools.button("Restore missing details", "restore-details-button", tasks,
                 () -> listings.repairable(rows -> {
                     if (rows.isEmpty()) {
@@ -200,20 +203,52 @@ public class ListingTableView extends VBox {
         return restore;
     }
 
-    private FlowPane ownerActions(ListingController listings, TaskRunner tasks, RefreshController refresh, Supplier<Window> owner) {
+    private FlowPane ownerActions(ListingController listings, TaskRunner tasks,
+            RefreshController refresh, Supplier<Window> owner) {
         Button sold = ownerAction("Mark as sold", "sold-button", listings::markSold, listings,
                 tasks, refresh, owner, "Mark this item as sold?");
         sold.getStyleClass().add("success-button");
         Button remove = ownerAction("Remove listing", "withdraw-button", listings::withdraw,
                 listings, tasks, refresh, owner, "Remove this item from public search?");
         remove.getStyleClass().add("danger-button");
-        FlowPane ownerActions = new FlowPane(8, 8, sold, remove);
+        Button edit = UiTools.button("Edit title / price", "edit-listing-button", tasks,
+                () -> edit(listings, refresh, owner));
+        edit.disableProperty().unbind();
+        edit.disableProperty().bind(tasks.busyProperty().or(listings.canManageProperty().not()));
+        FlowPane ownerActions = new FlowPane(8, 8, edit, sold, remove);
         ownerActions.visibleProperty().bind(listings.ownProperty());
         ownerActions.managedProperty().bind(ownerActions.visibleProperty());
         return ownerActions;
     }
 
-    private SplitPane details(StackPane browser, ListingController listings, ReviewController reviews, WaitlistController waitlists, TaskRunner tasks, RefreshController refresh, Supplier<Window> owner) {
+    private void edit(ListingController listings, RefreshController refresh,
+            Supplier<Window> owner) {
+        Listing item = listings.selectedProperty().get();
+        if (item == null) {
+            return;
+        }
+        TextField title = new TextField(item.getTitle());
+        title.setId("edit-title");
+        TextField price = new TextField(item.getPrice().toPlainString());
+        price.setId("edit-price");
+        javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
+        dialog.setTitle("Edit listing");
+        dialog.getDialogPane()
+                .setContent(new VBox(12, new Label("Title"), title,
+                        new Label("Price (" + item.getCurrency() + ")"), price,
+                        UiTools.label(
+                                "Type, condition, creation date and saved reviews are retained.",
+                                "muted")));
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        if (UiTools.dialog(dialog, owner.get(), refresh)
+                .orElse(ButtonType.CANCEL) == ButtonType.OK) {
+            listings.update(item, title.getText(), price.getText());
+        }
+    }
+
+    private SplitPane details(StackPane browser, ListingController listings,
+            ReviewController reviews, WaitlistController waitlists, TaskRunner tasks,
+            RefreshController refresh, Supplier<Window> owner) {
         ReviewsView selected = new ReviewsView(listings, reviews, waitlists, tasks, refresh, owner);
         VBox.setVgrow(selected, Priority.ALWAYS);
         FlowPane ownerActions = ownerActions(listings, tasks, refresh, owner);

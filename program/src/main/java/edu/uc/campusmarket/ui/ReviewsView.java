@@ -57,7 +57,11 @@ public class ReviewsView extends VBox {
         });
         read.disableProperty().unbind();
         read.disableProperty().bind(tasks.busyProperty().or(listings.selectedProperty().isNull()));
-        FlowPane actions = new FlowPane(8, 8, view, read, join, review);
+        Button leave = UiTools.button("Leave waitlist", "leave-waitlist-button", tasks,
+                () -> waitlists.leave(listings.selectedProperty().get(), listings::viewDetails));
+        leave.disableProperty().unbind();
+        leave.disableProperty().bind(tasks.busyProperty().or(listings.selectedProperty().isNull()));
+        FlowPane actions = new FlowPane(8, 8, view, read, join, leave, review);
         getChildren().addAll(UiTools.label("Item details", "section-title"), actions,
                 UiTools.label("Join the waitlist before reviewing another member's item.", "muted"),
                 details);
@@ -102,7 +106,8 @@ public class ReviewsView extends VBox {
         UiTools.dialog(dialog, owner, refresh);
     }
 
-    private Button reviewButton(ListingController listings, ReviewController reviews, TaskRunner tasks, RefreshController refresh, Supplier<Window> owner) {
+    private Button reviewButton(ListingController listings, ReviewController reviews,
+            TaskRunner tasks, RefreshController refresh, Supplier<Window> owner) {
         Button review = UiTools.button("Review listing", "review-button", tasks, () -> {
             Listing item = listings.selectedProperty().get();
             if (item == null) {

@@ -3,6 +3,7 @@ package edu.uc.campusmarket.ui;
 import edu.uc.campusmarket.controller.AccountController;
 import edu.uc.campusmarket.controller.AnalyticsController;
 import edu.uc.campusmarket.controller.ListingController;
+import edu.uc.campusmarket.controller.HomeController;
 import edu.uc.campusmarket.controller.RefreshController;
 import edu.uc.campusmarket.controller.ReviewController;
 import edu.uc.campusmarket.controller.TaskRunner;
@@ -43,7 +44,8 @@ public class MarketplaceView {
     /** Creates this component from the supplied values or dependencies. */
     public MarketplaceView(AccountController accounts, ListingController listings,
             ReviewController reviews, WaitlistController waitlists, AnalyticsController analytics,
-            RefreshController refresh, UserSession session, TaskRunner tasks, String databasePath) {
+            RefreshController refresh, UserSession session, TaskRunner tasks, String databasePath,
+            HomeController home) {
         this.accounts = accounts;
         this.tasks = tasks;
         this.refresh = refresh;
@@ -62,6 +64,11 @@ public class MarketplaceView {
                         new ImportView(analytics, tasks, refresh,
                                 () -> root.getScene().getWindow())),
                 new Tab("Analytics", new ChartsView(analytics, tasks)));
+        pages.getTabs()
+                .add(new Tab("My home",
+                        new HomeView(home, tasks, session,
+                                () -> pages.getSelectionModel().select(0),
+                                () -> pages.getSelectionModel().select(1))));
         for (Tab tab : pages.getTabs()) {
             tab.setClosable(false);
         }
@@ -71,7 +78,7 @@ public class MarketplaceView {
         header.getStyleClass().add("page-header");
         workspace.setTop(header);
         footer(databasePath);
-        bindNavigation(listings, analytics);
+        bindNavigation(listings, analytics, home);
         accounts.readyProperty().addListener((o, before, ready) -> {
             if (ready && !accounts.initialAccounts().isEmpty()) {
                 showInitialCredentials(List.copyOf(accounts.initialAccounts()));
@@ -85,15 +92,16 @@ public class MarketplaceView {
         if (sidebar != null) {
             return sidebar;
         }
-        HBox sidebar = new HBox(12, UiTools.label("Campus Marketplace", "top-brand"));
+        HBox sidebar = new HBox(8, UiTools.label("Campus Marketplace", "top-brand"));
         sidebar.setAlignment(Pos.CENTER_LEFT);
         sidebar.getStyleClass().add("top-navigation");
         ToggleGroup group = new ToggleGroup();
-        for (int i = 0; i < pages.getTabs().size(); i++) {
+        for (int i : new int[] { 4, 0, 1, 2, 3 }) {
             final int index = i;
             ToggleButton button = new ToggleButton(pages.getTabs().get(i).getText());
             button.setId("nav-" + i);
             button.setToggleGroup(group);
+            button.setMinWidth(Region.USE_PREF_SIZE);
             button.setMaxWidth(Double.MAX_VALUE);
             button.getStyleClass().add("nav-button");
             button.setSelected(i == 0);
@@ -105,6 +113,8 @@ public class MarketplaceView {
         Region space = new Region();
         HBox.setHgrow(space, Priority.ALWAYS);
         Label memberName = UiTools.label("", "account-name");
+        memberName.setMaxWidth(110);
+        memberName.setWrapText(false);
         memberName.textProperty()
                 .bind(javafx.beans.binding.Bindings.createStringBinding(
                         () -> session.member() == null ? "" : session.member().getName(),
@@ -190,7 +200,8 @@ public class MarketplaceView {
         root.setBottom(new VBox(errors, footer));
     }
 
-    private void bindNavigation(ListingController listings, AnalyticsController analytics) {
+    private void bindNavigation(ListingController listings, AnalyticsController analytics,
+            HomeController home) {
         pages.getSelectionModel().selectedIndexProperty().addListener((o, before, after) -> {
             int page = after.intValue();
             if (page < 0) {
@@ -200,6 +211,9 @@ public class MarketplaceView {
             refresh.setPage(page);
             if (page == 0) {
                 listings.refresh();
+            }
+            if (page == 4) {
+                home.load(false);
             }
             if (page == 3) {
                 analytics.refresh();
@@ -212,9 +226,9 @@ public class MarketplaceView {
             }
             root.setTop(sidebar());
             root.setCenter(workspace);
-            pages.getSelectionModel().selectFirst();
-            title.setText("Marketplace");
-            refresh.setPage(0);
+            pages.getSelectionModel().select(4);
+            title.setText("My home");
+            refresh.setPage(4);
         });
     }
 }
