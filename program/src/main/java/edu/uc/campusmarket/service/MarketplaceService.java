@@ -1,7 +1,17 @@
 package edu.uc.campusmarket.service;
 
+import edu.uc.campusmarket.dao.AnalyticsDao;
+import edu.uc.campusmarket.dao.CategoryDao;
+import edu.uc.campusmarket.dao.HistoryDao;
+import edu.uc.campusmarket.dao.InterestDao;
+import edu.uc.campusmarket.dao.ListingDao;
+import edu.uc.campusmarket.dao.MemberDao;
+import edu.uc.campusmarket.dao.ReviewDao;
+import edu.uc.campusmarket.dao.SellerDao;
 import edu.uc.campusmarket.model.Category;
+import edu.uc.campusmarket.model.CategorySummary;
 import edu.uc.campusmarket.model.Listing;
+import edu.uc.campusmarket.model.ListingForRepair;
 import edu.uc.campusmarket.model.Member;
 import edu.uc.campusmarket.persistence.Database;
 import java.nio.file.Path;
@@ -19,59 +29,132 @@ import java.util.Stack;
 
 /** Connects the screen's actions to the models and database. */
 public class MarketplaceService {
+    private static final int MAX_RECENT_VIEWS = 20;
     private final Database database;
-    private List<Member> members = new ArrayList<>();
+    private final MemberDao memberDao;
+    private final SellerDao sellerDao;
+    private final CategoryDao categoryDao;
+    private final ListingDao listingDao;
+    private final InterestDao interestDao;
+    private final ReviewDao reviewDao;
+    private final AnalyticsDao analyticsDao;
+    private final HistoryDao historyDao;
+
     private List<Category> categories = new ArrayList<>();
     // Each member has a separate recently-viewed stack for this session.
     private final Map<Long, Stack<Long>> histories = new HashMap<>();
 
-    public MarketplaceService(Database database) {
+    /** Creates this component from the supplied values or dependencies. */
+    public MarketplaceService(Database database, MemberDao memberDao, SellerDao sellerDao,
+            CategoryDao categoryDao, ListingDao listingDao, InterestDao interestDao,
+            ReviewDao reviewDao, AnalyticsDao analyticsDao, HistoryDao historyDao) {
         this.database = database;
+        this.memberDao = memberDao;
+        this.sellerDao = sellerDao;
+        this.categoryDao = categoryDao;
+        this.listingDao = listingDao;
+        this.interestDao = interestDao;
+        this.reviewDao = reviewDao;
+        this.analyticsDao = analyticsDao;
+        this.historyDao = historyDao;
     }
 
+    /**
+     * Initializes the schema or account state while preserving existing records.
+     */
     public void initialize() throws SQLException {
         database.initialize();
-        members = database.getMembers();
-        categories = database.getCategories();
+
+        categories = categoryDao.getCategories();
         validateCategories(categories);
     }
 
-    public Path databasePath() { return database.getPath(); }
+    /** Provides the database path operation for this component. */
+    public Path databasePath() {
+        return database.getPath();
+    }
+
+    /**
+     * Verifies the supplied credentials before establishing the current account.
+     */
     public Member login(String username, char[] password) throws SQLException {
-        return database.authenticate(username, password);
-    }
-    public String resetPassword(String username, char[] recoveryCode, char[] newPassword) throws SQLException {
-        return database.resetPassword(username, recoveryCode, newPassword);
-    }
-    public SalesHistoryImporter importer() { return new SalesHistoryImporter(database); }
-    public List<Database.CategorySummary> prices(String currency) throws SQLException { return database.priceSummary(currency); }
-    public List<Database.CategorySummary> ratings() throws SQLException { return database.ratingSummary(); }
-    public String historyPreview() throws SQLException { return database.historyPreview(); }
-    public String reviews(long listingId) throws SQLException { return database.reviews(listingId); }
-    public void review(long listingId, long memberId, int rating, String comment) throws SQLException {
-        requireMember(memberId);
-        database.addReview(listingId, memberId, rating, comment);
-    }
-    public List<Member> getMembers() { return new ArrayList<>(members); }
-    public List<Category> getCategories() { return new ArrayList<>(categories); }
-
-    public List<Database.ListingForRepair> listingsForRepair(long memberId) throws SQLException {
-        requireMember(memberId);
-        return database.listingsForRepair(memberId);
+        return memberDao.authenticate(username, password);
     }
 
+    /**
+     * Consumes a recovery code and returns a replacement after updating the
+     * password.
+     */
+    public String resetPassword(String username, char[] recoveryCode, char[] newPassword)
+            throws SQLException {
+        return memberDao.resetPassword(username, recoveryCode, newPassword);
+    }
+
+    /** Provides the importer operation for this component. */
+    public SalesHistoryImporter importer() {
+        return new SalesHistoryImporter(database, categoryDao, historyDao);
+    }
+
+    /** Provides the prices operation for this component. */
+    public List<CategorySummary> prices(String currency) throws SQLException {
+        return analyticsDao.priceSummary(currency);
+    }
+
+    /** Provides the ratings operation for this component. */
+    public List<CategorySummary> ratings() throws SQLException {
+        return analyticsDao.ratingSummary();
+    }
+
+    /** Provides the history preview operation for this component. */
+    public String historyPreview() throws SQLException {
+        return historyDao.historyPreview();
+    }
+
+    /** Loads saved reviews in their recorded order. */
+    public String reviews(long listingId) throws SQLException {
+        return reviewDao.reviews(listingId);
+    }
+
+    /** Provides the review operation for this component. */
+    public void review(long listingId, long memberId, int rating, String comment)
+            throws SQLException {
+        requireMember(memberId);
+        reviewDao.addReview(listingId, memberId, rating, comment);
+    }
+
+    /** Loads member identities without exposing stored credential hashes. */
+    public List<Member> getMembers() throws SQLException {
+        return memberDao.getMembers();
+    }
+
+    /** Returns the stored category hierarchy. */
+    public List<Category> getCategories() {
+        return new ArrayList<>(categories);
+    }
+
+    /** Provides the listings for repair operation for this component. */
+    public List<ListingForRepair> listingsForRepair(long memberId) throws SQLException {
+        requireMember(memberId);
+        return listingDao.listingsForRepair(memberId);
+    }
+
+    /**
+     * Restores missing condition evidence transactionally after rechecking
+     * ownership.
+     */
     public void restoreDetails(long memberId, Listing observed) throws SQLException {
         requireMember(memberId);
-        database.restoreDetails(memberId, observed);
+        listingDao.restoreDetails(memberId, observed);
     }
 
+    /** Finds listings matching the category, title and ownership filter. */
     public List<Listing> search(long categoryId, String keyword) throws SQLException {
         List<Long> categoryIds = categoryIdsUnder(categoryId, categories);
         String query = keyword == null ? "" : keyword.trim().toLowerCase(Locale.ROOT);
         List<Listing> results = new ArrayList<>();
         // This SELECT reads the saved records again, including newly posted items.
-        for (Listing listing : database.getListings()) {
-            if (listing.getStatus().equals("AVAILABLE")
+        for (Listing listing : listingDao.getListings()) {
+            if (listing.getStatus().equals("ACTIVE")
                     && categoryIds.contains(listing.getCategoryId())
                     && listing.getTitle().toLowerCase(Locale.ROOT).contains(query)) {
                 results.add(listing);
@@ -80,56 +163,75 @@ public class MarketplaceService {
         return results;
     }
 
+    /** Provides the seller for operation for this component. */
     public long sellerFor(long memberId) throws SQLException {
         requireMember(memberId);
-        return database.ensureSeller(memberId);
+        return sellerDao.ensureSeller(memberId);
     }
 
+    /** Creates a listing using the signed-in member's seller identity. */
     public long post(long memberId, Listing listing) throws SQLException {
         long sellerId = sellerFor(memberId);
         if (listing.getSellerId() != sellerId) {
             throw new IllegalArgumentException("Post using your own seller profile.");
         }
-        if (!listing.getStatus().equals("AVAILABLE")) {
-            throw new IllegalArgumentException("New listings must be available.");
+        if (!listing.getStatus().equals("ACTIVE")) {
+            throw new IllegalArgumentException("New listings must be active.");
         }
-        return database.insertListing(listing);
+        return listingDao.insertListing(listing);
     }
 
+    /** Provides the my listings operation for this component. */
     public List<Listing> myListings(long memberId) throws SQLException {
         long sellerId = sellerFor(memberId);
         List<Listing> results = new ArrayList<>();
-        for (Listing listing : database.getListings()) {
-            if (listing.getSellerId() == sellerId) results.add(listing);
+        for (Listing listing : listingDao.getListings()) {
+            if (listing.getSellerId() == sellerId) {
+                results.add(listing);
+            }
         }
         return results;
     }
 
+    /** Withdraws an available listing only for its owner. */
     public void withdraw(long memberId, long listingId) throws SQLException {
         requireMember(memberId);
-        database.withdrawListing(listingId, memberId);
+        listingDao.withdrawListing(listingId, memberId);
     }
 
+    /** Marks an active listing sold only for the signed-in owner. */
+    public void markSold(long memberId, long listingId) throws SQLException {
+        requireMember(memberId);
+        listingDao.markSold(listingId, memberId);
+    }
+
+    /** Provides the join waitlist operation for this component. */
     public List<Long> joinWaitlist(long listingId, long memberId) throws SQLException {
         requireMember(memberId);
-        database.addInterest(listingId, memberId);
+        interestDao.addInterest(listingId, memberId);
         return getWaitlist(listingId);
     }
 
+    /** Returns buyer identities in first-in-first-out joining order. */
     public List<Long> getWaitlist(long listingId) throws SQLException {
         // Database rows arrive in joining order. offer() adds to the queue's tail.
         Queue<Long> buyers = new ArrayDeque<>();
-        for (Long buyerId : database.getWaitlist(listingId)) buyers.offer(buyerId);
+        for (Long buyerId : interestDao.getWaitlist(listingId)) {
+            buyers.offer(buyerId);
+        }
         List<Long> order = new ArrayList<>();
         // poll() removes from the head: the first buyer who joined is displayed first.
-        while (!buyers.isEmpty()) order.add(buyers.poll());
+        while (!buyers.isEmpty()) {
+            order.add(buyers.poll());
+        }
         return order;
     }
 
+    /** Adds a visible listing to the active member's bounded recent-view stack. */
     public void view(long memberId, long listingId) throws SQLException {
         requireMember(memberId);
         Listing listing = findListing(listingId);
-        if (!listing.getStatus().equals("AVAILABLE")) {
+        if (!listing.getStatus().equals("ACTIVE")) {
             throw new IllegalArgumentException("This listing was withdrawn.");
         }
         Stack<Long> history = histories.get(memberId);
@@ -139,22 +241,27 @@ public class MarketplaceService {
         }
         history.remove(Long.valueOf(listingId));
         history.push(listingId); // Most recently viewed item is now on top.
-        if (history.size() > 20) history.remove(0);
+        if (history.size() > MAX_RECENT_VIEWS) {
+            history.remove(0);
+        }
     }
 
+    /** Reads the member's recent items without consuming their actual stack. */
     public List<Listing> recent(long memberId) throws SQLException {
         requireMember(memberId);
         List<Listing> results = new ArrayList<>();
         Stack<Long> history = histories.get(memberId);
-        if (history == null) return results;
+        if (history == null) {
+            return results;
+        }
         // Pop a copy so reading history does not destroy the member's real stack.
         Stack<Long> newestFirst = new Stack<>();
         newestFirst.addAll(history);
-        List<Listing> saved = database.getListings();
+        List<Listing> saved = listingDao.getListings();
         while (!newestFirst.empty()) {
             long id = newestFirst.pop();
             for (Listing listing : saved) {
-                if (listing.getId() == id && listing.getStatus().equals("AVAILABLE")) {
+                if (listing.getId() == id && listing.getStatus().equals("ACTIVE")) {
                     results.add(listing);
                     break;
                 }
@@ -182,6 +289,7 @@ public class MarketplaceService {
         // Base case: a leaf has no children, so no recursive call occurs and we return.
     }
 
+    /** Rejects duplicate categories, missing parents and cyclic relationships. */
     public static void validateCategories(List<Category> categories) {
         Set<Long> uniqueIds = new HashSet<>();
         for (Category category : categories) {
@@ -202,22 +310,28 @@ public class MarketplaceService {
 
     private static Category findCategory(long id, List<Category> categories) {
         for (Category category : categories) {
-            if (category.getId() == id) return category;
+            if (category.getId() == id) {
+                return category;
+            }
         }
         throw new IllegalArgumentException("Category or parent category does not exist: " + id);
     }
 
     private Listing findListing(long id) throws SQLException {
-        for (Listing listing : database.getListings()) {
-            if (listing.getId() == id) return listing;
+        for (Listing listing : listingDao.getListings()) {
+            if (listing.getId() == id) {
+                return listing;
+            }
         }
         throw new IllegalArgumentException("Listing does not exist.");
     }
 
-    private void requireMember(long id) {
-        for (Member member : members) {
-            if (member.getId() == id) return;
+    private void requireMember(long id) throws SQLException {
+        for (Member member : memberDao.getMembers()) {
+            if (member.getId() == id) {
+                return;
+            }
         }
-        throw new IllegalArgumentException("Choose a valid demo member.");
+        throw new IllegalArgumentException("Sign in with an existing member.");
     }
 }
