@@ -55,7 +55,8 @@ public class ImportView extends VBox {
         getStyleClass().addAll("page-content", "import-page");
     }
 
-    private Button chooseButton(AnalyticsController analytics, TaskRunner tasks, RefreshController refresh, Supplier<Window> owner) {
+    private Button chooseButton(AnalyticsController analytics, TaskRunner tasks,
+            RefreshController refresh, Supplier<Window> owner) {
         Button choose = UiTools.button("Import JSON sales history", "import-button", tasks, () -> {
             FileChooser picker = new FileChooser();
             picker.getExtensionFilters()

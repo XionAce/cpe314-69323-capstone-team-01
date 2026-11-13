@@ -52,7 +52,8 @@ public class SalesHistoryImporter {
             throws IOException, SQLException {
         List<Category> categories = categoriesDao.getCategories();
         try (var connection = database.open();
-                var reader = new JsonReader(Files.newBufferedReader(file, StandardCharsets.UTF_8))) {
+                var reader = new JsonReader(
+                        Files.newBufferedReader(file, StandardCharsets.UTF_8))) {
             connection.setAutoCommit(false);
             reader.setStrictness(Strictness.STRICT);
             try (var insert = historyDao.prepareImport(connection)) {
@@ -70,7 +71,8 @@ public class SalesHistoryImporter {
                 if (error instanceof CancellationException) {
                     throw error;
                 }
-                throw new IOException("Import failed; no new sales were saved. " + error.getMessage(), error);
+                throw new IOException(
+                        "Import failed; no new sales were saved. " + error.getMessage(), error);
             }
         }
     }
@@ -107,7 +109,9 @@ public class SalesHistoryImporter {
         return new ImportResult(saved, invalid, duplicates, List.copyOf(errors));
     }
 
-    private record SaleRow(long categoryId, String sourceId, long minor, String currency, String soldAt) { }
+    private record SaleRow(long categoryId, String sourceId, long minor, String currency,
+            String soldAt) {
+    }
 
     private SaleRow validateRow(JsonObject row, List<Category> categories) {
         String sourceId = text(row, "sourceRecordId");
@@ -120,12 +124,13 @@ public class SalesHistoryImporter {
         if (!row.get("price").getAsJsonPrimitive().isNumber()) {
             throw new IllegalArgumentException("Price must be numeric.");
         }
-        long minor = row.get("price").getAsBigDecimal().movePointRight(MONEY_SCALE).longValueExact();
+        long minor = row.get("price").getAsBigDecimal().movePointRight(MONEY_SCALE)
+                .longValueExact();
         if (minor <= 0) {
             throw new IllegalArgumentException("Price must be positive with at most two decimals.");
         }
-        return new SaleRow(categoryId(row.getAsJsonArray("categoryPath"), categories),
-                sourceId, minor, currency, soldAt);
+        return new SaleRow(categoryId(row.getAsJsonArray("categoryPath"), categories), sourceId,
+                minor, currency, soldAt);
     }
 
     private void bindSale(java.sql.PreparedStatement insert, SaleRow row) throws SQLException {

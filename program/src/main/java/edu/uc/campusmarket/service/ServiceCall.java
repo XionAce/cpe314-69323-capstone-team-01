@@ -7,12 +7,30 @@ public final class ServiceCall {
     private ServiceCall() {
     }
 
+    /**
+     * A database operation whose checked SQL failure becomes a user-facing
+     * AppException.
+     */
     @FunctionalInterface
     public interface Query<T> {
+        /**
+         * Executes the prepared database operation and returns its value.
+         *
+         * @return the operation result
+         * @throws SQLException if database access fails
+         */
         T execute() throws SQLException;
     }
 
-    /** Returns the . */
+    /**
+     * Executes a data operation and translates SQL failures into a user-facing
+     * error.
+     *
+     * @param action database work to execute
+     * @param <T>    result type
+     * @return the operation result
+     * @throws AppException if database access fails
+     */
     public static <T> T get(Query<T> action) {
         try {
             return action.execute();

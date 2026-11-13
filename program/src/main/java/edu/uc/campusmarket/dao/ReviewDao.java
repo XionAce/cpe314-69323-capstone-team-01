@@ -11,6 +11,9 @@ import java.util.List;
 
 /** SQL operations for this table or closely related aggregate. */
 public class ReviewDao {
+    private static final int MIN_RATING = 1;
+    private static final int MAX_RATING = 5;
+    private static final int MAX_COMMENT_LENGTH = 1000;
     private final Database database;
 
     /** Creates this component from the supplied values or dependencies. */
@@ -24,10 +27,10 @@ public class ReviewDao {
      */
     public void addReview(long listingId, long memberId, int rating, String comment)
             throws SQLException {
-        if (rating < 1 || rating > 5) {
+        if (rating < MIN_RATING || rating > MAX_RATING) {
             throw new IllegalArgumentException("Rating must be 1 to 5.");
         }
-        if (comment == null || comment.length() > 1000) {
+        if (comment == null || comment.length() > MAX_COMMENT_LENGTH) {
             throw new IllegalArgumentException("Comment must be at most 1000 characters.");
         }
         try (Connection connection = database.open()) {

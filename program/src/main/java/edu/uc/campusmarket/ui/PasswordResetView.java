@@ -24,7 +24,8 @@ public class PasswordResetView extends VBox {
         Label mismatch = UiTools.label("", "error-text");
         Label error = UiTools.label("", "error-text");
         error.textProperty().bind(tasks.errorProperty());
-        Button reset = resetButton(accounts, tasks, username, code, password, confirmation, mismatch);
+        Button reset = resetButton(accounts, tasks, username, code, password, confirmation,
+                mismatch);
         reset.getStyleClass().add("primary");
         reset.disableProperty().unbind();
         reset.disableProperty()
@@ -52,7 +53,9 @@ public class PasswordResetView extends VBox {
         setMaxWidth(400);
     }
 
-    private Button resetButton(AccountController accounts, TaskRunner tasks, TextField username, PasswordField code, PasswordField password, PasswordField confirmation, Label mismatch) {
+    private Button resetButton(AccountController accounts, TaskRunner tasks, TextField username,
+            PasswordField code, PasswordField password, PasswordField confirmation,
+            Label mismatch) {
         Button reset = UiTools.button("Update password", "reset-button", tasks, () -> {
             if (!password.getText().equals(confirmation.getText())) {
                 mismatch.setText("The two passwords must match.");

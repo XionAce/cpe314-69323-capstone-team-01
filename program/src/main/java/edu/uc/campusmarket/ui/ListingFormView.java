@@ -69,7 +69,8 @@ public class ListingFormView extends ScrollPane {
         getStyleClass().add("page-scroll");
     }
 
-    private void bindCategories(ListingController listings, ComboBox<String> type, ComboBox<Category> category, ComboBox<String> evidence) {
+    private void bindCategories(ListingController listings, ComboBox<String> type,
+            ComboBox<Category> category, ComboBox<String> evidence) {
         Runnable observations = () -> {
             evidence.getItems().setAll(ListingFactory.observations(type.getValue()));
             evidence.getSelectionModel().selectFirst();
@@ -87,7 +88,8 @@ public class ListingFormView extends ScrollPane {
         observations.run();
     }
 
-    private VBox suggestions(ListingController listings, TaskRunner tasks, TextField title, ComboBox<String> type) {
+    private VBox suggestions(ListingController listings, TaskRunner tasks, TextField title,
+            ComboBox<String> type) {
         Label result = UiTools.label("", "muted");
         result.setId("catalog-result");
         result.textProperty().bind(listings.suggestionProperty());

@@ -146,8 +146,8 @@ public class ChartsView extends ScrollPane {
         chart.setPrefHeight(360);
         chart.setMinHeight(360);
         chart.setCategoryGap(40);
-        x.categorySpacingProperty().addListener((o, before, spacing) ->
-                chart.setCategoryGap(Math.max(18, spacing.doubleValue() * .65)));
+        x.categorySpacingProperty().addListener((o, before, spacing) -> chart
+                .setCategoryGap(Math.max(18, spacing.doubleValue() * .65)));
         chart.setBarGap(12);
         chart.setHorizontalGridLinesVisible(true);
         chart.setVerticalGridLinesVisible(false);

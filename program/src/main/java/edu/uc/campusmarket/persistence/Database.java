@@ -89,7 +89,8 @@ public class Database {
                         .prepareStatement("PRAGMA user_version");
                         ResultSet result = statement.executeQuery()) {
                     result.next();
-                    if (result.getInt(1) < 1 || result.getInt(1) > SCHEMA_VERSION || tables != TABLE_COUNT) {
+                    if (result.getInt(1) < 1 || result.getInt(1) > SCHEMA_VERSION
+                            || tables != TABLE_COUNT) {
                         throw new SQLException("Unrecognized database. Choose a new data folder.");
                     }
                     if (result.getInt(1) == SCHEMA_VERSION) {
@@ -207,15 +208,15 @@ public class Database {
 
     private int countTables(Connection connection) throws SQLException {
         int tables;
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "SELECT COUNT(*) FROM sqlite_master WHERE type = ? AND name NOT LIKE ?")) {
-                statement.setString(1, "table");
-                statement.setString(2, "sqlite_%");
-                try (ResultSet result = statement.executeQuery()) {
-                    result.next();
-                    tables = result.getInt(1);
-                }
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = ? AND name NOT LIKE ?")) {
+            statement.setString(1, "table");
+            statement.setString(2, "sqlite_%");
+            try (ResultSet result = statement.executeQuery()) {
+                result.next();
+                tables = result.getInt(1);
             }
+        }
         return tables;
     }
 }

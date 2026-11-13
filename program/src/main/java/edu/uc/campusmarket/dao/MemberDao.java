@@ -18,6 +18,8 @@ import java.util.Locale;
 
 /** SQL operations for this table or closely related aggregate. */
 public class MemberDao {
+    private static final int MAX_DISPLAY_NAME_LENGTH = 80;
+    private static final int SQLITE_CONSTRAINT = 19;
     private final Database database;
 
     /** Creates this component from the supplied values or dependencies. */
@@ -95,18 +97,7 @@ public class MemberDao {
      */
     public Registration register(String displayName, String username, char[] password)
             throws SQLException {
-        if (displayName == null || displayName.isBlank() || displayName.strip().length() > 80) {
-            throw new IllegalArgumentException("Enter a display name of 1 to 80 characters.");
-        }
-        String normalized = username == null ? "" : username.strip().toLowerCase(Locale.ROOT);
-        if (!normalized.matches("[a-z0-9_]{3,30}")) {
-            throw new IllegalArgumentException(
-                    "Use 3-30 lowercase letters, digits or underscores for the username.");
-        }
-        if (password == null || password.length < CredentialSecurity.MIN_PASSWORD_LENGTH
-                || password.length > CredentialSecurity.MAX_PASSWORD_LENGTH) {
-            throw new IllegalArgumentException("Use a password between 8 and 128 characters.");
-        }
+        String normalized = validateRegistration(displayName, username, password);
         byte[] salt = CredentialSecurity.randomBytes(CredentialSecurity.SALT_BYTES);
         byte[] recoverySalt = CredentialSecurity.randomBytes(CredentialSecurity.SALT_BYTES);
         String code = Base64.getUrlEncoder().withoutPadding()
@@ -131,7 +122,7 @@ public class MemberDao {
                 return new Registration(new Member(id, displayName.strip()), normalized, code);
             } catch (SQLException error) {
                 Database.rollback(connection, error);
-                if (error.getErrorCode() == 19) {
+                if (error.getErrorCode() == SQLITE_CONSTRAINT) {
                     throw new IllegalArgumentException("This username is already taken.", error);
                 }
                 throw error;
@@ -144,64 +135,81 @@ public class MemberDao {
         }
     }
 
+    private String validateRegistration(String displayName, String username, char[] password) {
+        if (displayName == null || displayName.isBlank()
+                || displayName.strip().length() > MAX_DISPLAY_NAME_LENGTH) {
+            throw new IllegalArgumentException("Enter a display name of 1 to 80 characters.");
+        }
+        String normalized = username == null ? "" : username.strip().toLowerCase(Locale.ROOT);
+        if (!normalized.matches("[a-z0-9_]{3,30}")) {
+            throw new IllegalArgumentException(
+                    "Use 3-30 lowercase letters, digits or underscores for the username.");
+        }
+        if (password == null || password.length < CredentialSecurity.MIN_PASSWORD_LENGTH
+                || password.length > CredentialSecurity.MAX_PASSWORD_LENGTH) {
+            throw new IllegalArgumentException("Use a password between 8 and 128 characters.");
+        }
+        return normalized;
+    }
 
-    private record RecoveryCheck(long memberId, String previousHash) { }
+    private record RecoveryCheck(long memberId, String previousHash) {
+    }
 
-    private RecoveryCheck verifyRecovery(Connection connection, String username, char[] recoveryCode)
-            throws SQLException {
+    private RecoveryCheck verifyRecovery(Connection connection, String username,
+            char[] recoveryCode) throws SQLException {
         long memberId;
         String previousHash;
         try (var statement = connection.prepareStatement(
-                        "SELECT id, recoverySalt, recoveryHash FROM Members WHERE username = ?")) {
-                    statement.setString(1, username.strip().toLowerCase(Locale.ROOT));
-                    try (var result = statement.executeQuery()) {
-                        if (!result.next() || result.getString("recoveryHash") == null) {
-                            throw new IllegalArgumentException(
-                                    "The username or recovery code is incorrect.");
-                        }
-                        byte[] salt = Base64.getDecoder().decode(result.getString("recoverySalt"));
-                        previousHash = result.getString("recoveryHash");
-                        if (!MessageDigest.isEqual(Base64.getDecoder().decode(previousHash),
-                                CredentialSecurity.hash(recoveryCode, salt))) {
-                            throw new IllegalArgumentException(
-                                    "The username or recovery code is incorrect.");
-                        }
-                        memberId = result.getLong("id");
-                    }
+                "SELECT id, recoverySalt, recoveryHash FROM Members WHERE username = ?")) {
+            statement.setString(1, username.strip().toLowerCase(Locale.ROOT));
+            try (var result = statement.executeQuery()) {
+                if (!result.next() || result.getString("recoveryHash") == null) {
+                    throw new IllegalArgumentException(
+                            "The username or recovery code is incorrect.");
                 }
+                byte[] salt = Base64.getDecoder().decode(result.getString("recoverySalt"));
+                previousHash = result.getString("recoveryHash");
+                if (!MessageDigest.isEqual(Base64.getDecoder().decode(previousHash),
+                        CredentialSecurity.hash(recoveryCode, salt))) {
+                    throw new IllegalArgumentException(
+                            "The username or recovery code is incorrect.");
+                }
+                memberId = result.getLong("id");
+            }
+        }
         return new RecoveryCheck(memberId, previousHash);
     }
 
     private String replaceSecrets(Connection connection, RecoveryCheck checked, char[] newPassword)
             throws SQLException {
-                SecureRandom random = new SecureRandom();
-                byte[] passwordSalt = new byte[CredentialSecurity.SALT_BYTES];
-                byte[] recoverySalt = new byte[CredentialSecurity.SALT_BYTES];
-                byte[] codeBytes = new byte[CredentialSecurity.RECOVERY_BYTES];
-                random.nextBytes(passwordSalt);
-                random.nextBytes(recoverySalt);
-                random.nextBytes(codeBytes);
-                String nextCode = Base64.getUrlEncoder().withoutPadding().encodeToString(codeBytes);
-                char[] nextCodeChars = nextCode.toCharArray();
-                try (var statement = connection.prepareStatement("""
-                        UPDATE Members SET passwordSalt = ?, passwordHash = ?,
-                            recoverySalt = ?, recoveryHash = ?
-                        WHERE id = ? AND recoveryHash = ?
-                        """)) {
-                    statement.setString(1, Base64.getEncoder().encodeToString(passwordSalt));
-                    statement.setString(2, Base64.getEncoder()
-                            .encodeToString(CredentialSecurity.hash(newPassword, passwordSalt)));
-                    statement.setString(3, Base64.getEncoder().encodeToString(recoverySalt));
-                    statement.setString(4, Base64.getEncoder()
-                            .encodeToString(CredentialSecurity.hash(nextCodeChars, recoverySalt)));
-                    statement.setLong(5, checked.memberId());
-                    statement.setString(6, checked.previousHash());
-                    if (statement.executeUpdate() != 1) {
-                        throw new SQLException("The recovery code has already been used.");
-                    }
-                } finally {
-                    Arrays.fill(nextCodeChars, '\0');
-                }
+        SecureRandom random = new SecureRandom();
+        byte[] passwordSalt = new byte[CredentialSecurity.SALT_BYTES];
+        byte[] recoverySalt = new byte[CredentialSecurity.SALT_BYTES];
+        byte[] codeBytes = new byte[CredentialSecurity.RECOVERY_BYTES];
+        random.nextBytes(passwordSalt);
+        random.nextBytes(recoverySalt);
+        random.nextBytes(codeBytes);
+        String nextCode = Base64.getUrlEncoder().withoutPadding().encodeToString(codeBytes);
+        char[] nextCodeChars = nextCode.toCharArray();
+        try (var statement = connection.prepareStatement("""
+                UPDATE Members SET passwordSalt = ?, passwordHash = ?,
+                    recoverySalt = ?, recoveryHash = ?
+                WHERE id = ? AND recoveryHash = ?
+                """)) {
+            statement.setString(1, Base64.getEncoder().encodeToString(passwordSalt));
+            statement.setString(2, Base64.getEncoder()
+                    .encodeToString(CredentialSecurity.hash(newPassword, passwordSalt)));
+            statement.setString(3, Base64.getEncoder().encodeToString(recoverySalt));
+            statement.setString(4, Base64.getEncoder()
+                    .encodeToString(CredentialSecurity.hash(nextCodeChars, recoverySalt)));
+            statement.setLong(5, checked.memberId());
+            statement.setString(6, checked.previousHash());
+            if (statement.executeUpdate() != 1) {
+                throw new SQLException("The recovery code has already been used.");
+            }
+        } finally {
+            Arrays.fill(nextCodeChars, '\0');
+        }
         return nextCode;
     }
 }
