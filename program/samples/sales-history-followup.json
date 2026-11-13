@@ -1,0 +1,5 @@
+[
+  {"sourceRecordId":"demo-followup-001","categoryPath":["All finds","Textbooks"],"price":225.00,"currency":"PHP","soldAt":"2026-11-04T08:00:00Z"},
+  {"sourceRecordId":"demo-followup-002","categoryPath":["All finds","Furniture"],"price":425.00,"currency":"PHP","soldAt":"2026-11-05T09:00:00Z"},
+  {"sourceRecordId":"demo-followup-003","categoryPath":["All finds","Electronics","Computers","Laptops"],"price":14500.00,"currency":"PHP","soldAt":"2026-11-06T10:00:00Z"}
+]
