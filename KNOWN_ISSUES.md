@@ -4,60 +4,51 @@ Campus Marketplace with Reviews. Updated 13 November 2026.
 
 ## Implemented corrections
 
-- The user created and pushed `project/milestone-2`, preserving the existing member commits. The required replacement PR title is **Milestone 2 - Team 01**; PR creation remains a manual step.
-- Root build instructions, this file, the requirement map and the editable design source are available.
-- `SalesAnalysis.weeklyCounts()` groups imported sale dates in a Java Map, normalizes timestamps to UTC, sorts Monday-starting weeks and counts each sale. All tied busiest weeks are reported. A dedicated bar chart displays the Java result.
-- Small views call feature controllers. Controllers own observable state and background actions. Views contain no JDBC imports, web client calls or worker creation. `App` composes dependencies and owns one worker's shutdown.
-- Feature SQL is in DAOs. `Database` handles connections/schema/initial data and `AccountSetup` handles account migration. Result records are standalone model/DTO types. The old database query facade now exists only in the test fixture, not in production.
-- Catalog downloading, JSON parsing and supported-category matching are separated. Unsupported categories remain manual; catalog prices are not silently converted to PHP.
-- Registration normalizes unique usernames, hashes credentials and returns a one-use recovery code. The active session supplies the member identity to controller actions.
-- Reviews now require waitlist membership as well as an existing member, another owner, an available item, rating 1-5, a comment of at most 1,000 characters and no earlier review by the same member/item.
-- New classroom accounts receive random initial credentials, shown once locally. Existing account passwords and related records survive upgrades. Starting secrets were removed from the program README and production initialization constants.
-- Explicit imports, braces, smaller screen files and public API comments improve readability.
-- The editable design and PDF now describe the implemented flows and all 69 top-level Java types. The approved context, Appendix and version history are retained. Diagrams use exact schema field names, show all ten tables/50 fields/twelve foreign keys and explain both BuyerInterests composite uniqueness rules.
+- Submission branch: `project/milestone-2`. Existing PR #14 is titled **Milestone 2 - Team 01**. Pushing this branch updates that PR; keep the earlier branches and member history.
+- Root build instructions use JDK 21 and the existing `program/` Maven module. This file, the requirement map and editable design are available.
+- Small views bind controllers; services apply rules; DAOs execute SQL. `App` creates dependencies and owns one named worker. Models/results/DTOs are separate from persistence and UI.
+- API download, parsing and comparable-product matching are separated. Reference currency is unspecified; final campus prices remain manual PHP inputs.
+- Registration, salted credential hashing, one-use recovery codes and random first-start credentials are implemented. Existing credentials/data survive migration. Reviews require waitlist membership, another owner, active status, rating/comment limits and no duplicate.
+- Java weekly analysis groups UTC sale timestamps into Monday-starting weeks using a TreeMap, counts them and reports all tied busiest weeks. Labeled colored bars display the result separately from category means.
+- Version-4 migration adds creation dates and ACTIVE/SOLD/REMOVED states. Owner-confirmed status changes retain related rows. Missing/conflicting subtype rows display a safe warning.
+- Waitlist joining allocates order and checks eligibility in one atomic INSERT ... SELECT. Two-thread tests cover distinct buyers and repeated joins.
+- Personal home opens after login: active listings, waiting buyer names, reviews received/average and the member's own queue positions. Member-filtered queries share a read transaction. Old-session results are rejected and logout clears the snapshot.
+- Owner-only title/price editing retains ID, type, condition, currency, date, reviews and interests. SQL rechecks active status and ownership at save time.
+- Leaving deletes only the signed-in buyer's interest, including on archived items, and retains saved reviews. Displayed positions count remaining earlier entries; rejoining goes to the tail.
+- The design/PDF document all 75 top-level Java types and ten tables/50 fields/twelve foreign keys. Overview/detail ERDs use exact field names and both BuyerInterests unique pairs.
+- The standards pass fixed helper indentation/wrapping, named business-rule limits and missing security/interface API comments. Syntax inspection found zero unbraced controls, wildcard imports, tabs, lines over 120 characters, undocumented public types/non-overriding methods or main methods over 50 lines. This is a focused inspection, not an external style certification.
 
-- Additional feedback is implemented: Listings.created_at, ACTIVE/SOLD/REMOVED states with ownership checks, old-database migration, status/date UI, two-thread waitlist tests and non-crashing incomplete-detail display. The schema now has 50 fields. Messages/offers are explicitly out of scope.
-- Waitlist allocation and eligibility checks run in one atomic INSERT ... SELECT. Two simultaneous distinct buyers get distinct positions; simultaneous repeat joins save one row.
-- The marketplace now has adjacent browse/details panels, archive status filtering and clearly labeled recovery-code fields. Fast filter changes retry after an older request finishes.
+KI-01 (design synchronization), KI-02 (ERD presentation), KI-05 (personal home/edit/queue controls) and KI-07 (final standards pass) are resolved in the current local source.
 
 ## Open corrections and verification gaps
 
 | ID | Issue | Next action |
 |---|---|---|
-| KI-03 | A fresh live API response could not be captured on this session's connection (its local proxy refused access). Local HTTP-server tests pass, but this is not a new public API/network demonstration. | Capture an actual response when connected normally, retain a sanitized test fixture, and repeat the required live network-toggle check. Do not substitute a fabricated response as live evidence. |
-| KI-04 | Refresh rereads available listing data or analysis inputs every three seconds on the active page. Its cost with very large databases has not been benchmarked. | Measure before claiming large-data performance. Consider incremental queries or a longer interval if measurements justify it. |
-| KI-05 | A dedicated personal dashboard, listing editing and waitlist leave/position screens from the broader guidance are not implemented. | Keep this scope explicit when demonstrating. The current personal view is My listings with owner-checked withdrawal; registration and waitlist-before-review are implemented. |
-| KI-06 | Local remote-tracking snapshots of `project/proposal` and `feature/milestone-1-prototype` still contain the old four-entity `docs/erd.png`. It is absent from the current submission branch. The instructor requested updating or removing those older images. | Recheck the branch contents on GitHub, then update or remove the stale image through a reviewed manual commit on each affected branch. Keep the branches and their existing history. No historical-branch cleanup has been performed here. |
-| KI-07 | The nine previously reported long methods/constructors have been split into focused helpers. The subsequent Java syntax-tree audit found zero main-source methods over 50 lines, and compilation passed. Final formatting, unexplained numeric limits and public API documentation still need review. | Complete that standards pass in a follow-up. This commit checkpoint records implemented work and does not claim every instructor correction is finished. |
-
-KI-01 (design synchronization) and KI-02 (ERD presentation) are resolved in this local correction. The PDF has 24 physical pages, with Introduction numbered 1, and was visually checked after export. These file updates still need the user's commit and push.
+| KI-03 | The normal public API request still fails through this session's configured proxy. Local-server tests do not prove public connectivity. No fresh real-response fixture is present. | Capture an actual response on a working connection, save it as a test resource and add its parser contract test. Repeat the instructor's live network on/off demonstration. Never label constructed JSON as a captured response. |
+| KI-04 | Data loading has been measured, but thousands of card controls, cold startup and simultaneous users have not. | Measure full UI rendering before claiming very large-data capacity. |
+| KI-06 | Earlier branch snapshots of `project/proposal` and `feature/milestone-1-prototype` contain stale `docs/erd.png`. It is absent from this submission branch. | Recheck GitHub and remove/update only that image with manual reviewed commits on the affected branches. Keep the branches and history. No cleanup of those branches is claimed here. |
 
 ## Prototype limits
 
-- Accounts and SQLite records are local to a database file. There is no shared cloud account/database service, email recovery or online payment.
-- Each computer normally has its own database. Automatic refresh synchronizes windows using the same file; it does not synchronize separate laptops.
-- Save newly issued credentials/recovery codes when displayed. Plaintext values are not retained for later retrieval. Older accounts keep their existing credentials rather than being silently reset.
-- The public catalog has limited coverage and a configured 15-second timeout. Current comparable-product matching supports electronics. Reference prices have unspecified currency; final campus prices are entered manually.
-- Recent-view stacks last for the service session and are not restored after app closure.
-- Weekly bars show observed weeks only; zero-sale weeks are not plotted. The counts include sales across currencies and do not sum their monetary amounts. The separate current-listing price chart filters by currency.
-- Historical imports are shared marketplace analysis records, not proof of a payment or completed in-app purchase.
+- Accounts/records are local to one SQLite file. Refresh synchronizes windows reading that file, not separate laptops. There is no cloud service, email recovery or payment processing.
+- Save passwords and recovery codes when displayed; plaintext is not retained. Existing accounts are not silently reset.
+- Catalog coverage is limited, matching currently supports electronics and requests have a 15-second timeout. Reference prices have unspecified currency.
+- Recent-view stacks last for the service session. Historical imports are analysis records, not proof of an in-app payment. Marking sold does not create an imported sale.
+- Weekly bars show observed weeks only; missing weeks are not plotted. Counts combine currencies without summing money; the price chart filters by currency.
+- Messages and offers remain explicitly out of scope. Editing currently changes title and price only; other listing fields stay unchanged.
 
 ## Recorded verification
 
-On 13 November 2026, from the repository root:
+JDK 21, enforcer enabled, from the repository root:
 
 ```powershell
 .\program\mvnw.cmd -o -f .\program\pom.xml verify
 ```
 
-Used JDK 21 with the Java/Maven enforcer enabled: **119 JUnit tests passed, zero failures/errors/skips**, in eleven test classes. The test-only convenience fixture is not a test class. Coverage includes the retained model/DAO/import rules, registration, review eligibility, credential preservation, Java analysis, controller state, stale-result rejection and refresh policy. Databases are temporary; HTTP tests use local servers.
+**128 JUnit tests in twelve classes passed, zero failures/errors/skips.** Tests use temporary databases and local HTTP servers. Nine new cases cover personal scope, received ratings, owner edit validation/preservation, queue changes and stale dashboard results. Earlier model, migration, concurrency, import, API and analysis checks remain.
 
-Separate actual-application checks passed **40 cases**, covering startup, registration, login, review rejection/acceptance, posting, My listings, owner withdrawal, JSON import, weekly chart data/labels, automatic refresh, password recovery, sold/remove confirmations, status filtering, missing electronics/furniture details, owner restoration, window resizing and large-import cancellation/rollback. These are counted separately from JUnit. No live personal database was used.
+**46 separate application checks passed** against temporary data, including startup/registration/login, personal home, editing, leaving/current position, reviews, post/sold/remove, archive filters, imports/charts, cancellation rollback, automatic refresh, recovery, missing-detail restoration and resizing. GUI checks are separate from JUnit and from public-network evidence.
 
-No assistant commit, push, PR creation or merge has been performed for these code changes. See [REQUIREMENT_MAP.md](REQUIREMENT_MAP.md) for the source and test locations.
+Five warm JDK 21 runs with **10,003 listings, 10,000 interests and 50,000 historical sales** measured search at 80.2-348.6 ms, analysis at 169.9-286.4 ms and personal-home reads at 49.5-63.0 ms. The temporary-data measurement excludes control rendering and cold startup; it is not a capacity guarantee.
 
-The earlier 13 November required-file recheck was a source/document inspection. After applying the additional feedback, a fresh JDK 21 Maven verification passed 119 tests, and 40 separate application checks passed against temporary data. No production source edits followed those final passing checks. GitHub confirmed that `project/milestone-2` exists; a search for PRs with that head branch returned none. The earlier test results remain the recorded evidence until new code changes justify repeating checks.
-
-UI follow-up verification: the 119-test JDK 21 run passed at 06:00 Manila on 13 November. The final popup-position/chart-spacing presentation changes were then compiled and packaged successfully and exercised by all 40 actual-application checks. These checks include maximized startup, top navigation, review cards/right-side placement, colored bars and active-import loading indicators.
-
-Current progress checkpoint: after extracting the long methods into helpers, JDK 21 Maven verification passed all 119 tests again at 08:53 Manila on 13 November, with zero failures/errors/skips. All 40 temporary-database application checks also passed again. The remaining items above are still unfinished; this verification supports committing current progress, not claiming final completion of the review.
+The earlier published checkpoint had 119 JUnit tests and 40 application checks. The latest follow-up remains local until the user commits/pushes; the assistant has not staged, committed, pushed, changed branches or modified a PR. Live API checks, older-branch image cleanup, the recursion trace and each member's explanation remain submission tasks. See [REQUIREMENT_MAP.md](REQUIREMENT_MAP.md).

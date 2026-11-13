@@ -191,11 +191,11 @@ collectCategoryIds() adds a category ID and recursively visits each child. A cat
 
 ### Application screens and state
 
-MarketplaceView is the application shell. LoginView, RegistrationView and PasswordResetView contain account forms. ListingTableView and ListingCards display the same observable listing list. ListingFormView handles posting inputs, ReviewsView contains review/waitlist controls, ImportView displays import state and ChartsView renders the returned results.
+MarketplaceView is the application shell. LoginView, RegistrationView and PasswordResetView contain account forms. HomeView shows the signed-in member's personal summary. ListingTableView and ListingCards display the same observable listing list. ListingFormView handles posting inputs, ReviewsView contains review/waitlist controls, ImportView displays import state and ChartsView renders the returned results.
 
-UserSession holds the active Member and a generation number. AccountController, ListingController, ReviewController, WaitlistController and AnalyticsController coordinate their features. FxTaskRunner exposes busy, status and error properties. RefreshController decides whether to poll; FxRefreshSchedule supplies the timer. These per-window values are in memory, not new database columns.
+UserSession holds the active Member and a generation number. AccountController, ListingController, ReviewController, WaitlistController, HomeController and AnalyticsController coordinate their features. FxTaskRunner exposes busy, status and error properties. RefreshController decides whether to poll; FxRefreshSchedule supplies the timer. These per-window values are in memory, not new database columns.
 
-InitialAccount, Registration, ImportResult, CategorySummary, ListingForRepair, WeeklySales and AnalyticsSnapshot carry setup/action results. Review and Seller hold domain values. ItemArtwork draws category illustrations, and UiTools provides presentation helpers. Artwork is not a separate database entity.
+InitialAccount, Registration, ImportResult, CategorySummary, ListingForRepair, WeeklySales and AnalyticsSnapshot carry setup/action results. HomeItem and HomeSummary carry the personal dashboard snapshot. Review and Seller hold domain values. ItemArtwork draws category illustrations, and UiTools provides presentation helpers. Artwork is not a separate database entity.
 
 ### Sign in, registration and password recovery
 
@@ -211,11 +211,13 @@ Hashes use PBKDF2WithHmacSHA256, 210,000 iterations and 256 bits. Random salts u
 
 ### Marketplace screens and ownership
 
-The app opens maximized with navigation across the top. Selecting a card or list row opens a closable details panel on the right. Cards and List show the same records, dates and statuses. Read reviews opens a right-positioned popup with names, stars and comments; Review listing opens a form on that side. Smaller panels scroll. View details loads the waitlist and recent views.
+The app opens maximized with navigation across the top. After login, My home shows the member's active items, interested buyers, reviews received and personal waitlist positions. HomeController loads this data through HomeService and HomeDao in one background task. Every personal query filters by the member ID; a read transaction keeps the summary consistent. Signing out clears it, and results from an older session are rejected.
 
-Each member may buy or sell. Posting uses the member's seller profile, created when needed. My listings filters to that owner and can show All statuses, Active, Sold or Removed. Mark as sold and Remove listing require confirmation and recheck ownership in SQL. Records, condition rows, reviews and waitlists are retained. Public search and current-listing means include ACTIVE items only.
+Selecting a card or list row opens a closable details panel on the right. Cards and List show the same records, dates and statuses. Read reviews opens a right-positioned popup with names, stars and comments; Review listing opens a form on that side. Smaller panels scroll. View details loads the waitlist and recent views.
 
-Join waitlist accepts an existing member different from the seller and saves joiningOrder. Repeated joins are rejected. Reviews require membership in that listing's waitlist, another owner and no earlier review by the same member/item. Ratings are 1-5; optional comments have at most 1,000 characters. The item must remain ACTIVE. Waitlist membership demonstrates interest, not proof of payment.
+Each member may buy or sell. Edit title / price is available for an owned active listing. The service validates the title and exact positive price; SQL rechecks owner and active status at save time. The ID, type, condition, currency, creation date, reviews and waitlist stay unchanged. Posting uses the member's seller profile, created when needed. My listings filters to that owner and can show All statuses, Active, Sold or Removed. Mark as sold and Remove listing require confirmation and recheck ownership in SQL. Records, condition rows, reviews and waitlists are retained. Public search and current-listing means include ACTIVE items only.
+
+Join waitlist accepts an existing member different from the seller and saves joiningOrder. Repeated joins are rejected. Leave waitlist deletes only the signed-in buyer's interest row, including for archived items; saved reviews remain. Current position counts remaining buyers up to the member's joining order, so gaps in saved numbers do not leave gaps in displayed positions. Rejoining goes to the tail. Details and My home display the position. Reviews require membership in that listing's waitlist, another owner and no earlier review by the same member/item. Ratings are 1-5; optional comments have at most 1,000 characters. The item must remain ACTIVE. Waitlist membership demonstrates interest, not proof of payment.
 
 Restore missing details lets an owner choose a listing and the condition actually observed. No condition is selected automatically. Saving rechecks owner, type and missing subtype rows; it preserves the listing ID, common fields, reviews and waitlist. Cancel changes nothing. Conflicting existing details require maintainer review.
 
@@ -725,13 +727,13 @@ AnalyticsController dispatches progress to JavaFX after the first row and every 
 
 ### Automatic updates between windows
 
-FxRefreshSchedule supplies a three-second Timeline. RefreshController.tick() polls only while signed in, on Marketplace or Analytics, with no active work or open dialog. Listing results must still match the session, category, query and My listings filter. Unchanged values preserve rows and selection; equal analytics snapshots avoid redraw.
+FxRefreshSchedule supplies a three-second Timeline. RefreshController.tick() polls only while signed in, on My home, Marketplace or Analytics, with no active work or open dialog. Listing results must still match the session, category, query and My listings filter. Unchanged values preserve rows and selection; equal analytics snapshots avoid redraw.
 
 The timer stops on logout and close. Failed reads show a message and allow retry. Windows using one SQLite file see another connection's post/withdrawal on a successful check; separate laptop databases are not synchronized. Details/reviews/waitlists reload through their corresponding actions.
 
 ### Responsiveness and shutdown
 
-Work buttons and posting inputs are disabled while busy. Loaded views can scroll and navigation remains available. Cancel import stays available during import. App.stop() stops refresh, requests cancellation and shuts down the worker. Every database operation closes its resources. Polling very large databases still needs performance measurement.
+Work buttons and posting inputs are disabled while busy. Loaded views can scroll and navigation remains available. Cancel import stays available during import. App.stop() stops refresh, requests cancellation and shuts down the worker. Every database operation closes its resources. The Appendix records bounded data-read timings; very large screen rendering remains unmeasured.
 
 <!-- pagebreak -->
 
@@ -786,15 +788,15 @@ After registration or reset, save the displayed recovery code. A reset consumes 
 
 ### Verification
 
-JDK 21 Maven verification on 13 November 2026 passed 119 JUnit tests in eleven classes: zero failures/errors/skips, enforcer enabled. Temporary databases and local HTTP servers are used. Added cases cover migration/rollback, creation dates, sold-state preservation, missing rows, two-thread waitlist joins and fast filter changes; earlier account, model, analysis and import checks remain.
+JDK 21 verification on 13 November 2026 passed 128 JUnit tests in twelve classes, with zero failures/errors/skips and the enforcer enabled. Cases cover models, account rules, migration, concurrent queues, imports, analysis, personal scope, owner edits and stale results. Tests use temporary databases and local HTTP servers.
 
-The 40 separate application checks passed: account/review flows, posting, sold/remove confirmations, archive filters, import/charts, cancellation rollback, external refresh, missing electronics/furniture details, owner repair and resizing. They use temporary data and are separate from the JUnit count.
+Separately, 46 application checks passed using temporary data: account/home/review flows, owner edits, queue positions, posting, sold/removal, filters, import/charts, cancellation rollback, external refresh, missing-detail recovery and resizing.
 
 A new live public API check was unavailable because the checking session's proxy refused the connection. Repeat the response capture/network-toggle check on the normal connection; local server tests are separate evidence.
 
 ### Limitations and requirement mapping
 
-Accounts and records are local to one SQLite file. There is no cloud synchronization, email recovery, payment processing or proof of completed purchases. Recent-view stacks last for the service session. A personal dashboard and waitlist leave/position screens are not implemented. Very large-dataset polling is not benchmarked.
+Accounts use one local SQLite file; cloud sync, email recovery and payments are excluded. Recent views last for the session. Five warm runs with 10,003 listings, 10,000 interests and 50,000 sales measured search at 80.2-348.6 ms, analysis at 169.9-286.4 ms and home at 49.5-63.0 ms. These laptop data-read timings exclude rendering and cold startup; they are not a capacity guarantee.
 
 KNOWN_ISSUES.md and REQUIREMENT_MAP.md in the repository root list limits and map checklist requirements to classes, methods and tests. Splitting the code does not add database fields.
 
@@ -818,9 +820,10 @@ Table 10: Implemented process flow
 | Startup | App.start(); AccountController.initialize() | MemberService initializes Database/AccountSetup and returns newly issued credentials once. |
 | Register | RegistrationView; AccountController.register() | MemberDao saves a unique account and returns a recovery code. |
 | Login / reset | LoginView / PasswordResetView; AccountController.login()/reset() | MemberDao verifies or replaces hashes; UserSession holds active identity. |
+| Personal home | HomeView; HomeController.load() | HomeDao reads member-filtered active items/buyers, reviews received and personal queue positions in one transaction. |
 | Cards / search | ListingTableView / ListingCards; ListingController.refresh() | ListingService and MarketplaceService search available listings and category descendants. |
-| Post / sold / remove | ListingFormView; ListingController.post()/markSold()/withdraw() | ListingFactory creates a subtype; ListingDao records created_at or rechecks owner before changing ACTIVE to SOLD/REMOVED. |
-| History / waitlist | ListingController.viewDetails(); WaitlistController.join() | MarketplaceService uses LIFO/FIFO; InterestDao allocates and inserts joining order atomically. |
+| Post / edit / sold / remove | ListingFormView / ListingTableView; ListingController.post()/update()/markSold()/withdraw() | ListingFactory creates a subtype; ListingDao records created_at or rechecks owner before title/price edits and ACTIVE-to-SOLD/REMOVED changes. |
+| History / waitlist | ListingController.viewDetails(); WaitlistController.join()/leave() | MarketplaceService uses LIFO/FIFO; InterestDao allocates joining order atomically, removes only the requesting buyer and counts current queue position. |
 | Review | ReviewsView; ReviewController.submit() | ReviewDao checks owner, status, interest, rating and duplicate before saving. |
 | Restore evidence | ListingTableView; ListingController.repairable()/restore() | ListingDao checks owner, type and missing details and saves observed evidence. |
 | API reference | ListingFormView; ListingController.suggest() | CatalogService -> client/parser -> DTOs -> CatalogMapper prepares references. |
@@ -833,20 +836,20 @@ Table 10: Implemented process flow
 
 ### Complete Java type inventory
 
-The current source contains 69 top-level Java types. Every one is listed below; the database still contains ten tables. A DTO, controller or view is not an additional database table.
+The current source contains 75 top-level Java types. Every one is listed below; the database still contains ten tables. A DTO, controller or view is not an additional database table.
 
 Table 11: Java types by package
 
 | Package | Types |
 |---|---|
 | base | App |
-| model | AnalyticsSnapshot, Category, CategorySummary, ConditionGrade, Electronics, Furniture, ImportResult, InitialAccount, Listing, ListingForRepair, Member, Registration, Review, Seller, Textbook, WearLevel, WeeklySales |
+| model | AnalyticsSnapshot, Category, CategorySummary, ConditionGrade, Electronics, Furniture, HomeItem, HomeSummary, ImportResult, InitialAccount, Listing, ListingForRepair, Member, Registration, Review, Seller, Textbook, WearLevel, WeeklySales |
 | dto | CatalogProduct, CatalogResponse |
 | api | ProductCatalogClient, ProductCatalogParser |
-| dao | AnalyticsDao, CategoryDao, HistoryDao, InterestDao, ListingDao, MemberDao, ReviewDao, SellerDao |
+| dao | AnalyticsDao, CategoryDao, HistoryDao, HomeDao, InterestDao, ListingDao, MemberDao, ReviewDao, SellerDao |
 | persistence | AccountSetup, Database |
-| service | AnalyticsService, AppException, CatalogMapper, CatalogService, CredentialSecurity, ListingFactory, ListingService, MarketplaceService, MemberService, ReviewService, SalesAnalysis, SalesHistoryImporter, ServiceCall, WaitlistService |
-| controller | AccountController, AnalyticsController, FxRefreshSchedule, FxTaskRunner, ListingController, RefreshController, RefreshSchedule, ReviewController, TaskRunner, UserSession, WaitlistController |
-| ui | ChartsView, ImportView, ItemArtwork, ListingCards, ListingFormView, ListingTableView, LoginView, MarketplaceView, PasswordResetView, RegistrationView, ReviewsView, UiTools |
+| service | AnalyticsService, AppException, CatalogMapper, CatalogService, CredentialSecurity, HomeService, ListingFactory, ListingService, MarketplaceService, MemberService, ReviewService, SalesAnalysis, SalesHistoryImporter, ServiceCall, WaitlistService |
+| controller | AccountController, AnalyticsController, FxRefreshSchedule, FxTaskRunner, HomeController, ListingController, RefreshController, RefreshSchedule, ReviewController, TaskRunner, UserSession, WaitlistController |
+| ui | ChartsView, HomeView, ImportView, ItemArtwork, ListingCards, ListingFormView, ListingTableView, LoginView, MarketplaceView, PasswordResetView, RegistrationView, ReviewsView, UiTools |
 
 ServiceCall.Query is a nested SQL-operation interface. Anonymous Tasks execute background actions. Listing.incomplete() creates an anonymous read-only fallback for unavailable condition evidence; it is not a new posted item type or table.

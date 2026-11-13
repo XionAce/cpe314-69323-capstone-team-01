@@ -37,7 +37,7 @@ You can also click **Create an account**. Enter a display name, a unique usernam
 
 Weekly analysis is written in Java: convert each sold timestamp to UTC, find its Monday, increment a `Map` count, sort the weeks and report all tied busiest weeks. Weeks with no sales are not plotted. This chart counts sales across currencies; it does not add their monetary values. The separate current-price chart filters by currency.
 
-Marketplace and Analytics check the same local database every three seconds while signed in. Polling skips busy work and dialogs, preserves filters/selection and avoids redrawing unchanged results. It stops at sign-out or application close. This is synchronization between windows reading the same file, not between separate laptops.
+My home, Marketplace and Analytics check the same local database every three seconds while signed in. Polling skips busy work and dialogs, preserves filters/selection and avoids redrawing unchanged results. It stops at sign-out or application close. This is synchronization between windows reading the same file, not between separate laptops.
 
 Listings record `created_at` as UTC on insertion. Cards and the list show the date; details show a readable UTC time. Existing databases upgrade to schema version 4 without deleting accounts or records. Old AVAILABLE/WITHDRAWN statuses become ACTIVE/REMOVED. Older records without creation dates show **Date not recorded**. Marking sold does not automatically import a historical sale or process payment.
 
@@ -84,6 +84,10 @@ If a listing lacks its subtype evidence, it remains visible with **Details unava
 
 ## Submission records
 
-See the root [known issues](../KNOWN_ISSUES.md) and [requirement map](../REQUIREMENT_MAP.md) for actual status and verification. The [editable design](../docs/design-document.md) and [design PDF](../docs/design-document.pdf) describe the refactor, registration/review rules, weekly analysis and all current Java types. The [optional PDF exporter](../tools/export_design.py) requires Python, ReportLab and Calibri; it is separate from running the application. Recorded verification is 119 passing JUnit tests and 40 separate application checks. A fresh public-network/API demonstration remains outstanding.
+See the root [known issues](../KNOWN_ISSUES.md) and [requirement map](../REQUIREMENT_MAP.md) for actual status and verification. The [editable design](../docs/design-document.md) and [design PDF](../docs/design-document.pdf) describe the refactor, registration/review rules, weekly analysis and all current Java types. The [optional PDF exporter](../tools/export_design.py) requires Python, ReportLab and Calibri; it is separate from running the application. Recorded verification is 128 passing JUnit tests and 46 separate application checks. A fresh public-network/API demonstration remains outstanding.
 
 The application opens maximized. Navigation is across the top; saved reviews open as star/comment cards in a right-side popup. The selling screen includes a type illustration, imports show an indeterminate spinner/bar during actual work, and analytics use spaced colored bars with value tooltips.
+
+### Personal home, editing and waitlists
+
+After login, My home shows your active items, interested buyers, received rating average and personal queue positions. Use Marketplace -> My listings -> select an active item -> Edit title / price to revise your own title or price. Other fields and saved relations remain. Details shows your current waitlist position; Leave waitlist removes only your interest and keeps existing reviews. Rejoining places you at the tail.

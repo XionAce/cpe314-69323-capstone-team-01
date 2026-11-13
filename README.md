@@ -34,7 +34,7 @@ Campus Marketplace with Reviews is a Java desktop prototype for posting and brow
 
 The current implementation also provides listing reviews, FakeStoreAPI suggestions, background JSON sales-history import and category charts. The correction adds registration, waitlist eligibility for reviews, Java weekly-sales analysis and smaller MVC components. The editable design and PDF describe these implemented features and the current classes and schema.
 
-The marketplace now uses top navigation and a closable right-side details panel, creation-date labels and Active/Sold/Removed badges. In My listings, owners can mark an item sold or remove it without deleting reviews or waitlists. Missing subtype rows show a warning while the remaining listings stay usable. Messages and offers are out of scope.
+The marketplace now uses top navigation and a closable right-side details panel, creation-date labels and Active/Sold/Removed badges. My home shows personal listings, waiting buyers, received ratings and queue positions. Buyers can leave their own waitlist rows; current positions advance. In My listings, owners can edit title/price, mark an item sold or remove it without deleting reviews or waitlists. Missing subtype rows show a warning while the remaining listings stay usable. Messages and offers are out of scope.
 
 ## Build and run
 
@@ -60,7 +60,7 @@ The SQLite database is created outside the repository on first startup. Tests us
 
 ## Verification status
 
-JDK 21 Maven verification on 13 November 2026 passed **119 JUnit tests**, with zero failures, errors or skipped tests and the enforcer enabled. **40 separate application checks passed**, including registration, review eligibility, weekly charts and large-import cancellation/rollback. Temporary databases were used. The revised design was checked against the code and schema, and its PDF was visually reviewed. A fresh live public-API/network-toggle demonstration remains; see [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+JDK 21 Maven verification on 13 November 2026 passed **128 JUnit tests**, with zero failures, errors or skipped tests and the enforcer enabled. **46 separate application checks passed**, including registration, review eligibility, weekly charts and large-import cancellation/rollback. Temporary databases were used. The revised design was checked against the code and schema, and its PDF was visually reviewed. A fresh live public-API/network-toggle demonstration remains; see [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ## Project files
 
