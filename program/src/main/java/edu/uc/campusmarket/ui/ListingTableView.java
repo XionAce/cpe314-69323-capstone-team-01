@@ -10,6 +10,7 @@ import edu.uc.campusmarket.model.Listing;
 import edu.uc.campusmarket.model.ListingForRepair;
 import edu.uc.campusmarket.service.ListingFactory;
 import java.util.function.Function;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -44,7 +45,7 @@ public class ListingTableView extends VBox {
     /** Builds controls and binds their state to the listing controller. */
     public ListingTableView(ListingController listings, ReviewController reviews,
             WaitlistController waitlists, TaskRunner tasks, RefreshController refresh,
-            Supplier<Window> owner, Runnable sell) {
+            Supplier<Window> owner, Runnable sell, Consumer<Listing> openChat) {
         super(14);
         CheckBox mine = new CheckBox("My listings");
         ComboBox<String> status = new ComboBox<>();
@@ -52,7 +53,8 @@ public class ListingTableView extends VBox {
         TableView<Listing> table = table(listings);
         FlowPane heading = new FlowPane(12, 8);
         StackPane browser = browser(listings, table, mine, status, heading);
-        SplitPane split = details(browser, listings, reviews, waitlists, tasks, refresh, owner);
+        SplitPane split = details(browser, listings, reviews, waitlists, tasks, refresh, owner,
+                openChat);
         HBox hero = hero(tasks, sell);
         getChildren().addAll(hero, filters, heading, split);
         getStyleClass().add("page-content");
@@ -248,8 +250,9 @@ public class ListingTableView extends VBox {
 
     private SplitPane details(StackPane browser, ListingController listings,
             ReviewController reviews, WaitlistController waitlists, TaskRunner tasks,
-            RefreshController refresh, Supplier<Window> owner) {
-        ReviewsView selected = new ReviewsView(listings, reviews, waitlists, tasks, refresh, owner);
+            RefreshController refresh, Supplier<Window> owner, Consumer<Listing> openChat) {
+        ReviewsView selected = new ReviewsView(listings, reviews, waitlists, tasks, refresh, owner,
+                openChat);
         VBox.setVgrow(selected, Priority.ALWAYS);
         FlowPane ownerActions = ownerActions(listings, tasks, refresh, owner);
         Button restore = restoreButton(listings, tasks, refresh, owner);

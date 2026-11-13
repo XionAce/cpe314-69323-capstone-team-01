@@ -4,6 +4,7 @@ import edu.uc.campusmarket.controller.AccountController;
 import edu.uc.campusmarket.controller.AnalyticsController;
 import edu.uc.campusmarket.controller.ListingController;
 import edu.uc.campusmarket.controller.HomeController;
+import edu.uc.campusmarket.controller.ChatController;
 import edu.uc.campusmarket.controller.RefreshController;
 import edu.uc.campusmarket.controller.ReviewController;
 import edu.uc.campusmarket.controller.TaskRunner;
@@ -23,6 +24,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -45,7 +47,7 @@ public class MarketplaceView {
     public MarketplaceView(AccountController accounts, ListingController listings,
             ReviewController reviews, WaitlistController waitlists, AnalyticsController analytics,
             RefreshController refresh, UserSession session, TaskRunner tasks, String databasePath,
-            HomeController home) {
+            HomeController home, ChatController chats) {
         this.accounts = accounts;
         this.tasks = tasks;
         this.refresh = refresh;
@@ -56,7 +58,10 @@ public class MarketplaceView {
                 new Tab("Marketplace",
                         new ListingTableView(listings, reviews, waitlists, tasks, refresh,
                                 () -> root.getScene().getWindow(),
-                                () -> pages.getSelectionModel().select(1))),
+                                () -> pages.getSelectionModel().select(1), item -> {
+                                    chats.open(item.getId());
+                                    pages.getSelectionModel().select(5);
+                                })),
                 new Tab("Sell an item",
                         new ListingFormView(listings, tasks,
                                 () -> pages.getSelectionModel().selectFirst())),
@@ -69,6 +74,7 @@ public class MarketplaceView {
                         new HomeView(home, tasks, session,
                                 () -> pages.getSelectionModel().select(0),
                                 () -> pages.getSelectionModel().select(1))));
+        pages.getTabs().add(new Tab("Messages", new ChatView(chats, tasks)));
         for (Tab tab : pages.getTabs()) {
             tab.setClosable(false);
         }
@@ -78,7 +84,7 @@ public class MarketplaceView {
         header.getStyleClass().add("page-header");
         workspace.setTop(header);
         footer(databasePath);
-        bindNavigation(listings, analytics, home);
+        bindNavigation(listings, analytics, home, chats);
         accounts.readyProperty().addListener((o, before, ready) -> {
             if (ready && !accounts.initialAccounts().isEmpty()) {
                 showInitialCredentials(List.copyOf(accounts.initialAccounts()));
@@ -96,7 +102,12 @@ public class MarketplaceView {
         sidebar.setAlignment(Pos.CENTER_LEFT);
         sidebar.getStyleClass().add("top-navigation");
         ToggleGroup group = new ToggleGroup();
-        for (int i : new int[] { 4, 0, 1, 2, 3 }) {
+        FlowPane navigation = new FlowPane(6, 6);
+        navigation.setAlignment(Pos.CENTER_LEFT);
+        navigation.setMinWidth(0);
+        HBox.setHgrow(navigation, Priority.ALWAYS);
+        sidebar.getChildren().add(navigation);
+        for (int i : new int[] { 4, 0, 1, 5, 2, 3 }) {
             final int index = i;
             ToggleButton button = new ToggleButton(pages.getTabs().get(i).getText());
             button.setId("nav-" + i);
@@ -108,7 +119,7 @@ public class MarketplaceView {
             button.setOnAction(event -> pages.getSelectionModel().select(index));
             pages.getSelectionModel().selectedIndexProperty()
                     .addListener((o, a, b) -> button.setSelected(b.intValue() == index));
-            sidebar.getChildren().add(button);
+            navigation.getChildren().add(button);
         }
         Region space = new Region();
         HBox.setHgrow(space, Priority.ALWAYS);
@@ -201,7 +212,7 @@ public class MarketplaceView {
     }
 
     private void bindNavigation(ListingController listings, AnalyticsController analytics,
-            HomeController home) {
+            HomeController home, ChatController chats) {
         pages.getSelectionModel().selectedIndexProperty().addListener((o, before, after) -> {
             int page = after.intValue();
             if (page < 0) {
@@ -217,6 +228,9 @@ public class MarketplaceView {
             }
             if (page == 3) {
                 analytics.refresh();
+            }
+            if (page == 5) {
+                chats.refresh(false);
             }
         });
         session.memberProperty().addListener((o, previous, member) -> {

@@ -7,6 +7,7 @@ import edu.uc.campusmarket.controller.TaskRunner;
 import edu.uc.campusmarket.controller.WaitlistController;
 import edu.uc.campusmarket.model.Listing;
 import java.util.function.Supplier;
+import java.util.function.Consumer;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
@@ -23,7 +24,7 @@ public class ReviewsView extends VBox {
     /** Creates this component from the supplied values or dependencies. */
     public ReviewsView(ListingController listings, ReviewController reviews,
             WaitlistController waitlists, TaskRunner tasks, RefreshController refresh,
-            Supplier<Window> owner) {
+            Supplier<Window> owner, Consumer<Listing> openChat) {
         super(8);
         TextArea details = new TextArea();
         details.setId("listing-details");
@@ -61,7 +62,11 @@ public class ReviewsView extends VBox {
                 () -> waitlists.leave(listings.selectedProperty().get(), listings::viewDetails));
         leave.disableProperty().unbind();
         leave.disableProperty().bind(tasks.busyProperty().or(listings.selectedProperty().isNull()));
-        FlowPane actions = new FlowPane(8, 8, view, read, join, leave, review);
+        Button chat = UiTools.button("Open chat", "open-chat-button", tasks,
+                () -> openChat.accept(listings.selectedProperty().get()));
+        chat.disableProperty().unbind();
+        chat.disableProperty().bind(tasks.busyProperty().or(listings.selectedProperty().isNull()));
+        FlowPane actions = new FlowPane(8, 8, view, chat, read, join, leave, review);
         getChildren().addAll(UiTools.label("Item details", "section-title"), actions,
                 UiTools.label("Join the waitlist before reviewing another member's item.", "muted"),
                 details);

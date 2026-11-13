@@ -187,3 +187,19 @@
 .chart-title { -fx-font-size: 19px; }
 .review-stars { -fx-font-size: 23px; -fx-text-fill: #d19a24; }
 .review-comment { -fx-text-fill: #554d65; -fx-font-size: 14px; }
+.chat-split { -fx-background-color: transparent; -fx-padding: 0; }
+.chat-inbox { -fx-padding: 16; -fx-background-color: white; -fx-background-radius: 14; }
+.chat-inbox .list-view { -fx-background-color: transparent; -fx-border-color: transparent; }
+.chat-inbox .list-cell { -fx-padding: 12; -fx-background-color: transparent; }
+.chat-inbox .list-cell:filled:selected { -fx-background-color: #eee7fc; -fx-background-radius: 10; }
+.chat-thread-card { -fx-padding: 3; }
+.chat-item-title { -fx-font-size: 12px; -fx-text-fill: #654b86; }
+.chat-conversation { -fx-background-color: white; -fx-background-radius: 14; -fx-padding: 20; }
+.chat-heading { -fx-padding: 0 0 12; -fx-border-color: transparent transparent #eee8f5; }
+.chat-history { -fx-padding: 18 12; }
+.chat-bubble { -fx-padding: 14 18; -fx-background-radius: 16; }
+.chat-incoming { -fx-background-color: #f0edf6; }
+.chat-outgoing { -fx-background-color: #e6dcfb; }
+.chat-body { -fx-text-fill: #292038; -fx-font-size: 14px; }
+.chat-sender { -fx-text-fill: #654299; -fx-font-weight: bold; -fx-font-size: 12px; }
+.chat-time { -fx-text-fill: #766b85; -fx-font-size: 11px; }
