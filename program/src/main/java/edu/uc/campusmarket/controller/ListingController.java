@@ -148,6 +148,19 @@ public class ListingController {
                 });
     }
 
+    /** Saves an owner-only title/price edit and reloads the current filter. */
+    public void update(Listing item, String title, String price) {
+        long member = session.memberId(), generation = session.generation();
+        tasks.run(() -> {
+            service.update(member, item, title, price);
+            return true;
+        }, done -> {
+            if (generation == session.generation()) {
+                refresh();
+            }
+        });
+    }
+
     /** Withdraws an available listing only for its owner. */
     public void withdraw() {
         Listing item = selected.get();

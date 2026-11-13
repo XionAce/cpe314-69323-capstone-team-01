@@ -54,7 +54,7 @@ public class ListingDao {
         long seller = result.getLong("sellerId");
         long category = result.getLong("categoryId");
         String title = result.getString("title");
-        BigDecimal price = BigDecimal.valueOf(result.getLong("priceMinor"), 2);
+        BigDecimal price = BigDecimal.valueOf(result.getLong("priceMinor"), Listing.MONEY_SCALE);
         String currency = result.getString("currency");
         String status = result.getString("status");
         String type = result.getString("type");
@@ -247,6 +247,27 @@ public class ListingDao {
             } catch (SQLException | RuntimeException error) {
                 Database.rollback(connection, error);
                 throw error;
+            }
+        }
+    }
+
+    /**
+     * Changes title and price only for an active item still owned by this member.
+     */
+    public void update(long listingId, long memberId, String title, long priceMinor)
+            throws SQLException {
+        try (Connection connection = database.open();
+                PreparedStatement statement = connection.prepareStatement("""
+                        UPDATE Listings SET title = ?, priceMinor = ?
+                        WHERE id = ? AND status = 'ACTIVE'
+                        AND sellerId IN (SELECT id FROM Sellers WHERE memberId = ?)
+                        """)) {
+            statement.setString(1, title);
+            statement.setLong(2, priceMinor);
+            statement.setLong(3, listingId);
+            statement.setLong(4, memberId);
+            if (statement.executeUpdate() != 1) {
+                throw new IllegalArgumentException("Only the owner can edit an active listing.");
             }
         }
     }

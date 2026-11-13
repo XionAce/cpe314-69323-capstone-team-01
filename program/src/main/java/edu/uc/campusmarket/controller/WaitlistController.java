@@ -24,4 +24,20 @@ public class WaitlistController {
         long member = session.memberId();
         tasks.run(() -> waitlists.join(item.getId(), member), order -> saved.run());
     }
+
+    /** Removes only the active member from the selected item's waitlist. */
+    public void leave(Listing item, Runnable saved) {
+        if (item == null) {
+            return;
+        }
+        long member = session.memberId(), generation = session.generation();
+        tasks.run(() -> {
+            waitlists.leave(item.getId(), member);
+            return true;
+        }, done -> {
+            if (generation == session.generation()) {
+                saved.run();
+            }
+        });
+    }
 }

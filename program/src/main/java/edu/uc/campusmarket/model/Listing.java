@@ -10,6 +10,8 @@ import java.time.Instant;
  * behavior.
  */
 public abstract class Listing {
+    /** Number of decimal places in saved currency amounts. */
+    public static final int MONEY_SCALE = 2;
     public static final String ACTIVE = "ACTIVE";
     public static final String SOLD = "SOLD";
     public static final String REMOVED = "REMOVED";
@@ -47,8 +49,8 @@ public abstract class Listing {
         try {
             // Store exact cents: 350.50 becomes 35050 in SQLite. Never silently round
             // money.
-            this.price = price.setScale(2, RoundingMode.UNNECESSARY);
-            this.price.movePointRight(2).longValueExact();
+            this.price = price.setScale(MONEY_SCALE, RoundingMode.UNNECESSARY);
+            this.price.movePointRight(MONEY_SCALE).longValueExact();
         } catch (ArithmeticException error) {
             throw new IllegalArgumentException(
                     "Use a price with at most two decimals within the storage limit.");
@@ -96,7 +98,7 @@ public abstract class Listing {
 
     /** Returns the price minor. */
     public long getPriceMinor() {
-        return price.movePointRight(2).longValueExact();
+        return price.movePointRight(MONEY_SCALE).longValueExact();
     }
 
     /** Returns the currency. */

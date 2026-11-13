@@ -33,6 +33,39 @@ public class InterestDao {
         return buyers;
     }
 
+    /**
+     * Removes only the requesting member's interest; existing reviews remain saved.
+     */
+    public void leave(long listingId, long memberId) throws SQLException {
+        try (Connection connection = database.open();
+                PreparedStatement statement = connection.prepareStatement(
+                        "DELETE FROM BuyerInterests WHERE listingId = ? AND buyerId = ?")) {
+            statement.setLong(1, listingId);
+            statement.setLong(2, memberId);
+            if (statement.executeUpdate() != 1) {
+                throw new IllegalArgumentException("You are not on this waitlist.");
+            }
+        }
+    }
+
+    /** Returns the member's current one-based position, or zero if not waiting. */
+    public int position(long listingId, long memberId) throws SQLException {
+        try (Connection connection = database.open();
+                PreparedStatement statement = connection.prepareStatement("""
+                        SELECT COUNT(*) FROM BuyerInterests earlier
+                        JOIN BuyerInterests mine ON mine.listingId = earlier.listingId
+                        WHERE mine.listingId = ? AND mine.buyerId = ?
+                        AND earlier.joiningOrder <= mine.joiningOrder
+                        """)) {
+            statement.setLong(1, listingId);
+            statement.setLong(2, memberId);
+            try (ResultSet result = statement.executeQuery()) {
+                result.next();
+                return result.getInt(1);
+            }
+        }
+    }
+
     /** Allocates FIFO order and inserts a buyer in one atomic SQLite statement. */
     public void addInterest(long listingId, long memberId) throws SQLException {
         try (Connection connection = database.open();

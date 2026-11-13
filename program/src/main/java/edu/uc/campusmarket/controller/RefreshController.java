@@ -11,6 +11,7 @@ public class RefreshController {
     private final ListingController listings;
     private final AnalyticsController analytics;
     private final RefreshSchedule schedule;
+    private HomeController home;
     private int page;
     private boolean dialogOpen;
     private boolean closed;
@@ -32,6 +33,13 @@ public class RefreshController {
         });
     }
 
+    /** Includes the personal dashboard in the existing idle polling policy. */
+    public RefreshController(TaskRunner tasks, UserSession session, ListingController listings,
+            AnalyticsController analytics, RefreshSchedule schedule, HomeController home) {
+        this(tasks, session, listings, analytics, schedule);
+        this.home = home;
+    }
+
     /** Refreshes the active page only when signed in, idle and outside a dialog. */
     public void tick() {
         if (closed || session.member() == null || tasks.busyProperty().get() || dialogOpen) {
@@ -39,6 +47,9 @@ public class RefreshController {
         }
         if (page == 0) {
             listings.refresh(true);
+        }
+        if (page == 4 && home != null) {
+            home.load(true);
         }
         if (page == 3) {
             analytics.refresh(true);

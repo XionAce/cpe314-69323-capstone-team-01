@@ -212,6 +212,20 @@ public class MarketplaceService {
         return getWaitlist(listingId);
     }
 
+    /**
+     * Removes this member from the queue without renumbering stored joining order.
+     */
+    public void leaveWaitlist(long listingId, long memberId) throws SQLException {
+        requireMember(memberId);
+        interestDao.leave(listingId, memberId);
+    }
+
+    /** Returns the current one-based queue position, or zero when not joined. */
+    public int waitlistPosition(long listingId, long memberId) throws SQLException {
+        requireMember(memberId);
+        return interestDao.position(listingId, memberId);
+    }
+
     /** Returns buyer identities in first-in-first-out joining order. */
     public List<Long> getWaitlist(long listingId) throws SQLException {
         // Database rows arrive in joining order. offer() adds to the queue's tail.

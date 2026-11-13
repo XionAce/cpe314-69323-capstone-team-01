@@ -11,6 +11,7 @@ import java.util.List;
 
 /** Listing validation, searching, ownership and condition restoration. */
 public class ListingService {
+    private static final int RECENT_DETAIL_LIMIT = 3;
     private static final java.time.format.DateTimeFormatter DETAIL_DATE = java.time.format.DateTimeFormatter
             .ofPattern("d MMM yyyy, HH:mm 'UTC'", java.util.Locale.ENGLISH)
             .withZone(java.time.ZoneOffset.UTC);
@@ -70,6 +71,24 @@ public class ListingService {
         });
     }
 
+    /**
+     * Validates an edit using the model's title/money rules; type and condition
+     * stay unchanged.
+     */
+    public void update(long member, Listing original, String title, String price) {
+        Listing validated = Listing.incomplete(original.getId(), original.getSellerId(),
+                original.getCategoryId(), title, new BigDecimal(price), original.getCurrency(),
+                original.getStatus(), original.getCreatedAt(), original.getType(),
+                "Edit validation");
+        ServiceCall.get(() -> {
+            // Checking the member and owner at write time prevents stale UI edits.
+            market.sellerFor(member);
+            listings.update(original.getId(), member, validated.getTitle(),
+                    validated.getPriceMinor());
+            return true;
+        });
+    }
+
     /** Withdraws an available listing only for its owner. */
     public void withdraw(long member, long id) {
         ServiceCall.get(() -> {
@@ -118,11 +137,14 @@ public class ListingService {
                 text.append("\n").append(item.getConditionIssue());
             }
             text.append("\nReviews:\n").append(market.reviews(item.getId()));
+            int position = market.waitlistPosition(item.getId(), member);
+            text.append("\nYour waitlist position: ")
+                    .append(position == 0 ? "Not joined" : position);
             text.append("\nWaitlist (first buyer first): ")
                     .append(buyerNames(market.getWaitlist(item.getId())));
             text.append("\nRecently viewed (newest first):");
             List<Listing> recent = market.recent(member);
-            for (int i = 0; i < Math.min(3, recent.size()); i++) {
+            for (int i = 0; i < Math.min(RECENT_DETAIL_LIMIT, recent.size()); i++) {
                 text.append("\n- ").append(recent.get(i).getTitle());
             }
             return text.toString();
