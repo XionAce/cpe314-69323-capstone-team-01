@@ -2,6 +2,9 @@ package edu.uc.campusmarket;
 
 import edu.uc.campusmarket.api.ProductCatalogClient;
 import edu.uc.campusmarket.controller.HomeController;
+import edu.uc.campusmarket.controller.ChatController;
+import edu.uc.campusmarket.dao.ChatDao;
+import edu.uc.campusmarket.service.ChatService;
 import edu.uc.campusmarket.dao.HomeDao;
 import edu.uc.campusmarket.service.HomeService;
 import edu.uc.campusmarket.controller.AccountController;
@@ -83,12 +86,15 @@ public class App extends Application {
                 session);
         HomeController home = new HomeController(new HomeService(new HomeDao(database)), tasks,
                 session);
+        ChatController chats = new ChatController(new ChatService(new ChatDao(database)), tasks,
+                session);
         analytics = new AnalyticsController(analysisService, tasks, session);
         refresh = new RefreshController(tasks, session, listingController, analytics,
                 new FxRefreshSchedule(), home);
+        refresh.setChats(chats);
         MarketplaceView view = new MarketplaceView(accountController, listingController,
                 reviewController, waitlistController, analytics, refresh, session, tasks,
-                database.getPath().toString(), home);
+                database.getPath().toString(), home, chats);
         openWindow(stage, view);
     }
 

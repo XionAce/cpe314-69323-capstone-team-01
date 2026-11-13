@@ -12,6 +12,7 @@ public class RefreshController {
     private final AnalyticsController analytics;
     private final RefreshSchedule schedule;
     private HomeController home;
+    private ChatController chats;
     private int page;
     private boolean dialogOpen;
     private boolean closed;
@@ -54,6 +55,14 @@ public class RefreshController {
         if (page == 3) {
             analytics.refresh(true);
         }
+        if (page == 5 && chats != null) {
+            chats.refresh(true);
+        }
+    }
+
+    /** Adds the signed-in inbox to the existing idle three-second refresh policy. */
+    public void setChats(ChatController value) {
+        chats = value;
     }
 
     /** Provides the set page operation for this component. */
