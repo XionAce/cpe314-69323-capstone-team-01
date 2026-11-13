@@ -36,7 +36,8 @@ CREATE TABLE Listings (
         CHECK (typeof(priceMinor) = 'integer' AND priceMinor > 0),
     currency TEXT NOT NULL
         CHECK (length(currency) = 3 AND currency NOT GLOB '*[^A-Z]*'),
-    status TEXT NOT NULL CHECK (length(trim(status)) > 0)
+    status TEXT NOT NULL CHECK (status IN ('ACTIVE', 'SOLD', 'REMOVED')),
+    created_at TEXT CHECK (created_at IS NULL OR length(trim(created_at)) > 0)
 );
 
 CREATE TABLE Reviews (
