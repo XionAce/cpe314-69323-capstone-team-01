@@ -67,6 +67,8 @@ JDK 21 Maven verification on 14 November 2026 passed **142 JUnit tests**, with z
 - [Current program](program/)
 - [Revised project proposal](docs/proposal.pdf)
 - [Revised project design document](docs/design-document.pdf)
+- [Editable project design document (Word)](docs/design-document.docx)
+- [Final defense presentation (PowerPoint)](docs/Group1_Campus_Marketplace_Final_Defense.pptx)
 - [Editable design master](docs/design-document.md)
 - [Design PDF exporter](tools/export_design.py) - optional; requires Python, ReportLab and Calibri. Run `python tools/export_design.py` from the repository root. Set `CALIBRI_DIR` for a different font folder.
 - [Known issues and correction status](KNOWN_ISSUES.md)
