@@ -1,99 +1,102 @@
-# Run and understand this program
+# Run and understand Campus Marketplace
 
-This folder is the complete Java 21 + JavaFX 21 + SQLite/JDBC Maven project. Keep `pom.xml`, `src`, `mvnw.cmd`, `mvnw` and the hidden `.mvn` folder together. Maven supplies JavaFX and the SQLite driver; do not add JARs by hand.
+This is the Java 21 + JavaFX + SQLite program for `project/milestone-2`.
+The `App` entry point stays the same. Keep this folder, its `pom.xml`, `src`, Maven Wrapper and hidden `.mvn` folder together.
 
-## Antigravity: Run button
+## Start the application
 
-1. Choose **File > Open Workspace from File...** and open **`C:\Users\HP\Documents\Codex\campus-marketplace-work\CampusMarketplace.code-workspace`**. This workspace contains only `program`. The window title should identify **CampusMarketplace**, rather than **Untitled (Workspace)**. Alternatively, use File > Open Folder to open `program` by itself. Opening the whole Documents/Codex folder imports archived Maven copies and creates duplicate-project errors.
-2. Install **Language Support for Java(TM) by Red Hat** (`redhat.java`) and **Debugger for Java** (`vscjava.vscode-java-debug`) if they are missing. They are already installed on the current presentation computer. Reload the editor if requested.
-3. Wait for Java to finish importing the Maven project. Use JDK 21. Maven still resolves the project's libraries; no Maven launch command is needed.
-4. Open **Run and Debug**, select **Run Campus Marketplace**, and click the green triangle or press **F5**.
-5. On this computer, you can also open `App.java` and click **Run** above `main()`. The local `.vscode/settings.json` supplies the same JavaFX options to that inline Run button.
-
-The portable Windows profile is `.vscode/launch.json`; it finds the pinned JavaFX 21.0.8 JARs in your normal Maven cache through USERPROFILE. It resolves the Java project from the main class rather than assuming an editor-specific project name. The local settings file contains this computer's cache path for inline Run and is ignored by Git. On another Windows computer, use the portable Run and Debug profile after the dependencies have downloaded. The profile does not run a Maven goal before launching; the Java editor builds the source.
-
-## Eclipse: Java Application Run button
-
-1. Under **Window > Preferences > Java > Installed JREs**, select **JDK 21**. Set **JavaSE-21** to use it under Execution Environments.
-2. If this same folder is already imported, right-click the project and choose **Refresh**, then **Maven > Update Project**. If Eclipse instead points to another copy, remove that workspace entry with **Delete project contents on disk unchecked**, then use **File > Import > Maven > Existing Maven Projects**.
-3. Root directory: **`C:\Users\HP\Documents\Codex\campus-marketplace-work\program`**. Select its `pom.xml`, then Finish. Keep the project name **campus-marketplace**, which the supplied launch profile uses.
-4. Wait for Maven dependency resolution and Eclipse's automatic build. If needed, right-click the project > **Maven > Update Project**. This imports/builds the project; launching uses a regular Java Application.
-5. Select **Run > Run Configurations > Java Application > Run-Campus-Marketplace**, then **Run**. The supplied `Run-Campus-Marketplace.launch` contains the JavaFX options and is also added to Run favorites.
-6. After that, choose **Run-Campus-Marketplace** from the green Run button's dropdown.
-
-If Eclipse has not discovered the profile, choose **File > Import > Run/Debug > Launch Configurations** and select this program folder, then import `Run-Campus-Marketplace.launch`. This is a Java Application configuration, not a Maven Build configuration.
-
-The editor configurations are for **Windows**, using the pinned libraries already managed by `pom.xml`. They keep JavaFX on its required module path. No Java source, schema or UI behavior was changed for this setup. The direct Java launch can be verified separately from the actual editor buttons; finish the one-time editor import/extension steps before using them.
-
-## Optional terminal build and tests (PowerShell)
-
-Open **File > Open Folder** and choose `C:\Users\HP\Documents\Codex\campus-marketplace-work`. Open **Terminal > New Terminal**, then run:
+Use JDK 21. From the repository root in PowerShell:
 
 ```powershell
-cd C:\Users\HP\Documents\Codex\campus-marketplace-work\program
-.\mvnw.cmd clean verify
-.\mvnw.cmd javafx:run
+java -version
+.\program\mvnw.cmd -version
+.\program\mvnw.cmd -f .\program\pom.xml clean verify
+.\program\mvnw.cmd -f .\program\pom.xml javafx:run
 ```
 
-`clean verify` compiles the code and runs JUnit. `javafx:run` opens the window; close it before entering another command. First-time dependencies need a connection. With everything already downloaded, `.\mvnw.cmd -o verify` runs offline.
+Both version commands must report Java 21. Do not bypass the enforcer. `clean verify` compiles and runs JUnit; `javafx:run` opens the window. First-time dependencies need a connection. After downloading them, `-o` can be used for an offline build.
 
-The terminal build and both editors use the same `pom.xml`. No `module-info.java` is needed. The packaged JAR is a build artifact; use the saved editor profile or `javafx:run` to launch the app.
+## First startup and accounts
 
-## Where each part is
+A new database creates Person A, Person B and Person C as classroom accounts. Their usernames are `person_a`, `person_b` and `person_c`. Each receives a newly generated password and recovery code. A local startup dialog shows newly issued credentials once: save them privately before closing it. No starter password or recovery code is published here. Only salted PBKDF2 hashes are stored in SQLite.
 
-```text
-src/main/java/edu/uc/campusmarket/
-  App.java                      Starts the JavaFX window
-  model/
-    Listing.java                Shared fields and abstract grading method
-    Textbook.java                Textbook condition rules
-    Electronics.java             Electronics condition rules
-    Furniture.java               Furniture condition rules
-    ConditionGrade.java          Four allowed condition grades
-    WearLevel.java               Three allowed wear levels
-    Member.java                  Demo member ID/name
-    Category.java                Category ID/name/parent ID
-  service/MarketplaceService.java Search, queue, stack and ownership rules
-  persistence/Database.java       JDBC connections, SQL and initial data
-  ui/MarketplaceView.java         Controls and button event handlers
-src/main/resources/
-  db/schema.sql                   The ten planned tables
-  ui/marketplace.css              JavaFX colors, spacing and text styles
-src/test/java/                    JUnit tests (temporary test databases)
+Existing accounts keep their passwords, IDs, listings, reviews and waitlists. Opening an existing current database does not generate replacement credentials. An older database that needs a missing login/recovery field is upgraded without deleting its records.
+
+You can also click **Create an account**. Enter a display name, a unique username of 3-30 letters/digits/underscores, and an 8-128 character password. Usernames are normalized to lowercase. Save the recovery code shown after registration, then sign in. Accounts belong to the local database, not a cloud server.
+
+**Forgot password?** verifies the saved recovery code. A successful reset changes the password and replaces the code. Save the replacement; the old code cannot be reused. There is no email-recovery service.
+
+## A short demonstration
+
+1. Sign in as one account. In **Sell an item**, post a textbook with a title, a positive PHP price, a category and an observed condition. **My listings** shows that account's items.
+2. Sign out and use another account. Select the item and try to review it before joining its waitlist: the app rejects the review. Click **Join waitlist**, then review it with a rating from 1 to 5. Self-reviews and duplicate reviews are still rejected.
+3. In **My listings**, select an active item and use **Mark as sold** or **Remove listing**. Confirm to set SOLD or REMOVED. Both leave public search and remain in the owner's archive with reviews/waitlists. Use **All statuses / Active / Sold / Removed** to filter the archive. Another member cannot change its status.
+4. In **Sales history**, import `samples/sales-history.json`. It contains six demonstration sales over three weeks. A repeated import skips matching source IDs. Cancel requests rollback of the unfinished import.
+5. In **Analytics**, view the weekly sales counts and busiest-week summary, then the current-listing price and review charts. With only the six sample sales imported, the weekly counts are 3, 2 and 1. For a controlled change, next import `samples/sales-history-followup.json`: counts become 3, 2 and 4, with the last week busiest. Both files contain synthetic demo records. Existing history may change these totals.
+6. For catalog suggestions, enter an electronics title such as `laptop` and click **Suggest category / price**. This makes a new HTTP request. Catalog prices have unspecified currency; enter the final PHP price manually. Unsupported categories retain manual entry.
+
+Weekly analysis is written in Java: convert each sold timestamp to UTC, find its Monday, increment a `Map` count, sort the weeks and report all tied busiest weeks. Weeks with no sales are not plotted. This chart counts sales across currencies; it does not add their monetary values. The separate current-price chart filters by currency.
+
+My home, Marketplace and Analytics check the same local database every three seconds while signed in. Polling skips busy work and dialogs, preserves filters/selection and avoids redrawing unchanged results. It stops at sign-out or application close. This is synchronization between windows reading the same file, not between separate laptops.
+
+Listings record `created_at` as UTC on insertion. Cards and the list show the date; details show a readable UTC time. Existing databases upgrade to schema version 5 without deleting accounts or records. Old AVAILABLE/WITHDRAWN statuses become ACTIVE/REMOVED. Older records without creation dates show **Date not recorded**. Marking sold does not automatically import a historical sale or process payment.
+
+Private listing chats are available in Messages. Buyers start a conversation with the seller on an active item; each buyer has a separate thread. Existing sold-item conversations continue for pickup arrangements; removed-item history is read-only. Offers and payment processing remain outside the application.
+
+## Run buttons in Antigravity and Eclipse
+
+In Antigravity, open this `program` folder, wait for Java's Maven import, then select **Run and Debug > Run Campus Marketplace**. You can also use the existing workspace file at the repository root. Open only this active project, rather than the whole Documents/Codex folder containing other copies.
+
+In Eclipse, use **File > Import > Maven > Existing Maven Projects**, select this folder's `pom.xml`, and use JDK 21. For an already imported copy, use **Refresh** and **Maven > Update Project** after the refactor. Use the existing **Run-Campus-Marketplace** Java Application launch profile, or the Maven command above.
+
+Maven manages JavaFX, Gson and the SQLite driver. Do not copy JARs by hand.
+
+## Where the work happens
+
+| Package/file | Responsibility |
+|---|---|
+| `App.java` | Creates DAOs, services, controllers and views; owns the shared worker and shutdown. |
+| `model/` | Plain domain objects, condition rules and immutable result records. No GUI or SQL. |
+| `dto/` | The catalog JSON data transferred from the parser. |
+| `api/` | The HTTP client and separate catalog parser. |
+| `dao/` | Prepared SQL statements, result reading and transactional writes. |
+| `service/` | Account/listing/review rules, catalog matching, JSON import and Java sales analysis. |
+| `controller/` | Account/session state, observable lists, background actions, cancellation and refresh policy. |
+| `ui/` | Small JavaFX screens, bindings, illustrations, dialogs and chart rendering. No SQL, HTTP client or worker creation. |
+| `persistence/` | Database connection, schema creation, initial data and account migration. |
+| `src/main/resources/db/schema.sql` | The ten table definitions and storage constraints. |
+| `src/main/resources/ui/marketplace.css` | Colors, spacing and styles used by the JavaFX controls. |
+| `src/test/java/` | Model, DAO, service and controller tests with temporary data and local HTTP servers. |
+
+The usual action path is **view -> controller -> service -> DAO -> SQLite**. Results return through controller properties to the bound screen. `MarketplaceService` retains the recursive category traversal, FIFO waitlist and LIFO recent history; the feature services call those existing rules.
+
+## Database and missing condition details
+
+The default file is `.ucb-campus-marketplace-simple/marketplace.db` under the current user's home folder. The footer shows its exact path. It is created at startup and is ignored by Git. Close the application before manually inspecting it with a SQLite viewer.
+
+To use a separate demonstration database from the repository root:
+
+```powershell
+.\program\mvnw.cmd -f .\program\pom.xml -Dcampusmarket.dataDir=C:\your\demo-folder javafx:run
 ```
 
-## Week 9: the working GUI control
+If a listing lacks its subtype evidence, it remains visible with **Details unavailable** and no invented grade; healthy listings still load. Sign in as its owner and click **Restore missing details**. Select the listing and the condition actually observed. Cancellation changes nothing. Restoration preserves its ID, common fields, reviews and waitlist; conflicting detail rows need maintainer review. Do not delete the live database as a repair shortcut.
 
-The window has one listing table and one inline posting form. To demonstrate the required event handler:
+## Submission records
 
-1. Launch with the saved editor Run profile and wait for the sample listings.
-2. In the form, enter `Demo Java book`, price `150.00`, type TEXTBOOK, category Textbooks and an observation.
-3. Click **Post listing**. The new row appears selected in the table and the status says it was saved.
-4. Enter `Demo Java book` in the search box and click **Search / refresh**. The table shows the match.
+See the root [known issues](../KNOWN_ISSUES.md) and [requirement map](../REQUIREMENT_MAP.md) for actual status and verification. The [editable design](../docs/design-document.md) and [design PDF](../docs/design-document.pdf) describe the refactor, registration/review rules, weekly analysis and all current Java types. The [optional PDF exporter](../tools/export_design.py) requires Python, ReportLab and Calibri; it is separate from running the application. Recorded verification is 142 passing JUnit tests and 50 separate application checks. The real public response is captured and tested; a live GUI network on/off demonstration remains outstanding.
 
-In `MarketplaceView.java`, `post.setOnAction(event -> postListing())` wires the click to the handler. `postListing()` reads the form, creates a concrete listing, saves through the service/database and reloads the table with a SELECT. Search has its own explicit `setOnAction` handler.
+The application opens maximized. Navigation is across the top; saved reviews open as star/comment cards in a right-side popup. The selling screen includes a type illustration, imports show an indeterminate spinner/bar during actual work, and analytics use spaced colored bars with value tooltips.
 
-**View details** also records the selected item on the member's recently-viewed stack and shows the last three. **Join waitlist** demonstrates the queue for another member's item. The form takes one condition observation at a time; the model still supports all of its condition evidence and grading rules.
+### Personal home, editing and waitlists
 
-## Your database
+After login, My home shows your active items, interested buyers, received rating average and personal queue positions. Use Marketplace -> My listings -> select an active item -> Edit title / price to revise your own title or price. Other fields and saved relations remain. Details shows your current waitlist position; Leave waitlist removes only your interest and keeps existing reviews. Rejoining places you at the tail.
 
-Default file: `.ucb-campus-marketplace-simple/marketplace.db` inside the current user's home folder. On the presentation computer this is `C:\Users\HP\.ucb-campus-marketplace-simple\marketplace.db`.
 
-It is created when the app first starts. It is separate from the older prototype database. Close the app and use **DB Browser for SQLite > Open Database** to open this file. In Browse Data choose `Listings`, `Sellers` or `Categories`. Under Execute SQL:
+## Private listing chat
 
-```sql
-SELECT Listings.id, Listings.title, Sellers.displayName AS seller,
-       Categories.name AS category, Listings.priceMinor / 100.0 AS price,
-       Listings.currency, Listings.status
-FROM Listings
-JOIN Sellers ON Sellers.id = Listings.sellerId
-JOIN Categories ON Categories.id = Listings.categoryId;
-```
+Open an item and choose **Open chat**. The buyer writes first; the seller replies in **Messages**. Only that buyer and the item's seller can read or send through the app. A different buyer gets a separate conversation. Messages are plain text, 1-2000 characters, saved with UTC timestamps and ordered by database ID. They do not change waitlists, reserve items or process payments.
 
-This is a read-only demonstration query. The Java code uses `PreparedStatement` with `?` placeholders for changing values. For Maven, add `-Dcampusmarket.dataDir=C:\your\folder` to the command. For an Eclipse Java Application profile, add it under **Arguments > VM arguments**. Tests use temporary directories and do not touch your demo records.
+To demonstrate automatic updates, run the current program twice against the same data folder and sign in with two different accounts. Keep both Messages pages open. The existing three-second refresh displays saved replies without a manual refresh and preserves unsent text. Separate laptops do not share local messages. Existing sold-item chats stay usable for pickup; removed-item chats retain read-only history.
 
-The [study guide](../docs/STUDY_GUIDE.md) follows the code step by step. The [implementation note](../docs/DESIGN_V0.2_IMPLEMENTATION.md) maps the current classes and database to the Week 9 design requirements.
-
-## Prototype limits
-
-The member selector is demo data, not login/authentication. Any selected member may post or join another member's waitlist. Queue entries persist; recent-view history belongs to one member and lasts only until the app closes. Owner withdrawal and My listings remain tested backend methods without buttons on this smaller screen. There are no online payments or shared multi-computer server.
+Schema version 5 adds Messages and indexes while preserving earlier accounts and records. The current design includes eleven tables, 56 columns, fifteen foreign keys and 82 main Java types. Eight chat service tests and three chat-controller tests were added. A real two-process GUI test passed seventeen assertions, separately from JUnit.

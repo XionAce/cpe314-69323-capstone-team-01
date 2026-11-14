@@ -1,10 +1,15 @@
--- Same ten tables and constraints as the approved V0.2 design.
--- Reviews and HistoricalSales are reserved for Milestone 2.
+-- Marketplace tables include local login credentials and private listing messages.
+-- Database.initialize upgrades existing databases without replacing their records.
 -- Prices are stored as centavos, and currency is stored separately.
 
 CREATE TABLE Members (
     id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL CHECK (length(trim(name)) > 0)
+    name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+    username TEXT,
+    passwordSalt TEXT,
+    passwordHash TEXT,
+    recoverySalt TEXT,
+    recoveryHash TEXT
 );
 
 CREATE TABLE Sellers (
@@ -31,7 +36,8 @@ CREATE TABLE Listings (
         CHECK (typeof(priceMinor) = 'integer' AND priceMinor > 0),
     currency TEXT NOT NULL
         CHECK (length(currency) = 3 AND currency NOT GLOB '*[^A-Z]*'),
-    status TEXT NOT NULL CHECK (length(trim(status)) > 0)
+    status TEXT NOT NULL CHECK (status IN ('ACTIVE', 'SOLD', 'REMOVED')),
+    created_at TEXT CHECK (created_at IS NULL OR length(trim(created_at)) > 0)
 );
 
 CREATE TABLE Reviews (
@@ -92,6 +98,18 @@ CREATE TABLE FurnitureDetails (
         CHECK (typeof(hasStructuralDamage) = 'integer' AND hasStructuralDamage IN (0, 1)),
     surfaceWear TEXT NOT NULL CHECK (surfaceWear IN ('NONE', 'LIGHT', 'HEAVY'))
 );
+
+CREATE TABLE IF NOT EXISTS Messages (
+    id INTEGER PRIMARY KEY,
+    listingId INTEGER NOT NULL REFERENCES Listings(id),
+    buyerId INTEGER NOT NULL REFERENCES Members(id),
+    senderId INTEGER NOT NULL REFERENCES Members(id),
+    body TEXT NOT NULL CHECK (length(trim(body)) BETWEEN 1 AND 2000),
+    sentAt TEXT NOT NULL CHECK (length(trim(sentAt)) > 0)
+);
+
+CREATE INDEX IF NOT EXISTS idx_Messages_thread ON Messages(listingId, buyerId, id);
+CREATE INDEX IF NOT EXISTS idx_Messages_buyerId ON Messages(buyerId);
 
 CREATE INDEX idx_Sellers_memberId ON Sellers(memberId);
 CREATE INDEX idx_Categories_parentId ON Categories(parentId);

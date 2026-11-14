@@ -1,0 +1,9 @@
+{
+  "endpoint": "https://fakestoreapi.com/products",
+  "capturedAtUtc": "2026-11-13T15:45:24.4149118Z",
+  "httpStatus": 200,
+  "productCount": 20,
+  "sha256": "8a244bc1211c3cd0a3ee03e8e72b259c2dfc6a2d8c1d355169c67eb2caf4c2e7",
+  "captureToolReportedProductCount": 1,
+  "countCorrection": "Decoded JSON array length; original script counted the array as one object. Response bytes, timestamp and SHA-256 are unchanged."
+}

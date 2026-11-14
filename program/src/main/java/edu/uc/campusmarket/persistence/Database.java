@@ -1,6 +1,11 @@
 package edu.uc.campusmarket.persistence;
 
-import edu.uc.campusmarket.model.*;
+import edu.uc.campusmarket.dao.ListingDao;
+import edu.uc.campusmarket.model.Electronics;
+import edu.uc.campusmarket.model.Furniture;
+import edu.uc.campusmarket.model.InitialAccount;
+import edu.uc.campusmarket.model.Textbook;
+import edu.uc.campusmarket.model.WearLevel;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -16,24 +21,39 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
-/** SQL stays here. Each public operation opens and closes its own connection. */
+/**
+ * Opens SQLite, initializes its schema and preserves data during account
+ * upgrades.
+ */
 public class Database {
+    private static final int SCHEMA_VERSION = 5;
+    private static final int TABLE_COUNT = 11;
+    private static final int LEGACY_TABLE_COUNT = 10;
+    private static final int BUSY_TIMEOUT_MS = 5000;
     private final Path file;
+    private final List<InitialAccount> initialAccounts = new ArrayList<>();
 
+    /** Creates this component from the supplied values or dependencies. */
     public Database(Path file) {
         this.file = file.toAbsolutePath().normalize();
     }
 
-    public Path getPath() { return file; }
+    /** Returns the path. */
+    public Path getPath() {
+        return file;
+    }
 
+    /** Provides the default path operation for this component. */
     public static Path defaultPath() {
         String directory = System.getProperty("campusmarket.dataDir");
         if (directory == null || directory.isBlank()) {
-            return Path.of(System.getProperty("user.home"), ".ucb-campus-marketplace-simple", "marketplace.db");
+            return Path.of(System.getProperty("user.home"), ".ucb-campus-marketplace-simple",
+                    "marketplace.db");
         }
         return Path.of(directory, "marketplace.db");
     }
 
+    /** Opens a connection with SQLite foreign keys and the busy timeout enabled. */
     public Connection open() throws SQLException {
         try {
             Files.createDirectories(file.getParent());
@@ -43,10 +63,12 @@ public class Database {
         Connection connection = DriverManager.getConnection("jdbc:sqlite:" + file);
         try {
             // SQLite needs this setting on EVERY new connection.
-            try (PreparedStatement statement = connection.prepareStatement("PRAGMA foreign_keys = ON")) {
+            try (PreparedStatement statement = connection
+                    .prepareStatement("PRAGMA foreign_keys = ON")) {
                 statement.execute();
             }
-            try (PreparedStatement statement = connection.prepareStatement("PRAGMA busy_timeout = 5000")) {
+            try (PreparedStatement statement = connection
+                    .prepareStatement("PRAGMA busy_timeout = " + BUSY_TIMEOUT_MS)) {
                 statement.execute();
             }
             return connection;
@@ -56,27 +78,29 @@ public class Database {
         }
     }
 
+    /**
+     * Initializes the schema or account state while preserving existing records.
+     */
     public void initialize() throws SQLException {
         try (Connection connection = open()) {
-            int tables;
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "SELECT COUNT(*) FROM sqlite_master WHERE type = ? AND name NOT LIKE ?")) {
-                statement.setString(1, "table");
-                statement.setString(2, "sqlite_%");
-                try (ResultSet result = statement.executeQuery()) {
-                    result.next();
-                    tables = result.getInt(1);
-                }
-            }
+            int tables = countTables(connection);
             if (tables > 0) {
                 // Never recreate or erase a database that already contains tables.
-                try (PreparedStatement statement = connection.prepareStatement("PRAGMA user_version");
-                     ResultSet result = statement.executeQuery()) {
+                try (PreparedStatement statement = connection
+                        .prepareStatement("PRAGMA user_version");
+                        ResultSet result = statement.executeQuery()) {
                     result.next();
-                    if (result.getInt(1) != 1 || tables != 10) {
+                    int expectedTables = result.getInt(1) < SCHEMA_VERSION
+                            ? LEGACY_TABLE_COUNT : TABLE_COUNT;
+                    if (result.getInt(1) < 1 || result.getInt(1) > SCHEMA_VERSION
+                            || tables != expectedTables) {
                         throw new SQLException("Unrecognized database. Choose a new data folder.");
                     }
+                    if (result.getInt(1) == SCHEMA_VERSION) {
+                        return;
+                    }
                 }
+                initialAccounts.addAll(AccountSetup.upgrade(connection));
                 return;
             }
             connection.setAutoCommit(false);
@@ -90,7 +114,8 @@ public class Database {
                     }
                 }
                 seed(connection);
-                try (PreparedStatement statement = connection.prepareStatement("PRAGMA user_version = 1")) {
+                try (PreparedStatement statement = connection
+                        .prepareStatement("PRAGMA user_version = 1")) {
                     statement.execute();
                 }
                 connection.commit();
@@ -98,22 +123,39 @@ public class Database {
                 rollback(connection, error);
                 throw error;
             }
+            initialAccounts.addAll(AccountSetup.upgrade(connection));
         }
     }
 
-    private String readSchema() throws SQLException {
+    private static String readSchema() throws SQLException {
         try (InputStream input = Database.class.getResourceAsStream("/db/schema.sql")) {
-            if (input == null) throw new IOException("Missing /db/schema.sql resource.");
+            if (input == null) {
+                throw new IOException("Missing /db/schema.sql resource.");
+            }
             return new String(input.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException error) {
             throw new SQLException("Cannot read the table definitions.", error);
         }
     }
 
+    /** Reuses the current message DDL when upgrading an existing classroom database. */
+    static void ensureMessages(Connection connection) throws SQLException {
+        for (String part : readSchema().split(";")) {
+            String sql = part.strip();
+            if (sql.startsWith("CREATE TABLE IF NOT EXISTS Messages")
+                    || sql.startsWith("CREATE INDEX IF NOT EXISTS idx_Messages_")) {
+                try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                    statement.execute();
+                }
+            }
+        }
+    }
+
     private void seed(Connection connection) throws SQLException {
-        String[] names = {"Alex (demo)", "Bea (demo)", "Carlo (demo)"};
+        String[] names = { "Person A", "Person B", "Person C" };
         for (int i = 0; i < names.length; i++) {
-            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO Members(id, name) VALUES (?, ?)")) {
+            try (PreparedStatement statement = connection
+                    .prepareStatement("INSERT INTO Members(id, name) VALUES (?, ?)")) {
                 statement.setLong(1, i + 1);
                 statement.setString(2, names[i]);
                 statement.executeUpdate();
@@ -127,241 +169,70 @@ public class Database {
                 statement.executeUpdate();
             }
         }
-        String[] categories = {"All finds", "Textbooks", "Electronics", "Furniture", "Computers", "Laptops", "Gaming Laptops"};
-        Long[] parents = {null, 1L, 1L, 1L, 3L, 5L, 6L};
+        String[] categories = { "All finds", "Textbooks", "Electronics", "Furniture", "Computers",
+                "Laptops", "Gaming Laptops" };
+        Long[] parents = { null, 1L, 1L, 1L, 3L, 5L, 6L };
         for (int i = 0; i < categories.length; i++) {
-            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO Categories(id, parentId, name) VALUES (?, ?, ?)")) {
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "INSERT INTO Categories(id, parentId, name) VALUES (?, ?, ?)")) {
                 statement.setLong(1, i + 1);
-                if (parents[i] == null) statement.setNull(2, Types.INTEGER);
-                else statement.setLong(2, parents[i]);
+                if (parents[i] == null) {
+                    statement.setNull(2, Types.INTEGER);
+                } else {
+                    statement.setLong(2, parents[i]);
+                }
                 statement.setString(3, categories[i]);
                 statement.executeUpdate();
             }
         }
-        insertListing(connection, new Textbook(0, 1, 2, "Java textbook (demo)", new BigDecimal("350.00"),
-                "PHP", "AVAILABLE", 0, WearLevel.LIGHT, false));
-        insertListing(connection, new Electronics(0, 2, 7, "Gaming laptop (demo)", new BigDecimal("18000.00"),
-                "PHP", "AVAILABLE", true, false, true));
-        insertListing(connection, new Furniture(0, 3, 4, "Study chair (demo)", new BigDecimal("650.00"),
-                "PHP", "AVAILABLE", true, false, WearLevel.LIGHT));
+        ListingDao.insertListing(connection, new Textbook(0, 1, 2, "Java textbook (demo)",
+                new BigDecimal("350.00"), "PHP", "ACTIVE", 0, WearLevel.LIGHT, false));
+        ListingDao.insertListing(connection, new Electronics(0, 2, 7, "Gaming laptop (demo)",
+                new BigDecimal("18000.00"), "PHP", "ACTIVE", true, false, true));
+        ListingDao.insertListing(connection, new Furniture(0, 3, 4, "Study chair (demo)",
+                new BigDecimal("650.00"), "PHP", "ACTIVE", true, false, WearLevel.LIGHT));
     }
 
-    public List<Member> getMembers() throws SQLException {
-        List<Member> members = new ArrayList<>();
-        try (Connection connection = open();
-             PreparedStatement statement = connection.prepareStatement("SELECT id, name FROM Members ORDER BY id");
-             ResultSet result = statement.executeQuery()) {
-            while (result.next()) members.add(new Member(result.getLong("id"), result.getString("name")));
-        }
-        return members;
-    }
-
-    public List<Category> getCategories() throws SQLException {
-        List<Category> categories = new ArrayList<>();
-        try (Connection connection = open();
-             PreparedStatement statement = connection.prepareStatement("SELECT id, parentId, name FROM Categories ORDER BY id");
-             ResultSet result = statement.executeQuery()) {
-            while (result.next()) {
-                long parent = result.getLong("parentId");
-                Long parentId = result.wasNull() ? null : parent;
-                categories.add(new Category(result.getLong("id"), parentId, result.getString("name")));
-            }
-        }
-        return categories;
-    }
-
-    public List<Listing> getListings() throws SQLException {
-        List<Listing> listings = new ArrayList<>();
-        // One shared listing row is joined to its type-specific evidence.
-        String sql = """
-                SELECT l.*, t.listingId AS textbookId, t.missingPages, t.markingLevel, t.coverDamaged,
-                       e.listingId AS electronicsId, e.powersOn, e.hasFunctionalDefect, e.hasCosmeticDamage,
-                       f.listingId AS furnitureId, f.structurallyStable, f.hasStructuralDamage, f.surfaceWear
-                FROM Listings l
-                LEFT JOIN TextbookDetails t ON t.listingId = l.id
-                LEFT JOIN ElectronicsDetails e ON e.listingId = l.id
-                LEFT JOIN FurnitureDetails f ON f.listingId = l.id
-                ORDER BY l.id
-                """;
-        try (Connection connection = open(); PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet result = statement.executeQuery()) {
-            while (result.next()) listings.add(readListing(result));
-        }
-        return listings;
-    }
-
-    private Listing readListing(ResultSet result) throws SQLException {
-        long id = result.getLong("id");
-        long seller = result.getLong("sellerId");
-        long category = result.getLong("categoryId");
-        String title = result.getString("title");
-        BigDecimal price = BigDecimal.valueOf(result.getLong("priceMinor"), 2);
-        String currency = result.getString("currency");
-        String status = result.getString("status");
-        String type = result.getString("type");
-        int detailCount = 0;
-        if (result.getObject("textbookId") != null) detailCount++;
-        if (result.getObject("electronicsId") != null) detailCount++;
-        if (result.getObject("furnitureId") != null) detailCount++;
-        if (detailCount != 1) throw new SQLException("Listing " + id + " needs exactly one matching detail row.");
-        if (type.equals("TEXTBOOK") && result.getObject("textbookId") != null) {
-            return new Textbook(id, seller, category, title, price, currency, status, result.getInt("missingPages"),
-                    WearLevel.valueOf(result.getString("markingLevel")), result.getBoolean("coverDamaged"));
-        }
-        if (type.equals("ELECTRONICS") && result.getObject("electronicsId") != null) {
-            return new Electronics(id, seller, category, title, price, currency, status, result.getBoolean("powersOn"),
-                    result.getBoolean("hasFunctionalDefect"), result.getBoolean("hasCosmeticDamage"));
-        }
-        if (type.equals("FURNITURE") && result.getObject("furnitureId") != null) {
-            return new Furniture(id, seller, category, title, price, currency, status, result.getBoolean("structurallyStable"),
-                    result.getBoolean("hasStructuralDamage"), WearLevel.valueOf(result.getString("surfaceWear")));
-        }
-        throw new SQLException("Listing " + id + " has inconsistent type/details.");
-    }
-
-    public long ensureSeller(long memberId) throws SQLException {
-        try (Connection connection = open()) {
-            try (PreparedStatement statement = connection.prepareStatement("SELECT id FROM Sellers WHERE memberId = ? ORDER BY id LIMIT 1")) {
-                statement.setLong(1, memberId);
-                try (ResultSet result = statement.executeQuery()) {
-                    if (result.next()) return result.getLong(1);
-                }
-            }
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO Sellers(memberId, displayName, sellerKind) SELECT id, name, ? FROM Members WHERE id = ?")) {
-                statement.setString(1, "STUDENT");
-                statement.setLong(2, memberId);
-                if (statement.executeUpdate() != 1) throw new IllegalArgumentException("Choose an existing member.");
-            }
-            return lastId(connection);
-        }
-    }
-
-    public long insertListing(Listing listing) throws SQLException {
-        if (listing.getId() != 0) throw new IllegalArgumentException("A new listing must have ID 0.");
-        try (Connection connection = open()) {
-            connection.setAutoCommit(false);
-            try {
-                long id = insertListing(connection, listing);
-                connection.commit();
-                return id;
-            } catch (SQLException | RuntimeException error) {
-                rollback(connection, error);
-                throw error;
-            }
-        }
-    }
-
-    private long insertListing(Connection connection, Listing listing) throws SQLException {
-        if (!(listing instanceof Textbook) && !(listing instanceof Electronics) && !(listing instanceof Furniture)) {
-            throw new IllegalArgumentException("Unsupported listing type.");
-        }
-        try (PreparedStatement statement = connection.prepareStatement(
-                "INSERT INTO Listings(sellerId, categoryId, type, title, priceMinor, currency, status) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
-            statement.setLong(1, listing.getSellerId());
-            statement.setLong(2, listing.getCategoryId());
-            statement.setString(3, listing.getType());
-            statement.setString(4, listing.getTitle());
-            statement.setLong(5, listing.getPriceMinor());
-            statement.setString(6, listing.getCurrency());
-            statement.setString(7, listing.getStatus());
-            statement.executeUpdate();
-        }
-        long id = lastId(connection);
-        if (listing instanceof Textbook book) {
-            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO TextbookDetails VALUES (?, ?, ?, ?)")) {
-                statement.setLong(1, id); statement.setInt(2, book.getMissingPages());
-                statement.setString(3, book.getMarkingLevel().name()); statement.setBoolean(4, book.isCoverDamaged());
-                statement.executeUpdate();
-            }
-        } else if (listing instanceof Electronics electronic) {
-            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO ElectronicsDetails VALUES (?, ?, ?, ?)")) {
-                statement.setLong(1, id); statement.setBoolean(2, electronic.isPowersOn());
-                statement.setBoolean(3, electronic.hasFunctionalDefect()); statement.setBoolean(4, electronic.hasCosmeticDamage());
-                statement.executeUpdate();
-            }
-        } else if (listing instanceof Furniture furniture) {
-            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO FurnitureDetails VALUES (?, ?, ?, ?)")) {
-                statement.setLong(1, id); statement.setBoolean(2, furniture.isStable());
-                statement.setBoolean(3, furniture.hasStructuralDamage()); statement.setString(4, furniture.getSurfaceWear().name());
-                statement.executeUpdate();
-            }
-        }
-        return id;
-    }
-
-    private long lastId(Connection connection) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement("SELECT last_insert_rowid()");
-             ResultSet result = statement.executeQuery()) {
+    /** Reads the identifier inserted on the same connection. */
+    public static long lastId(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection
+                .prepareStatement("SELECT last_insert_rowid()");
+                ResultSet result = statement.executeQuery()) {
             result.next();
             return result.getLong(1);
         }
     }
 
-    public List<Long> getWaitlist(long listingId) throws SQLException {
-        List<Long> buyers = new ArrayList<>();
-        try (Connection connection = open(); PreparedStatement statement = connection.prepareStatement(
-                "SELECT buyerId FROM BuyerInterests WHERE listingId = ? ORDER BY joiningOrder")) {
-            statement.setLong(1, listingId);
-            try (ResultSet result = statement.executeQuery()) {
-                while (result.next()) buyers.add(result.getLong(1));
-            }
-        }
-        return buyers;
-    }
-
-    public void addInterest(long listingId, long memberId) throws SQLException {
-        try (Connection connection = open()) {
-            connection.setAutoCommit(false);
-            try {
-                try (PreparedStatement statement = connection.prepareStatement(
-                        "SELECT l.status, s.memberId FROM Listings l JOIN Sellers s ON s.id = l.sellerId WHERE l.id = ?")) {
-                    statement.setLong(1, listingId);
-                    try (ResultSet result = statement.executeQuery()) {
-                        if (!result.next()) throw new IllegalArgumentException("Listing not found.");
-                        if (!result.getString("status").equals("AVAILABLE")) throw new IllegalArgumentException("Listing has been withdrawn.");
-                        if (result.getLong("memberId") == memberId) throw new IllegalArgumentException("You cannot join your own listing's waitlist.");
-                    }
-                }
-                try (PreparedStatement statement = connection.prepareStatement("SELECT id FROM Members WHERE id = ?")) {
-                    statement.setLong(1, memberId);
-                    try (ResultSet result = statement.executeQuery()) {
-                        if (!result.next()) throw new IllegalArgumentException("Choose an existing member.");
-                    }
-                }
-                try (PreparedStatement statement = connection.prepareStatement("SELECT id FROM BuyerInterests WHERE listingId = ? AND buyerId = ?")) {
-                    statement.setLong(1, listingId); statement.setLong(2, memberId);
-                    try (ResultSet result = statement.executeQuery()) {
-                        if (result.next()) throw new IllegalArgumentException("You already joined this waitlist.");
-                    }
-                }
-                try (PreparedStatement statement = connection.prepareStatement(
-                        "INSERT INTO BuyerInterests(listingId, buyerId, joiningOrder) SELECT ?, ?, COALESCE(MAX(joiningOrder), 0) + 1 FROM BuyerInterests WHERE listingId = ?")) {
-                    statement.setLong(1, listingId); statement.setLong(2, memberId); statement.setLong(3, listingId);
-                    statement.executeUpdate();
-                }
-                connection.commit();
-            } catch (SQLException | RuntimeException error) {
-                rollback(connection, error);
-                throw error;
-            }
-        }
-    }
-
-    public void withdrawListing(long listingId, long memberId) throws SQLException {
-        try (Connection connection = open(); PreparedStatement statement = connection.prepareStatement(
-                "UPDATE Listings SET status = ? WHERE id = ? AND status = ? AND sellerId IN (SELECT id FROM Sellers WHERE memberId = ?)")) {
-            statement.setString(1, "WITHDRAWN"); statement.setLong(2, listingId);
-            statement.setString(3, "AVAILABLE"); statement.setLong(4, memberId);
-            if (statement.executeUpdate() != 1) throw new IllegalArgumentException("Only the owner can withdraw an available listing.");
-        }
-    }
-
-    private void rollback(Connection connection, Exception error) {
+    /**
+     * Rolls back an unfinished write and retains any rollback failure as a
+     * suppressed cause.
+     */
+    public static void rollback(Connection connection, Exception error) {
         try {
             connection.rollback();
         } catch (SQLException rollbackError) {
             error.addSuppressed(rollbackError);
         }
+    }
+
+    /** Return newly issued credentials once; they are never saved as plaintext. */
+    public List<InitialAccount> takeInitialAccounts() {
+        List<InitialAccount> result = List.copyOf(initialAccounts);
+        initialAccounts.clear();
+        return result;
+    }
+
+    private int countTables(Connection connection) throws SQLException {
+        int tables;
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = ? AND name NOT LIKE ?")) {
+            statement.setString(1, "table");
+            statement.setString(2, "sqlite_%");
+            try (ResultSet result = statement.executeQuery()) {
+                result.next();
+                tables = result.getInt(1);
+            }
+        }
+        return tables;
     }
 }
