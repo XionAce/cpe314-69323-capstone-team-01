@@ -8,7 +8,6 @@ import edu.uc.campusmarket.controller.WaitlistController;
 import edu.uc.campusmarket.model.Category;
 import edu.uc.campusmarket.model.Listing;
 import edu.uc.campusmarket.model.ListingForRepair;
-import edu.uc.campusmarket.service.ListingFactory;
 import java.util.function.Function;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -55,8 +54,7 @@ public class ListingTableView extends VBox {
         StackPane browser = browser(listings, table, mine, status, heading);
         SplitPane split = details(browser, listings, reviews, waitlists, tasks, refresh, owner,
                 openChat);
-        HBox hero = hero(tasks, sell);
-        getChildren().addAll(hero, filters, heading, split);
+        getChildren().addAll(filters, heading, split);
         getStyleClass().add("page-content");
     }
 
@@ -154,6 +152,9 @@ public class ListingTableView extends VBox {
         ScrollPane cards = new ScrollPane(new ListingCards(listings));
         cards.setId("listing-cards");
         cards.setFitToWidth(true);
+        cards.setPannable(true);
+        cards.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        cards.setMinHeight(120);
         cards.getStyleClass().add("page-scroll");
         ToggleButton cardMode = new ToggleButton("Cards");
         cardMode.setId("cards-mode-button");
@@ -175,7 +176,8 @@ public class ListingTableView extends VBox {
         heading.getChildren().setAll(headingText, count, mine, status, cardMode, listMode);
         heading.setAlignment(Pos.CENTER_LEFT);
         StackPane browser = new StackPane(cards, table);
-        browser.setMinWidth(300);
+        browser.setMinWidth(0);
+        browser.setMinHeight(120);
         return browser;
     }
 
@@ -193,7 +195,7 @@ public class ListingTableView extends VBox {
                     choose.setHeaderText("Choose your listing to restore.");
                     UiTools.dialog(choose, owner.get(), refresh).ifPresent(item -> {
                         ChoiceDialog<String> evidence = new ChoiceDialog<>(null,
-                                ListingFactory.observations(item.type()));
+                                listings.observations(item.type()));
                         evidence.setSelectedItem(null);
                         evidence.setHeaderText("Select the condition actually observed.");
                         evidence.getDialogPane().lookupButton(ButtonType.OK).disableProperty()
@@ -235,13 +237,21 @@ public class ListingTableView extends VBox {
         price.setId("edit-price");
         javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
         dialog.setTitle("Edit listing");
-        dialog.getDialogPane()
-                .setContent(new VBox(12, new Label("Title"), title,
-                        new Label("Price (" + item.getCurrency() + ")"), price,
-                        UiTools.label(
-                                "Type, condition, creation date and saved reviews are retained.",
-                                "muted")));
+        Label validation = UiTools.label("", "error-text");
+        validation.setId("edit-validation-error");
+        dialog.getDialogPane().setContent(new VBox(12, UiTools.fieldLabel("Title", title), title,
+                UiTools.fieldLabel("Price (" + item.getCurrency() + ")", price), price, validation,
+                UiTools.label("Type, condition, creation date and saved reviews are retained.",
+                        "muted")));
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        dialog.getDialogPane().lookupButton(ButtonType.OK)
+                .addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+                    String message = listings.validateEdit(item, title.getText(), price.getText());
+                    validation.setText(message);
+                    if (!message.isEmpty()) {
+                        event.consume();
+                    }
+                });
         if (UiTools.dialog(dialog, owner.get(), refresh)
                 .orElse(ButtonType.CANCEL) == ButtonType.OK) {
             listings.update(item, title.getText(), price.getText());
@@ -260,17 +270,19 @@ public class ListingTableView extends VBox {
         Label help = UiTools.label("Use My listings to mark your item sold or remove it. "
                 + "Your records stay saved.", "muted");
         VBox detailPane = new VBox(10, selected, ownerActions, restore, help);
-        detailPane.setMinWidth(250);
+        detailPane.setMinWidth(220);
         ScrollPane detailScroll = new ScrollPane(detailPane);
         detailScroll.setFitToWidth(true);
-        detailScroll.setFitToHeight(true);
-        detailScroll.setMinWidth(260);
+        detailScroll.setFitToHeight(false);
+        detailScroll.setMinWidth(0);
+        detailScroll.setMinHeight(120);
+        detailScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         detailScroll.getStyleClass().add("page-scroll");
         SplitPane split = new SplitPane(browser, detailScroll);
         split.setId("marketplace-split");
         split.setDividerPositions(1);
         split.getItems().remove(detailScroll);
-        Button closeDetails = new Button("Close details  ×");
+        Button closeDetails = new Button("Close details");
         closeDetails.getStyleClass().add("quiet");
         closeDetails.setOnAction(event -> listings.selectedProperty().set(null));
         detailPane.getChildren().addFirst(closeDetails);
@@ -279,22 +291,22 @@ public class ListingTableView extends VBox {
                 split.getItems().remove(detailScroll);
             } else if (!split.getItems().contains(detailScroll)) {
                 split.getItems().add(detailScroll);
-                split.setDividerPositions(.67);
+                split.setDividerPositions(
+                        split.getOrientation() == javafx.geometry.Orientation.VERTICAL ? .52 : .66);
             }
         });
         split.getStyleClass().add("marketplace-split");
+        split.widthProperty().addListener((o, before, width) -> {
+            var direction = width.doubleValue() < 860 ? javafx.geometry.Orientation.VERTICAL
+                    : javafx.geometry.Orientation.HORIZONTAL;
+            if (split.getOrientation() != direction) {
+                split.setOrientation(direction);
+                split.setDividerPositions(
+                        direction == javafx.geometry.Orientation.VERTICAL ? .52 : .66);
+            }
+        });
         VBox.setVgrow(split, Priority.ALWAYS);
         return split;
     }
 
-    private HBox hero(TaskRunner tasks, Runnable sell) {
-        VBox heroCopy = new VBox(5, UiTools.label("Good finds. New beginnings.", "hero-title"),
-                UiTools.label("Give campus essentials their next chapter.", "hero-description"));
-        HBox.setHgrow(heroCopy, Priority.ALWAYS);
-        HBox hero = new HBox(20, heroCopy,
-                UiTools.button("+ Sell an item", "sell-shortcut", tasks, sell));
-        hero.getStyleClass().add("market-hero");
-        hero.setAlignment(Pos.CENTER_LEFT);
-        return hero;
-    }
 }

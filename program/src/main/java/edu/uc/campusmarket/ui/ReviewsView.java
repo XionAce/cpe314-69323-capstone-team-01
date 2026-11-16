@@ -30,14 +30,15 @@ public class ReviewsView extends VBox {
         details.setId("listing-details");
         details.setEditable(false);
         details.setWrapText(true);
-        details.setPrefRowCount(12);
-        details.setMinHeight(120);
+        details.setPrefRowCount(9);
+        details.setMinHeight(180);
         VBox.setVgrow(details, Priority.ALWAYS);
         details.textProperty().bind(listings.detailsProperty());
         Button view = UiTools.button("View details", "view-button", tasks, listings::viewDetails);
         Button join = UiTools.button("Join waitlist", "join-button", tasks,
                 () -> waitlists.join(listings.selectedProperty().get(), listings::viewDetails));
         Button review = reviewButton(listings, reviews, tasks, refresh, owner);
+        join.getStyleClass().add("primary");
         view.disableProperty().unbind();
         view.disableProperty().bind(tasks.busyProperty().or(listings.selectedProperty().isNull()));
         var inactive = javafx.beans.binding.Bindings.createBooleanBinding(
@@ -48,14 +49,7 @@ public class ReviewsView extends VBox {
         join.disableProperty().bind(tasks.busyProperty().or(inactive));
         review.disableProperty().unbind();
         review.disableProperty().bind(tasks.busyProperty().or(inactive));
-        Button read = UiTools.button("Read reviews", "read-reviews-button", tasks, () -> {
-            Listing item = listings.selectedProperty().get();
-            reviews.load(item, () -> {
-                if (listings.selectedProperty().get() == item) {
-                    showReviews(item, reviews, owner.get(), refresh);
-                }
-            });
-        });
+        Button read = readButton(listings, reviews, tasks, refresh, owner);
         read.disableProperty().unbind();
         read.disableProperty().bind(tasks.busyProperty().or(listings.selectedProperty().isNull()));
         Button leave = UiTools.button("Leave waitlist", "leave-waitlist-button", tasks,
@@ -67,41 +61,80 @@ public class ReviewsView extends VBox {
         chat.disableProperty().unbind();
         chat.disableProperty().bind(tasks.busyProperty().or(listings.selectedProperty().isNull()));
         FlowPane actions = new FlowPane(8, 8, view, chat, read, join, leave, review);
-        getChildren().addAll(UiTools.label("Item details", "section-title"), actions,
+        getChildren().addAll(UiTools.label("ITEM DETAILS", "eyebrow"), summary(listings), actions,
                 UiTools.label("Join the waitlist before reviewing another member's item.", "muted"),
                 details);
         getStyleClass().addAll("card", "detail-panel");
     }
 
+    private Button readButton(ListingController listings, ReviewController reviews,
+            TaskRunner tasks, RefreshController refresh, Supplier<Window> owner) {
+        return UiTools.button("Read reviews", "read-reviews-button", tasks, () -> {
+            Listing item = listings.selectedProperty().get();
+            reviews.load(item, () -> {
+                if (listings.selectedProperty().get() == item) {
+                    showReviews(item, reviews, owner.get(), refresh);
+                }
+            });
+        });
+    }
+
+    private VBox summary(ListingController listings) {
+        Label name = UiTools.label("", "selected-item-title");
+        name.textProperty()
+                .bind(javafx.beans.binding.Bindings
+                        .createStringBinding(
+                                () -> listings.selectedProperty().get() == null ? "Choose an item"
+                                        : listings.selectedProperty().get().getTitle()
+                                                .replace(" (demo)", ""),
+                                listings.selectedProperty()));
+        Label price = UiTools.label("", "item-price");
+        price.textProperty().bind(javafx.beans.binding.Bindings.createStringBinding(() -> {
+            Listing item = listings.selectedProperty().get();
+            return item == null ? ""
+                    : item.getCurrency() + " "
+                            + String.format(java.util.Locale.ROOT, "%,.2f", item.getPrice());
+        }, listings.selectedProperty()));
+        return new VBox(8, name, price);
+    }
+
     private void showReviews(Listing item, ReviewController reviews, Window owner,
             RefreshController refresh) {
-        VBox cards = new VBox(14, UiTools.label(item.getTitle(), "section-title"));
-        cards.setPrefWidth(330);
+        VBox cards = new VBox(16, UiTools.label(item.getTitle(), "section-title"), UiTools
+                .label(reviews.items().size() + " saved reviews · Ratings out of 5", "muted"));
+        cards.setPrefWidth(400);
         if (reviews.items().isEmpty()) {
             cards.getChildren().add(UiTools
                     .label("No reviews yet. Be the first to share your experience.", "muted"));
         }
         for (var row : reviews.items()) {
-            VBox card = new VBox(8, UiTools.label(row.reviewerName(), "section-title"),
-                    UiTools.label("★".repeat(row.rating()) + "☆".repeat(5 - row.rating()),
-                            "review-stars"),
+            Label initials = UiTools.label(
+                    row.reviewerName().substring(0, 1).toUpperCase(java.util.Locale.ROOT),
+                    "review-avatar");
+            javafx.scene.layout.HBox byline = new javafx.scene.layout.HBox(10, initials,
+                    new VBox(3, UiTools.label(row.reviewerName(), "section-title"),
+                            UiTools.label("★".repeat(row.rating()) + "☆".repeat(5 - row.rating()),
+                                    "review-stars")));
+            byline.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            VBox card = new VBox(12, byline,
                     UiTools.label(
                             row.comment() == null || row.comment().isBlank() ? "No written comment."
                                     : row.comment(),
                             "review-comment"));
-            card.getStyleClass().add("card");
+            card.getStyleClass().addAll("card", "saved-review-card");
             cards.getChildren().add(card);
         }
         javafx.scene.control.ScrollPane scroll = new javafx.scene.control.ScrollPane(cards);
         scroll.setFitToWidth(true);
-        scroll.setPrefViewportHeight(400);
-        scroll.setPrefViewportWidth(350);
+        scroll.setPrefViewportHeight(Math.max(220, Math.min(480, owner.getHeight() - 220)));
+        scroll.setPrefViewportWidth(410);
+        scroll.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER);
         scroll.getStyleClass().add("page-scroll");
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Reviews");
         dialog.getDialogPane().setId("reviews-popup");
         dialog.getDialogPane().getStyleClass().add("review-dialog");
-        dialog.getDialogPane().setPrefWidth(400);
+        dialog.getDialogPane().setPrefWidth(460);
         dialog.getDialogPane().setContent(scroll);
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
         dialog.setOnShown(event -> javafx.application.Platform.runLater(() -> {
@@ -113,7 +146,7 @@ public class ReviewsView extends VBox {
 
     private Button reviewButton(ListingController listings, ReviewController reviews,
             TaskRunner tasks, RefreshController refresh, Supplier<Window> owner) {
-        Button review = UiTools.button("Review listing", "review-button", tasks, () -> {
+        Button review = UiTools.button("Write a review", "review-button", tasks, () -> {
             Listing item = listings.selectedProperty().get();
             if (item == null) {
                 return;

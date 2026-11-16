@@ -45,9 +45,11 @@ public class PasswordResetView extends VBox {
         notice.textProperty().bind(accounts.noticeProperty());
         getChildren().addAll(UiTools.label("Reset your password.", "login-title"), UiTools.label(
                 "Use your saved recovery code. A successful reset supplies a replacement code.",
-                "muted"), new Label("Username"), username, new Label("Recovery code"), code,
-                new Label("New password"), password, new Label("Confirm password"), confirmation,
-                mismatch, error, reset, notice, codeLabel, replacement,
+                "muted"), UiTools.fieldLabel("Username", username), username,
+                UiTools.fieldLabel("Recovery code", code), code,
+                UiTools.fieldLabel("New password", password), password,
+                UiTools.fieldLabel("Confirm password", confirmation), confirmation, mismatch, error,
+                reset, notice, codeLabel, replacement,
                 UiTools.button("Back to sign in", "reset-back", tasks, back));
         getStyleClass().add("login-form");
         setMaxWidth(400);

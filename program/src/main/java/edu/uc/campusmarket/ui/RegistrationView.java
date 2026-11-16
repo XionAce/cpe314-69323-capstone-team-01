@@ -39,13 +39,7 @@ public class RegistrationView extends VBox {
         save.disableProperty().unbind();
         save.disableProperty()
                 .bind(tasks.busyProperty().or(accounts.recoveryCodeProperty().isNotEmpty()));
-        TextField code = new TextField();
-        code.setId("registration-recovery-code");
-        code.setEditable(false);
-        code.getStyleClass().add("recovery-code");
-        code.textProperty().bind(accounts.recoveryCodeProperty());
-        code.visibleProperty().bind(accounts.recoveryCodeProperty().isNotEmpty());
-        code.managedProperty().bind(code.visibleProperty());
+        TextField code = recoveryField(accounts);
         Label codeLabel = UiTools.label("Recovery code - save this privately", "field-label");
         codeLabel.visibleProperty().bind(code.visibleProperty());
         codeLabel.managedProperty().bind(code.visibleProperty());
@@ -53,11 +47,24 @@ public class RegistrationView extends VBox {
         notice.textProperty().bind(accounts.noticeProperty());
         getChildren().addAll(UiTools.label("Join your campus.", "login-title"),
                 UiTools.label("Use a unique username and an 8-128 character password.", "muted"),
-                new Label("Display name"), name, new Label("Username"), username,
-                new Label("Password"), password, new Label("Confirm password"), confirmation,
-                mismatch, error, save, notice, codeLabel, code,
+                UiTools.fieldLabel("Display name", name), name,
+                UiTools.fieldLabel("Username", username), username,
+                UiTools.fieldLabel("Password", password), password,
+                UiTools.fieldLabel("Confirm password", confirmation), confirmation, mismatch, error,
+                save, notice, codeLabel, code,
                 UiTools.button("Back to sign in", "register-back", tasks, back));
         getStyleClass().add("login-form");
         setMaxWidth(400);
+    }
+
+    private TextField recoveryField(AccountController accounts) {
+        TextField code = new TextField();
+        code.setId("registration-recovery-code");
+        code.setEditable(false);
+        code.getStyleClass().add("recovery-code");
+        code.textProperty().bind(accounts.recoveryCodeProperty());
+        code.visibleProperty().bind(accounts.recoveryCodeProperty().isNotEmpty());
+        code.managedProperty().bind(code.visibleProperty());
+        return code;
     }
 }

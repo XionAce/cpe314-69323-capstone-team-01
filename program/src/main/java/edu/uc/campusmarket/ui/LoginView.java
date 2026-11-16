@@ -39,8 +39,8 @@ public class LoginView extends VBox {
         error.textProperty().bind(tasks.errorProperty());
         getChildren().addAll(UiTools.label("Welcome back.", "login-title"),
                 UiTools.label("Sign in to find your next campus essential.", "muted"),
-                UiTools.label("Username", "field-label"), username,
-                UiTools.label("Password", "field-label"), password, error, login, create, forgot);
+                UiTools.fieldLabel("Username", username), username,
+                UiTools.fieldLabel("Password", password), password, error, login, create, forgot);
         getStyleClass().add("login-form");
         setMaxWidth(400);
         setAlignment(Pos.CENTER_LEFT);

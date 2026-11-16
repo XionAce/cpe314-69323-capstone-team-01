@@ -54,21 +54,21 @@ public class MarketplaceView {
         this.session = session;
         root.getStyleClass().add("app-root");
         pages.getStyleClass().add("workspace-pages");
-        pages.getTabs().addAll(
-                new Tab("Marketplace",
+        pages.getTabs()
+                .addAll(new Tab("Marketplace",
                         new ListingTableView(listings, reviews, waitlists, tasks, refresh,
                                 () -> root.getScene().getWindow(),
                                 () -> pages.getSelectionModel().select(1), item -> {
                                     chats.open(item.getId());
                                     pages.getSelectionModel().select(5);
                                 })),
-                new Tab("Sell an item",
-                        new ListingFormView(listings, tasks,
-                                () -> pages.getSelectionModel().selectFirst())),
-                new Tab("Sales history",
-                        new ImportView(analytics, tasks, refresh,
-                                () -> root.getScene().getWindow())),
-                new Tab("Analytics", new ChartsView(analytics, tasks)));
+                        new Tab("Sell an item",
+                                new ListingFormView(listings, tasks,
+                                        () -> pages.getSelectionModel().selectFirst())),
+                        new Tab("Sales history",
+                                new ImportView(analytics, tasks, refresh,
+                                        () -> root.getScene().getWindow())),
+                        new Tab("Analytics", new ChartsView(analytics, tasks)));
         pages.getTabs()
                 .add(new Tab("My home",
                         new HomeView(home, tasks, session,
@@ -80,9 +80,7 @@ public class MarketplaceView {
         }
         workspace.setCenter(pages);
         workspace.getStyleClass().add("workspace");
-        HBox header = new HBox(16, title);
-        header.getStyleClass().add("page-header");
-        workspace.setTop(header);
+        workspace.setTop(pageHeader());
         footer(databasePath);
         bindNavigation(listings, analytics, home, chats);
         accounts.readyProperty().addListener((o, before, ready) -> {
@@ -94,11 +92,32 @@ public class MarketplaceView {
         showAccount("login");
     }
 
+    private HBox pageHeader() {
+        Label saying = UiTools.label(
+                "Good finds. New beginnings. Give campus essentials " + "their next chapter.",
+                "page-subtitle");
+        saying.visibleProperty()
+                .bind(pages.getSelectionModel().selectedIndexProperty().isEqualTo(0));
+        saying.managedProperty().bind(saying.visibleProperty());
+        VBox copy = new VBox(4, title, saying);
+        HBox.setHgrow(copy, Priority.ALWAYS);
+        var sell = UiTools.button("Sell an item", "sell-shortcut", tasks,
+                () -> pages.getSelectionModel().select(1));
+        sell.getStyleClass().add("primary");
+        sell.visibleProperty().bind(saying.visibleProperty());
+        sell.managedProperty().bind(sell.visibleProperty());
+        HBox header = new HBox(16, copy, sell);
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.getStyleClass().add("page-header");
+        return header;
+    }
+
     private HBox sidebar() {
         if (sidebar != null) {
             return sidebar;
         }
-        HBox sidebar = new HBox(8, UiTools.label("Campus Marketplace", "top-brand"));
+        HBox sidebar = new HBox(8, UiTools.logo(36),
+                UiTools.label("Campus Marketplace", "top-brand"));
         sidebar.setAlignment(Pos.CENTER_LEFT);
         sidebar.getStyleClass().add("top-navigation");
         ToggleGroup group = new ToggleGroup();
@@ -144,18 +163,20 @@ public class MarketplaceView {
         default -> new LoginView(accounts, tasks, () -> showAccount("register"),
                 () -> showAccount("reset"));
         };
-        VBox brand = new VBox(18,
+        VBox brand = new VBox(18, UiTools.logo(150),
                 UiTools.label("Your campus.\nYour marketplace.", "login-hero-title"),
-                UiTools.label(
-                        "Find textbooks, electronics and furniture. Give your next great find a new owner.",
-                        "login-hero-copy"),
-                ItemArtwork.draw("TEXTBOOK"), ItemArtwork.draw("ELECTRONICS"));
+                UiTools.label("Find textbooks, electronics and furniture. Give your next "
+                        + "great find a new owner.", "login-hero-copy"));
         brand.getStyleClass().add("login-identity");
         brand.setAlignment(Pos.CENTER_LEFT);
+        brand.visibleProperty().bind(accountPane.widthProperty().greaterThanOrEqualTo(950));
+        brand.managedProperty().bind(brand.visibleProperty());
         ScrollPane scroll = new ScrollPane(form);
         scroll.setFitToWidth(true);
         scroll.getStyleClass().add("page-scroll");
         scroll.setMaxWidth(460);
+        scroll.setMinWidth(0);
+        HBox.setHgrow(scroll, Priority.ALWAYS);
         HBox layout = new HBox(40, brand, scroll);
         layout.setAlignment(Pos.CENTER);
         layout.getStyleClass().add("login-layout");
@@ -181,8 +202,12 @@ public class MarketplaceView {
         details.setEditable(false);
         details.setWrapText(true);
         details.setId("initial-credentials");
+        details.setPrefRowCount(18);
+        details.setPrefColumnCount(56);
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Save your classroom account details");
+        dialog.setResizable(true);
+        dialog.getDialogPane().setPrefWidth(620);
         dialog.getDialogPane().setContent(details);
         dialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
         UiTools.dialog(dialog, root.getScene().getWindow(), refresh);
@@ -205,8 +230,18 @@ public class MarketplaceView {
         Label status = UiTools.label("", "status-text");
         status.textProperty().bind(tasks.statusProperty());
         Label errors = UiTools.label("", "error-text");
+        errors.setId("application-error");
+        errors.getStyleClass().add("global-error");
         errors.textProperty().bind(tasks.errorProperty());
-        HBox footer = new HBox(15, status, UiTools.label("Database: " + databasePath, "muted"));
+        errors.visibleProperty()
+                .bind(errors.textProperty().isNotEmpty().and(session.memberProperty().isNotNull())
+                        .and(pages.getSelectionModel().selectedIndexProperty().isNotEqualTo(1)));
+        errors.managedProperty().bind(errors.visibleProperty());
+        status.setMinWidth(0);
+        HBox.setHgrow(status, Priority.ALWAYS);
+        Label location = UiTools.label("Saved on this computer", "muted");
+        location.setTooltip(new javafx.scene.control.Tooltip(databasePath));
+        HBox footer = new HBox(15, status, location);
         footer.getStyleClass().add("status-bar");
         root.setBottom(new VBox(errors, footer));
     }
