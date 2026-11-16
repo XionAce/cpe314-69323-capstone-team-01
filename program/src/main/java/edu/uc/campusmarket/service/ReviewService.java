@@ -25,4 +25,9 @@ public class ReviewService {
             return reviews.listFor(listingId);
         });
     }
+
+    /** Returns saved review text and its stored-data rating summary. */
+    public String summary(long listing) {
+        return ServiceCall.get(() -> reviews.reviews(listing));
+    }
 }

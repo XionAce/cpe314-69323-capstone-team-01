@@ -1,5 +1,11 @@
 package edu.uc.campusmarket.controller;
 
+import edu.uc.campusmarket.persistence.DatabaseChanges;
+import edu.uc.campusmarket.service.ServiceCall;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Three-second polling policy; tick() is independently testable without a
  * window.
@@ -16,6 +22,8 @@ public class RefreshController {
     private int page;
     private boolean dialogOpen;
     private boolean closed;
+    private DatabaseChanges changes;
+    private final Map<Integer, Long> versions = new HashMap<>();
 
     /** Creates this component from the supplied values or dependencies. */
     public RefreshController(TaskRunner tasks, UserSession session, ListingController listings,
@@ -26,6 +34,7 @@ public class RefreshController {
         this.analytics = analytics;
         this.schedule = schedule;
         session.memberProperty().addListener((o, before, after) -> {
+            versions.clear();
             if (after == null || closed) {
                 schedule.stop();
             } else {
@@ -46,6 +55,10 @@ public class RefreshController {
         if (closed || session.member() == null || tasks.busyProperty().get() || dialogOpen) {
             return;
         }
+        if (changes != null && (page == 0 || page == 3)) {
+            checkChanges();
+            return;
+        }
         if (page == 0) {
             listings.refresh(true);
         }
@@ -60,13 +73,41 @@ public class RefreshController {
         }
     }
 
-    /** Adds the signed-in inbox to the existing idle three-second refresh policy. */
+    private void checkChanges() {
+        int requestedPage = page;
+        long generation = session.generation();
+        tasks.run(() -> ServiceCall.get(changes::version), version -> {
+            if (closed || generation != session.generation() || page != requestedPage || dialogOpen
+                    || version.equals(versions.get(requestedPage))) {
+                return;
+            }
+            Runnable read = () -> versions.put(requestedPage, version);
+            if (requestedPage == 0) {
+                listings.refresh(true, read);
+            } else {
+                analytics.refresh(true, read);
+            }
+        }, true);
+    }
+
+    /** Watches committed data before reloading listings and analytics. */
+    public void setChanges(DatabaseChanges value) {
+        changes = value;
+        versions.clear();
+    }
+
+    /**
+     * Adds the signed-in inbox to the existing idle three-second refresh policy.
+     */
     public void setChats(ChatController value) {
         chats = value;
     }
 
     /** Provides the set page operation for this component. */
     public void setPage(int value) {
+        if (page != value) {
+            versions.remove(value);
+        }
         page = value;
     }
 
@@ -79,5 +120,13 @@ public class RefreshController {
     public void close() {
         closed = true;
         schedule.stop();
+        if (changes != null) {
+            try {
+                changes.close();
+            } catch (SQLException failure) {
+                System.getLogger(RefreshController.class.getName()).log(System.Logger.Level.WARNING,
+                        "Could not close database observer.", failure);
+            }
+        }
     }
 }

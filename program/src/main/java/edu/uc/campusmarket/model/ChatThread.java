@@ -9,7 +9,9 @@ public record ChatThread(long listingId, long buyerId, long sellerMemberId, Stri
         return memberId == buyerId ? sellerName : buyerName;
     }
 
-    /** Removed listings retain their chat history, but cannot receive new messages. */
+    /**
+     * Removed listings retain their chat history, but cannot receive new messages.
+     */
     public boolean canSend() {
         return !Listing.REMOVED.equals(listingStatus);
     }

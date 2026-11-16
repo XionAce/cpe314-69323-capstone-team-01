@@ -29,6 +29,7 @@ public class ListingController {
     private final StringProperty details = new SimpleStringProperty(
             "Select an item to view its details.");
     private final StringProperty suggestion = new SimpleStringProperty("");
+    private final StringProperty formError = new SimpleStringProperty("");
     private final StringProperty query = new SimpleStringProperty("");
     private final StringProperty statusFilter = new SimpleStringProperty("ALL");
     private final BooleanProperty own = new SimpleBooleanProperty();
@@ -54,6 +55,7 @@ public class ListingController {
             own.set(false);
             statusFilter.set("ALL");
             suggestion.set("");
+            formError.set("");
             if (after != null) {
                 loadCategories();
             }
@@ -84,15 +86,21 @@ public class ListingController {
      * applicable.
      */
     public void refresh(boolean quiet) {
+        refresh(quiet, () -> {
+        });
+    }
+
+    /** Reports a successful current-filter read to the change monitor. */
+    public boolean refresh(boolean quiet, Runnable refreshed) {
         if (session.member() == null || category.get() == null) {
-            return;
+            return false;
         }
         long generation = session.generation(), member = session.memberId(),
                 categoryId = category.get().getId();
         String text = query.get();
         boolean mine = own.get();
         String status = statusFilter.get();
-        tasks.run(() -> service.search(member, categoryId, text, mine, status), result -> {
+        return tasks.run(() -> service.search(member, categoryId, text, mine, status), result -> {
             if (generation != session.generation() || category.get() == null) {
                 return;
             }
@@ -109,6 +117,7 @@ public class ListingController {
                 items.setAll(result);
                 selected.set(result.stream().filter(p -> p.getId() == id).findFirst().orElse(null));
             }
+            refreshed.run();
         }, quiet);
     }
 
@@ -137,8 +146,13 @@ public class ListingController {
     /** Creates a listing using the signed-in member's seller identity. */
     public void post(String title, String price, String type, Category category, String observation,
             Runnable saved) {
+        formError.set(service.validateForm(title, price, type, observation));
+        if (!formError.get().isEmpty()) {
+            return;
+        }
         long member = session.memberId();
         if (category == null) {
+            formError.set("Choose a category for this item.");
             return;
         }
         tasks.run(() -> service.post(member, title, price, type, category.getId(), observation),
@@ -234,8 +248,16 @@ public class ListingController {
      * Requests supported catalog references without treating their prices as PHP.
      */
     public void suggest(String title, String type) {
+        long generation = session.generation();
         suggestion.set("Requesting catalog...");
-        tasks.run(() -> catalog.suggest(title, type), suggestion::set);
+        boolean accepted = tasks.run(() -> catalog.result(title, type), result -> {
+            if (generation == session.generation()) {
+                suggestion.set(result.message());
+            }
+        });
+        if (!accepted) {
+            suggestion.set("Another action is running. Please try again shortly.");
+        }
     }
 
     /** Provides the items operation for this component. */
@@ -276,5 +298,20 @@ public class ListingController {
     /** Returns observable suggestion state for view binding. */
     public ReadOnlyStringProperty suggestionProperty() {
         return suggestion;
+    }
+
+    /** Exposes inline form feedback without database work on the UI thread. */
+    public ReadOnlyStringProperty formErrorProperty() {
+        return formError;
+    }
+
+    /** Returns validation feedback before the owner edit dialog closes. */
+    public String validateEdit(Listing original, String title, String price) {
+        return service.validateEdit(original, title, price);
+    }
+
+    /** Supplies valid observations to views without importing service helpers. */
+    public List<String> observations(String type) {
+        return edu.uc.campusmarket.service.ListingFactory.observations(type);
     }
 }

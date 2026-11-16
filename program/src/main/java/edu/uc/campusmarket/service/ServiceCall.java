@@ -4,6 +4,8 @@ import java.sql.SQLException;
 
 /** Converts data-access failures at the service boundary. */
 public final class ServiceCall {
+    private static final System.Logger LOG = System.getLogger(ServiceCall.class.getName());
+
     private ServiceCall() {
     }
 
@@ -35,8 +37,8 @@ public final class ServiceCall {
         try {
             return action.execute();
         } catch (SQLException error) {
-            throw new AppException("Database operation could not finish: " + error.getMessage(),
-                    error);
+            LOG.log(System.Logger.Level.WARNING, "Database operation failed.", error);
+            throw new AppException("Could not save or load data. Please try again.", error);
         }
     }
 }

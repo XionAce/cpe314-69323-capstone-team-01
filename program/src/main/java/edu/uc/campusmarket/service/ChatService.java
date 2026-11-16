@@ -6,7 +6,9 @@ import edu.uc.campusmarket.model.ChatThread;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Applies message limits and loads private buyer-seller conversation snapshots. */
+/**
+ * Applies message limits and loads private buyer-seller conversation snapshots.
+ */
 public class ChatService {
     public static final int MAX_MESSAGE_LENGTH = 2000;
     private final ChatDao chats;
@@ -37,13 +39,14 @@ public class ChatService {
         if (listingId == 0) {
             return threads.isEmpty() ? null : threads.getFirst();
         }
-        return threads.stream()
-                .filter(thread -> thread.listingId() == listingId
-                        && (buyerId == 0 || thread.buyerId() == buyerId))
-                .findFirst().orElse(null);
+        return threads.stream().filter(thread -> thread.listingId() == listingId
+                && (buyerId == 0 || thread.buyerId() == buyerId)).findFirst().orElse(null);
     }
 
-    /** Stores plain text as a prepared value; sending never joins a waitlist or buys an item. */
+    /**
+     * Stores plain text as a prepared value; sending never joins a waitlist or buys
+     * an item.
+     */
     public void send(long memberId, long listingId, long buyerId, String message) {
         String text = message == null ? "" : message.strip();
         if (text.isEmpty() || text.length() > MAX_MESSAGE_LENGTH) {
