@@ -74,7 +74,7 @@ JDK 21 Maven verification on 15 November 2026 passed **159 JUnit tests**, with z
 - [Known issues and correction status](KNOWN_ISSUES.md)
 - [Requirement-to-code and test map](REQUIREMENT_MAP.md)
 
-The integration branch is `project/milestone-2`. PR #14, **Milestone 2 - Team 01**, was merged into main on 14 November. The latest local corrections still need reviewed publication. For final defense, the instructor grades **main**; verify a fresh clone on the presentation machine after publication. Keep existing branches/history. See [SETUP.md](SETUP.md) for rehearsal and capture steps.
+Milestone 2 used `project/milestone-2`; PR #14, **Milestone 2 - Team 01**, was merged into main on 14 November. The latest corrections are committed and pushed to `project/weel-11` in [PR #15](https://github.com/XionAce/cpe314-69323-capstone-team-01/pull/15), awaiting review and merge into main. For final defense, the instructor grades **main**; verify a fresh clone on the presentation machine after merging. Keep existing branches/history. See [SETUP.md](SETUP.md) for rehearsal and capture steps.
 
 The application fills the usable work area and uses the supplied logo with navy, teal and gold. Navigation is across the top; Marketplace has scrollable cards and a selected-item panel, and saved reviews open as readable star/comment cards. The selling screen includes a live listing preview. Choose or drop a JSON file, then select Import selected file; choosing alone saves nothing. Imports show actual activity and saved/invalid/duplicate totals. Analytics shows one chart at a time with an exact breakdown beside it.
 
@@ -96,6 +96,4 @@ seventeen independent two-process chat assertions also passed on temporary datab
 Quiet refresh accepts foreground actions and checks committed changes before full
 list/chart reads. The application uses focused services, explicit catalog outcomes,
 clear inline input errors, keyboard card activation and safe handling of unknown dates.
-The checked design Word/PDF have 33 pages and 50 verified contents entries. The 24-slide defense deck includes the original proposal questions and implementation answers before the closing Q&A. Both contain current application evidence. These local
-corrections still require a reviewed commit and publication; live defense and individual
-contribution requirements remain separate.
+The checked design Word/PDF have 33 pages and 50 verified contents entries. The 24-slide defense deck includes the original proposal questions and implementation answers before the closing Q&A. Both contain current application evidence. On 16 November, Maven `clean verify` again passed all 159 tests across fourteen classes, with zero failures, errors or skipped tests. The corrections are committed and pushed in PR #15; review and merge into main, presentation-machine verification, live defense and individual contribution requirements remain.

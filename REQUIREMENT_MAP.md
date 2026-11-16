@@ -1,6 +1,6 @@
 # Requirement-to-code and test map
 
-Campus Marketplace with Reviews. Updated 15 November 2026.
+Campus Marketplace with Reviews. Updated 16 November 2026.
 
 Main types are under `program/src/main/java/edu/uc/campusmarket/`; tests are under the corresponding `program/src/test/java/` package tree. Checked implementation is not a substitute for the instructor's live demonstration.
 
@@ -22,7 +22,7 @@ This table follows Week11_Checklist. The numbered implementation map below retai
 | 10. Peer evaluation | Each member privately completes the required ratings of teammates. Do not fabricate ratings or commit private evaluations. |
 | Individual Q&A | Each member prepares to explain their own recorded code, its rule, a meaningful test and what would break if it changed. This is a separate per-member defense requirement. |
 
-PR #14 was merged on 14 November. The current local corrections and updated 24-slide presentation still require reviewed publication. After publication, build/run a fresh clone of main on the presentation machine and complete the timed rehearsal. Keep the existing branches.
+PR #14 was merged on 14 November. The latest corrections and updated 24-slide presentation are committed and pushed to `project/weel-11` in [PR #15](https://github.com/XionAce/cpe314-69323-capstone-team-01/pull/15), awaiting review and merge into main. After merging, build/run a fresh clone of main on the presentation machine and complete the timed rehearsal. Keep the existing branches.
 
 ## Earlier checkpoint implementation map
 
@@ -46,8 +46,8 @@ This table follows the original project specification. It is separate from the e
 | Requirement | Source to inspect | Runtime demonstration |
 |---|---|---|
 | 1. Object-oriented design | `model/Listing`, `Textbook`, `Electronics`, `Furniture`; `Listing.getConditionLabel()` calls overridden `gradeCondition()` through the base type. | Browse the three seeded listing types and explain why different condition evidence produces different grades. |
-| 2. Data structure and recursion | `WaitlistService.order()/view()/recent()/collectCategoryIds()` | Join a queue as two buyers; show FIFO order and LIFO recent views. Search Electronics and find descendants. Trace category IDs 3 -> 5 -> 6 -> 7, returning [3,5,6,7]; the leaf has no recursive child call. |
-| 3. Automated testing | Thirteen JUnit classes in `program/src/test/java/` | Run Maven verification on the presentation machine and open an actual edge-case assertion. Historical passing results do not replace this live run. |
+| 2. Data structure and recursion | `WaitlistService.order()`; `ListingService.view()/recent()`; `CategoryTree.categoryIdsUnder()/collectCategoryIds()` | Join a queue as two buyers; show FIFO order and LIFO recent views. Search Electronics and find descendants. Trace category IDs 3 -> 5 -> 6 -> 7, returning [3,5,6,7]; the leaf has no recursive child call. |
+| 3. Automated testing | Fourteen JUnit classes in `program/src/test/java/` | Run Maven verification on the presentation machine and open an actual edge-case assertion. Historical passing results do not replace this live run. |
 | 4. Data modeling and database | Eleven tables in `schema.sql`; `dao/*`; `Database.open()` | Inspect the exact demo `.db` against the ERD. Show prepared insert/read/update SQL; removal archives a listing, while waitlist leave uses a parameterized DELETE. |
 | 5. API consumption | `ProductCatalogClient.fetch()`, `ProductCatalogParser.parse()`, `CatalogMapper.matches()`, `CatalogService.suggest()` | Request an electronics reference with HTTP details and a price range. Repeat offline and continue manual entry. The captured response is covered by a parser/mapper test; the live GUI network on/off check remains. |
 | 6. Event-driven GUI | Small `ui/*` views and feature controllers | Use login, search, post, join/review, edit and import controls. Show rejected empty/invalid input without a crash. |
@@ -91,7 +91,7 @@ The earlier six-record sample and three-record follow-up are synthetic classroom
 
 The actual HTTP-200 response is saved in `program/src/test/resources/api/fakestore-products.json`, with timestamp/hash metadata and a Java parser/mapper contract test. Repeat the GUI network-toggle demonstration on the presentation machine (KI-03). Local-server tests remain separate evidence.
 
-The instructor's request to clean up stale ERD images on older branches remains KI-06. Prepare the recursion trace and each member's explanation. PR #14 was merged into main on 14 November. The current 15 November corrections remain local for reviewed publication; no new PR or merge was performed for them. After publication, verify a fresh clone of main on the presentation machine. Preserve branches and member history. The current 60 broad GUI assertions and 17 two-process assertions are separate from the 159 JUnit tests.
+The instructor's request to clean up stale ERD images on older branches remains KI-06. Prepare the recursion trace and each member's explanation. PR #14 was merged into main on 14 November. The latest corrections are committed and pushed to `project/weel-11` in PR #15, awaiting review and merge into main. After merging, verify a fresh clone of main on the presentation machine. Preserve branches and member history. The recorded 93 application assertions (60 workflow and 33 UI follow-up checks) and 17 independent two-process assertions are separate from the 159 JUnit tests; Maven clean verification repeated successfully on 16 November without rerunning those GUI checks.
 
 The four earlier Additional_B1 feature requests are implemented. Personal home, owner title/price editing, waitlist leave/current positions, the standards pass and a bounded data-read measurement are checked. The live GUI network demonstration, older-branch image cleanup and very large UI-rendering measurements remain separate follow-ups.
 ## Additional feedback mapping
@@ -107,12 +107,12 @@ The four earlier Additional_B1 feature requests are implemented. Personal home, 
 
 | Question | Current factual answer |
 |---|---|
-| Branch name | The earlier submission used `feature/milestone-2-program`. The required `project/milestone-2` branch was submitted through PR #14 and merged into main on 14 November. The latest local corrections await reviewed publication. |
+| Branch name | The earlier submission used `feature/milestone-2-program`. The required `project/milestone-2` branch was submitted through PR #14 and merged into main on 14 November. The latest corrections are committed and pushed to `project/weel-11` in PR #15, awaiting review and merge into main. |
 | What is the Java analysis? | `SalesAnalysis.weeklyCounts()` groups saved historical sale timestamps into Monday-starting UTC weeks with a TreeMap. `summary()` finds the total and tied busiest weeks. The weekly bar chart displays those counts. Category SQL averages remain separate. |
 | How does a member receive the recovery code? | Registration shows it once in a read-only field. First-time seeded credentials appear in a local startup dialog. A successful password reset shows a replacement code and consumes the previous code. The member must save the code; there is no email delivery. |
 | Why is the program in a subfolder? | The existing Eclipse/Antigravity Maven layout is retained. Root README commands explicitly use `./program/mvnw.cmd -f ./program/pom.xml` to build or run from the repository root. |
 
-UI presentation follow-up: App.start() maximizes the stage; MarketplaceView builds top navigation; ReviewsView uses ReviewController.load() for saved star/comment cards in a right-side popup; ImportView binds its loader to importingProperty(); ChartsView spaces/colors bars and shows tooltips. The final application harness passed 46 checks, separately from JUnit.
+Earlier UI presentation follow-up: App.start() maximizes the stage; MarketplaceView builds top navigation; ReviewsView uses ReviewController.load() for saved star/comment cards in a right-side popup; ImportView binds its loader to importingProperty(); ChartsView spaces/colors bars and shows tooltips. That earlier application harness passed 46 checks, separately from JUnit. The latest recorded UI revision passed 93 application assertions.
 
 ## Personal-feature follow-up mapping
 
@@ -147,9 +147,10 @@ Schema version 5 adds Messages and indexes while preserving earlier accounts and
 | Catalog outcomes | CatalogService.result() returns CatalogSuggestion OK/EMPTY/FAILED; ListingController.suggest() handles rejected scheduling. Client and controller regressions cover both. |
 | Clear errors and retained records | ListingService, ServiceCall, ReviewDao and SavedDates; service/DAO tests cover invalid price/comment, SQL causes and malformed stored dates. |
 | Focused services and recursion | MemberService, ListingService, ReviewService, WaitlistService and CategoryTree; the old MarketplaceServiceTest now uses a test-only MarketplaceFixture to execute these production services. |
-| Accessible and responsive views | 60 actual GUI assertions on 15 November include linked price labels, Enter card activation, inline form feedback, invalid edits staying open, 800x600 Sign out visibility and the initial title bar. |
+| Accessible and responsive views | The initial 60 GUI assertions on 15 November include linked price labels, Enter card activation, inline form feedback, invalid edits staying open, 800x600 Sign out visibility and the initial title bar. A further 33 layout, file-selection, import-result and analytics-breakdown checks brought the UI revision total to 93 application assertions. |
 | Private chat after worker changes | 17 independent two-process assertions passed on 15 November, preserving draft text, recipient selection, saved order and buyer privacy. |
 
-The current suite has 159 tests in fourteen classes. Source inventory is 85 top-level
+Maven clean verification on 16 November passed 159 tests in fourteen classes, with zero
+failures, errors or skipped tests. Source inventory is 85 top-level
 types; the unchanged schema remains eleven tables, 56 columns and fifteen foreign keys.
 See design Sections 3, 5, 6 and 8 for the revised behavior and actual verification.

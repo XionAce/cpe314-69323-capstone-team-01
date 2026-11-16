@@ -40,13 +40,13 @@ Save the random first-start credentials and recovery codes privately when shown,
 5. Request an electronics catalog reference online. Repeat with the network unavailable: show the error and continue manual posting. Restore the connection afterward. Backup screenshots support, but do not replace, a live demo.
 6. Keep the IDE ready on `Listing.gradeCondition()`, its three subclasses, `CategoryTree.collectCategoryIds()`, a DAO, `FxTaskRunner`, `SalesAnalysis` and a meaningful test. Keep the exact demo database path ready for schema inspection after closing the app.
 
-For the instructor's real-response fixture follow-up, run `./tools/capture-catalog.ps1` on a working connection. It saves a real HTTP response and timestamp/hash metadata under `program/src/test/resources/api`, without replacing an existing capture. The Java parser contract test must then be added against that actual file. The helper does not claim the response was captured or the live network demo completed.
+The actual public-response fixture and timestamp/hash metadata are already saved under `program/src/test/resources/api`. `ProductCatalogClientTest.capturedPublicResponseParsesAndProvidesComparableElectronics()` checks that captured response. If another capture is needed, run `./tools/capture-catalog.ps1` on a working connection; it preserves existing captures. The fixture and contract test do not replace the live network demonstration.
 
 ## Final submission
 
 The final-defense checklist grades **main**, after Milestone 2 is merged. It does not require another branch. Keep the existing branches/history. The user handles commits, pushes and merging; an open PR alone does not put code on main. After merging, verify a fresh clone of main on the presentation machine with the commands above. Every member reviews their own commits and prepares to explain actual changed lines.
 
-The design, requirement map and known issues must describe the same program. The checked revision dated 16 November has 33 pages, 50 contents entries, eleven figures, 85 Java types and eleven database tables. The Word/PDF and 24-slide defense deck are in `docs/`. Matching Drive copies were replaced in place and checked in SirNos/WEEK11 file on 15 November. Git publication of the local corrections remains separate. See [README.md](README.md), [REQUIREMENT_MAP.md](REQUIREMENT_MAP.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+The design, requirement map and known issues must describe the same program. The checked revision dated 16 November has 33 pages, 50 contents entries, eleven figures, 85 Java types and eleven database tables. The Word/PDF and 24-slide defense deck are in `docs/`. Matching Drive copies were replaced in place and checked in SirNos/WEEK11 file on 16 November (Manila). The corrections are committed and pushed to `project/weel-11`; [PR #15](https://github.com/XionAce/cpe314-69323-capstone-team-01/pull/15) awaits review and merge into main. See [README.md](README.md), [REQUIREMENT_MAP.md](REQUIREMENT_MAP.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 
 ## Demonstrate buyer-seller chat
