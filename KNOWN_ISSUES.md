@@ -1,10 +1,10 @@
 # Known issues and correction status
 
-Campus Marketplace with Reviews. Updated 14 November 2026.
+Campus Marketplace with Reviews. Updated 16 November 2026.
 
 ## Implemented corrections
 
-- Submission branch: `project/milestone-2`. Existing PR #14 is titled **Milestone 2 - Team 01**. Pushing this branch updates that PR; keep the earlier branches and member history.
+- Milestone 2 used `project/milestone-2`. PR #14, **Milestone 2 - Team 01**, was merged into main on 14 November. The latest corrections are committed and pushed to `project/weel-11` in [PR #15](https://github.com/XionAce/cpe314-69323-capstone-team-01/pull/15), awaiting review and merge into main. Keep earlier branches and member history.
 - Root build instructions use JDK 21 and the existing `program/` Maven module. This file, the requirement map and editable design are available.
 - Small views bind controllers; services apply rules; DAOs execute SQL. `App` creates dependencies and owns one named worker. Models/results/DTOs are separate from persistence and UI.
 - API download, parsing and comparable-product matching are separated. Reference currency is unspecified; final campus prices remain manual PHP inputs.
@@ -15,10 +15,10 @@ Campus Marketplace with Reviews. Updated 14 November 2026.
 - Personal home opens after login: active listings, waiting buyer names, reviews received/average and the member's own queue positions. Member-filtered queries share a read transaction. Old-session results are rejected and logout clears the snapshot.
 - Owner-only title/price editing retains ID, type, condition, currency, date, reviews and interests. SQL rechecks active status and ownership at save time.
 - Leaving deletes only the signed-in buyer's interest, including on archived items, and retains saved reviews. Displayed positions count remaining earlier entries; rejoining goes to the tail.
-- The design/PDF document all 82 top-level Java types and eleven tables/56 fields/fifteen foreign keys. Overview/detail ERDs use exact field names and both BuyerInterests unique pairs.
+- The design/PDF document all 85 top-level Java types and eleven tables/56 fields/fifteen foreign keys. Overview/detail ERDs use exact field names and both BuyerInterests unique pairs.
 - The standards pass fixed helper indentation/wrapping, named business-rule limits and missing security/interface API comments. Syntax inspection found zero unbraced controls, wildcard imports, tabs, lines over 120 characters, undocumented public types/non-overriding methods or main methods over 50 lines. This is a focused inspection, not an external style certification.
 
-KI-01 (design synchronization), KI-02 (ERD presentation), KI-05 (personal home/edit/queue controls) and KI-07 (final standards pass) are resolved in the current local source.
+KI-01 (design synchronization), KI-02 (ERD presentation), KI-05 (personal home/edit/queue controls) and KI-07 (final standards pass) are resolved on the correction branch.
 
 ## Open corrections and verification gaps
 
@@ -45,13 +45,13 @@ JDK 21, enforcer enabled, from the repository root:
 .\program\mvnw.cmd -o -f .\program\pom.xml verify
 ```
 
-**142 JUnit tests in thirteen classes passed, zero failures/errors/skips.** Tests use temporary databases and local HTTP servers. The earlier nine personal-feature cases cover personal scope, received ratings, owner edit validation/preservation, queue changes and stale dashboard results. Earlier model, migration, concurrency, import, API and analysis checks remain.
+**Maven clean verification on 16 November passed 159 JUnit tests in fourteen classes, zero failures/errors/skips.** Tests use temporary databases and local HTTP servers. The earlier nine personal-feature cases cover personal scope, received ratings, owner edit validation/preservation, queue changes and stale dashboard results. Earlier model, migration, concurrency, import, API and analysis checks remain.
 
-**50 separate application checks passed** against temporary data, including startup/registration/login, personal home, editing, leaving/current position, reviews, post/sold/remove, archive filters, imports/charts, cancellation rollback, automatic refresh, recovery, missing-detail restoration and resizing. GUI checks are separate from JUnit and from public-network evidence.
+**Earlier verification passed 50 separate application checks** against temporary data, including startup/registration/login, personal home, editing, leaving/current position, reviews, post/sold/remove, archive filters, imports/charts, cancellation rollback, automatic refresh, recovery, missing-detail restoration and resizing. The later UI revision passed 93 application assertions: 60 workflow checks and 33 layout, file-selection, import-result and analytics-breakdown checks. GUI checks are separate from JUnit and from public-network evidence; they were not rerun during the 16 November Maven verification.
 
 Five warm JDK 21 runs with **10,003 listings, 10,000 interests and 50,000 historical sales** measured search at 80.2-348.6 ms, analysis at 169.9-286.4 ms and personal-home reads at 49.5-63.0 ms. The temporary-data measurement excludes control rendering and cold startup; it is not a capacity guarantee.
 
-The published e80c4cf checkpoint had 128 JUnit tests and 46 application checks. The latest readiness follow-up remains local until the user commits/pushes; the assistant has not staged, committed, pushed, changed branches or modified a PR. The live GUI network check, older-branch image cleanup, the recursion trace and each member's explanation remain submission tasks. See [REQUIREMENT_MAP.md](REQUIREMENT_MAP.md).
+The published e80c4cf checkpoint had 128 JUnit tests and 46 application checks. The latest corrections are committed and pushed to `project/weel-11` in PR #15. Review and merge into main, the live GUI network check, older-branch image cleanup, the recursion trace and each member's explanation remain submission tasks. See [REQUIREMENT_MAP.md](REQUIREMENT_MAP.md).
 
 ## Final-defense readiness follow-up
 
@@ -59,8 +59,8 @@ The published e80c4cf checkpoint had 128 JUnit tests and 46 application checks. 
 - ProductCatalogClientTest covers the actual captured 20-product response and electronics matching. Capture metadata retains the original script-reported count of one and explains its correction to the decoded array length; original response bytes/timestamp/hash are unchanged. The capture script now counts the array correctly.
 - SETUP.md uses the current Java 21/JSON/module commands. TEAM_INFO.md matches the existing README roster without inventing Joshua's missing student number. The requirement map now lists all nine original technical requirements separately from scoring items.
 - The synthetic sample plus follow-up was imported through the production importer/DAO/analysis: counts changed 3,2,1 to 3,2,4; a repeat saved zero and skipped three duplicates.
-- A clean Git archive of published e80c4cf passed its 128 tests. This was not a clone of main. That earlier readiness checkpoint passed 131 tests and 50 application checks on 13 November. The private-chat follow-up on 14 November passes 142 tests in thirteen classes; independent two-process chat checks are recorded below.
-- GitHub readback: PR #14 remains open/unmerged, targeting main. Final grading requires the user to commit/push/review/merge and then test a fresh clone of main on the presentation machine. No new branch, automatic merge or history rewriting was performed. The Word contents and page layout have been rendered and verified. The presentation-machine network-toggle demonstration and each member's live explanation remain course requirements.
+- A clean Git archive of published e80c4cf passed its 128 tests. This was not a clone of main. An earlier readiness checkpoint passed 131 tests and 50 application checks on 13 November. The private-chat follow-up on 14 November passed 142 tests in thirteen classes. The current 15 November correction group passed 159 tests in fourteen classes.
+- PR #14 was merged into main on 14 November. PR #15 contains the latest corrections from `project/weel-11` and awaits review and merge. After merging, verify a fresh clone of main on the presentation machine. The presentation-machine network-toggle demonstration and each member's live explanation remain course requirements.
 
 Six additional live public-API screen checks passed using temporary data: HTTP 200, comparable references, currency warning, retained entered PHP price, busy-button state and available navigation. These are additional to the 50 broader application checks, and are not an offline network-toggle check. The editable Word document is synchronized with the design master; its contents field and matching PDF are checked after rendering.
 
@@ -71,4 +71,37 @@ Open an item and choose **Open chat**. The buyer writes first; the seller replie
 
 To demonstrate automatic updates, run the current program twice against the same data folder and sign in with two different accounts. Keep both Messages pages open. The existing three-second refresh displays saved replies without a manual refresh and preserves unsent text. Separate laptops do not share local messages. Existing sold-item chats stay usable for pickup; removed-item chats retain read-only history.
 
-Schema version 5 adds Messages and indexes while preserving earlier accounts and records. The current design includes eleven tables, 56 columns, fifteen foreign keys and 82 main Java types. Eight chat service tests and three chat-controller tests were added. A real two-process GUI test passed seventeen assertions, separately from JUnit.
+Schema version 5 adds Messages and indexes while preserving earlier accounts and records. The current design includes eleven tables, 56 columns, fifteen foreign keys and 85 main Java types. Eight chat service tests and three chat-controller tests were added. A real two-process GUI test passed seventeen assertions, separately from JUnit.
+
+
+## Instructor follow-up, 15 November 2026
+
+Implemented and verified in the correction source, now committed on `project/weel-11`:
+
+- Invalid posting/edit prices have a clear message; valid surrounding spaces are accepted.
+  Null review comments have a distinct message, and SQL details are logged rather than
+  included in the user-facing database error.
+- Quiet reads do not set foreground busy state. One user action can queue behind a quiet
+  read on the same serial worker. Repeated quiet ticks cannot accumulate. A rejected
+  catalog request shows a retry message, and CatalogSuggestion distinguishes OK/EMPTY/FAILED.
+- DatabaseChanges keeps one observer connection and checks SQLite data_version before
+  full listing/analytics reloads. Only successful reads update the saved page version.
+- ListingService, MemberService, ReviewService and WaitlistService own their operations;
+  CategoryTree owns recursion. The production catch-all MarketplaceService was removed.
+  MarketplaceFixture exists only under test sources for legacy integration assertions.
+- Invalid saved listing/message dates retain the record with an unknown date. History
+  previews display friendly UTC dates. SavedDates never substitutes a fabricated time.
+- Cards support keyboard focus and Enter/Space; labels are linked to controls. Invalid
+  edits keep the dialog open. Forms show inline errors, text contrast/sizes are improved,
+  the usable monitor bounds contain the initial window, and compact layouts retain
+  readable controls. The normal footer hides the full database path.
+- Clean verification: 159 tests / fourteen classes, zero failures/errors/skips, repeated
+  on 16 November. Separate recorded GUI evidence: 93 application assertions (60 workflow
+  and 33 UI follow-up checks) and 17 independent two-process chat assertions. All use
+  temporary data. No personal database was used for this verification.
+
+Remaining: KI-06 old-branch image cleanup; very large card rendering/cold-start
+measurements (KI-04); review/merge of PR #15 and fresh-clone verification of main;
+final live network demonstration, rehearsal, individual Q&A and private peer forms.
+The catalog description/image fields were explicitly optional. No new feature is claimed
+for them. Later corrections do not change the professor's earlier grading cutoff.

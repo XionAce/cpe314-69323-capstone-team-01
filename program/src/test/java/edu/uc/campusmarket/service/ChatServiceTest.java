@@ -9,9 +9,33 @@ import java.util.concurrent.Executors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ChatServiceTest {
+    @Test
+    void badSavedMessageDatePreservesHistoryOrderAndPrivacy() throws Exception {
+        chats.send(2, 1, 2, "Message with damaged date");
+        chats.send(1, 1, 2, "Later valid reply");
+        try (var connection = database.open();
+                var update = connection
+                        .prepareStatement("UPDATE Messages SET sentAt = 'invalid' WHERE id = 1")) {
+            update.executeUpdate();
+        }
+        var history = chats.load(2, 1, 2).messages();
+        assertEquals(2, history.size());
+        assertEquals("Message with damaged date", history.getFirst().body());
+        assertNull(history.getFirst().sentAt());
+        assertNotNull(history.getLast().sentAt());
+        assertTrue(history.getFirst().id() < history.getLast().id());
+        assertNull(chats.load(3, 1, 2).selected());
+        assertTrue(chats.load(3, 1, 2).messages().isEmpty());
+    }
+
     @TempDir
     Path directory;
     private TestDatabase database;
@@ -37,7 +61,8 @@ class ChatServiceTest {
         var seller = chats.load(1, 1, 2);
         assertEquals(buyer.messages(), seller.messages());
         assertEquals(List.of(2L, 1L), buyer.messages().stream().map(m -> m.senderId()).toList());
-        assertEquals("Where can we meet?\nI'm near the library.", buyer.messages().getFirst().body());
+        assertEquals("Where can we meet?\nI'm near the library.",
+                buyer.messages().getFirst().body());
         assertFalse(buyer.messages().getFirst().sentAt().isBefore(before));
         assertTrue(buyer.messages().getFirst().id() < buyer.messages().getLast().id());
         assertThrows(UnsupportedOperationException.class, () -> buyer.messages().clear());
@@ -52,7 +77,8 @@ class ChatServiceTest {
         assertEquals(1, chats.load(3, 0, 0).threads().size());
         assertTrue(chats.load(3, 1, 2).messages().isEmpty());
         assertTrue(new ChatDao(database).messages(1, 2, 3).isEmpty());
-        assertThrows(IllegalArgumentException.class, () -> chats.send(3, 1, 2, "Pretending to be B"));
+        assertThrows(IllegalArgumentException.class,
+                () -> chats.send(3, 1, 2, "Pretending to be B"));
         assertEquals(1, chats.load(2, 1, 2).messages().size());
     }
 
@@ -82,10 +108,12 @@ class ChatServiceTest {
         chats.send(2, 1, 2, "Interested");
         new edu.uc.campusmarket.dao.ListingDao(database).markSold(1, 1);
         chats.send(1, 1, 2, "Sold to you; we can still arrange pickup.");
-        assertThrows(IllegalArgumentException.class, () -> chats.send(3, 1, 3, "New sold-item chat"));
+        assertThrows(IllegalArgumentException.class,
+                () -> chats.send(3, 1, 3, "New sold-item chat"));
         assertEquals(2, chats.load(2, 1, 2).messages().size());
-        try (var connection = database.open(); var query = connection.prepareStatement(
-                "UPDATE Listings SET status = 'REMOVED' WHERE id = ?")) {
+        try (var connection = database.open();
+                var query = connection
+                        .prepareStatement("UPDATE Listings SET status = 'REMOVED' WHERE id = ?")) {
             query.setLong(1, 1);
             query.executeUpdate();
         }
@@ -99,7 +127,7 @@ class ChatServiceTest {
         chats.send(2, 1, 2, "Is this available?");
         assertTrue(database.getWaitlist(1).isEmpty());
         assertEquals("ACTIVE", database.getListings().getFirst().getStatus());
-        var waitlists = new WaitlistService(database.market());
+        var waitlists = database.market().waitlists();
         waitlists.join(1, 2);
         waitlists.leave(1, 2);
         var reopened = new ChatService(new ChatDao(new TestDatabase(database.getPath())));

@@ -26,15 +26,16 @@ import edu.uc.campusmarket.dao.MemberDao;
 import edu.uc.campusmarket.dao.ReviewDao;
 import edu.uc.campusmarket.dao.SellerDao;
 import edu.uc.campusmarket.persistence.Database;
+import edu.uc.campusmarket.persistence.DatabaseChanges;
 import edu.uc.campusmarket.service.AnalyticsService;
 import edu.uc.campusmarket.service.CatalogService;
 import edu.uc.campusmarket.service.ListingService;
-import edu.uc.campusmarket.service.MarketplaceService;
 import edu.uc.campusmarket.service.MemberService;
 import edu.uc.campusmarket.service.ReviewService;
 import edu.uc.campusmarket.service.SalesHistoryImporter;
 import edu.uc.campusmarket.service.WaitlistService;
 import edu.uc.campusmarket.ui.MarketplaceView;
+import edu.uc.campusmarket.ui.UiTools;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javafx.application.Application;
@@ -50,7 +51,7 @@ public class App extends Application {
     private AnalyticsController analytics;
     private TaskRunner tasks;
 
-    /** Wires the application dependencies and opens the maximized JavaFX window. */
+    /** Wires the application dependencies and opens the themed JavaFX window. */
     @Override
     public void start(Stage stage) {
         Database database = new Database(Database.defaultPath());
@@ -62,12 +63,11 @@ public class App extends Application {
         AnalyticsDao summaries = new AnalyticsDao(database);
         SellerDao sellers = new SellerDao(database);
         InterestDao interests = new InterestDao(database);
-        MarketplaceService foundation = new MarketplaceService(database, members, sellers,
-                categories, listings, interests, reviews, summaries, history);
         MemberService memberService = new MemberService(database, members);
-        ListingService listingService = new ListingService(foundation, listings, categories);
         ReviewService reviewService = new ReviewService(reviews);
-        WaitlistService waitlistService = new WaitlistService(foundation);
+        WaitlistService waitlistService = new WaitlistService(interests, memberService);
+        ListingService listingService = new ListingService(listings, categories, sellers,
+                memberService, reviewService, waitlistService);
         AnalyticsService analysisService = new AnalyticsService(summaries, history,
                 new SalesHistoryImporter(database, categories, history));
         CatalogService catalog = new CatalogService(new ProductCatalogClient());
@@ -92,6 +92,7 @@ public class App extends Application {
         refresh = new RefreshController(tasks, session, listingController, analytics,
                 new FxRefreshSchedule(), home);
         refresh.setChats(chats);
+        refresh.setChanges(new DatabaseChanges(database));
         MarketplaceView view = new MarketplaceView(accountController, listingController,
                 reviewController, waitlistController, analytics, refresh, session, tasks,
                 database.getPath().toString(), home, chats);
@@ -99,14 +100,24 @@ public class App extends Application {
     }
 
     private void openWindow(Stage stage, MarketplaceView view) {
-        Scene scene = new Scene(view.getRoot(), 1200, 800);
+        javafx.geometry.Rectangle2D bounds = javafx.stage.Screen.getPrimary().getVisualBounds();
+        Scene scene = new Scene(UiTools.window(stage, view.getRoot()),
+                Math.min(1200, bounds.getWidth()), Math.min(800, bounds.getHeight()));
         scene.getStylesheets().add(App.class.getResource("/ui/marketplace.css").toExternalForm());
+        Runnable compact = () -> view.getRoot().pseudoClassStateChanged(
+                javafx.css.PseudoClass.getPseudoClass("compact"),
+                scene.getWidth() < 950 || scene.getHeight() < 640);
+        scene.widthProperty().addListener((o, before, after) -> compact.run());
+        scene.heightProperty().addListener((o, before, after) -> compact.run());
+        compact.run();
         stage.setTitle("Campus Marketplace with Reviews");
-        stage.setMinWidth(1050);
-        stage.setMinHeight(700);
+        stage.setMinWidth(Math.min(760, bounds.getWidth()));
+        stage.setMinHeight(Math.min(560, bounds.getHeight()));
         stage.setScene(scene);
-        stage.setMaximized(true);
+        stage.setX(bounds.getMinX() + (bounds.getWidth() - scene.getWidth()) / 2);
+        stage.setY(bounds.getMinY() + (bounds.getHeight() - scene.getHeight()) / 2);
         stage.show();
+        UiTools.maximizeWindow(stage);
         view.initialize();
     }
 

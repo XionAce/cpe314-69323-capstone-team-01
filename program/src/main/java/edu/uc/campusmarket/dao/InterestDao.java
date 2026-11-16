@@ -21,8 +21,9 @@ public class InterestDao {
     public List<Long> getWaitlist(long listingId) throws SQLException {
         List<Long> buyers = new ArrayList<>();
         try (Connection connection = database.open();
-                PreparedStatement statement = connection.prepareStatement(
-                        "SELECT buyerId FROM BuyerInterests WHERE listingId = ? ORDER BY joiningOrder")) {
+                PreparedStatement statement = connection
+                        .prepareStatement("SELECT buyerId FROM BuyerInterests WHERE listingId = ? "
+                                + "ORDER BY joiningOrder")) {
             statement.setLong(1, listingId);
             try (ResultSet result = statement.executeQuery()) {
                 while (result.next()) {

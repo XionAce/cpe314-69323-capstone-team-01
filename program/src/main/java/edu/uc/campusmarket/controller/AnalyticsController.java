@@ -69,16 +69,24 @@ public class AnalyticsController {
      * applicable.
      */
     public void refresh(boolean quiet) {
+        refresh(quiet, () -> {
+        });
+    }
+
+    /** Reports a successful current-currency read to the change monitor. */
+    public boolean refresh(boolean quiet, Runnable refreshed) {
         if (session.member() == null) {
-            return;
+            return false;
         }
         String selected = currency.get().strip().toUpperCase(Locale.ROOT);
         long generation = session.generation();
-        tasks.run(() -> analytics.load(selected), value -> {
+        return tasks.run(() -> analytics.load(selected), value -> {
             if (generation == session.generation()
-                    && currency.get().strip().equalsIgnoreCase(selected)
-                    && !value.equals(snapshot.get())) {
-                snapshot.set(value);
+                    && currency.get().strip().equalsIgnoreCase(selected)) {
+                if (!value.equals(snapshot.get())) {
+                    snapshot.set(value);
+                }
+                refreshed.run();
             }
         }, quiet);
     }

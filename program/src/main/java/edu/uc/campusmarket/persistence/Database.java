@@ -90,8 +90,8 @@ public class Database {
                         .prepareStatement("PRAGMA user_version");
                         ResultSet result = statement.executeQuery()) {
                     result.next();
-                    int expectedTables = result.getInt(1) < SCHEMA_VERSION
-                            ? LEGACY_TABLE_COUNT : TABLE_COUNT;
+                    int expectedTables = result.getInt(1) < SCHEMA_VERSION ? LEGACY_TABLE_COUNT
+                            : TABLE_COUNT;
                     if (result.getInt(1) < 1 || result.getInt(1) > SCHEMA_VERSION
                             || tables != expectedTables) {
                         throw new SQLException("Unrecognized database. Choose a new data folder.");
@@ -138,7 +138,9 @@ public class Database {
         }
     }
 
-    /** Reuses the current message DDL when upgrading an existing classroom database. */
+    /**
+     * Reuses the current message DDL when upgrading an existing classroom database.
+     */
     static void ensureMessages(Connection connection) throws SQLException {
         for (String part : readSchema().split(";")) {
             String sql = part.strip();
@@ -160,8 +162,9 @@ public class Database {
                 statement.setString(2, names[i]);
                 statement.executeUpdate();
             }
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO Sellers(id, memberId, displayName, sellerKind) VALUES (?, ?, ?, ?)")) {
+            try (PreparedStatement statement = connection
+                    .prepareStatement("INSERT INTO Sellers(id, memberId, displayName, sellerKind) "
+                            + "VALUES (?, ?, ?, ?)")) {
                 statement.setLong(1, i + 1);
                 statement.setLong(2, i + 1);
                 statement.setString(3, names[i]);

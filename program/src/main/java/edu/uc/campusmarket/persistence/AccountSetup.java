@@ -136,8 +136,9 @@ final class AccountSetup {
         byte[] salt = CredentialSecurity.randomBytes(CredentialSecurity.SALT_BYTES);
         String candidate = CredentialSecurity.randomSecret();
         char[] secret = candidate.toCharArray();
-        try (var statement = connection.prepareStatement(
-                "UPDATE Members SET recoverySalt = ?, recoveryHash = ? WHERE id = ? AND recoveryHash IS NULL")) {
+        try (var statement = connection
+                .prepareStatement("UPDATE Members SET recoverySalt = ?, recoveryHash = ? WHERE "
+                        + "id = ? AND recoveryHash IS NULL")) {
             statement.setString(1, Base64.getEncoder().encodeToString(salt));
             statement.setString(2,
                     Base64.getEncoder().encodeToString(CredentialSecurity.hash(secret, salt)));

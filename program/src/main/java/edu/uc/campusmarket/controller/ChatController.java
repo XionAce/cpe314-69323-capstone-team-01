@@ -11,8 +11,19 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
-/** Owns private chat state, worker requests and stale-session/selection rejection. */
+/**
+ * Owns private chat state, worker requests and stale-session/selection
+ * rejection.
+ */
 public class ChatController {
+    /**
+     * Supplies the validated message limit without exposing service helpers to
+     * views.
+     */
+    public int messageLimit() {
+        return ChatService.MAX_MESSAGE_LENGTH;
+    }
+
     private final ChatService service;
     private final TaskRunner tasks;
     private final UserSession session;
@@ -24,7 +35,10 @@ public class ChatController {
     private boolean pending;
     private boolean publishing;
 
-    /** Clears private data on account change and defers navigation until the worker is idle. */
+    /**
+     * Clears private data on account change and defers navigation until the worker
+     * is idle.
+     */
     public ChatController(ChatService service, TaskRunner tasks, UserSession session) {
         this.service = service;
         this.tasks = tasks;
@@ -48,7 +62,10 @@ public class ChatController {
         draft.set("");
     }
 
-    /** Opens the selected listing's seller chat, or its existing buyer conversations for an owner. */
+    /**
+     * Opens the selected listing's seller chat, or its existing buyer conversations
+     * for an owner.
+     */
     public void open(long itemId) {
         listingId = itemId;
         buyerId = 0;
@@ -59,7 +76,9 @@ public class ChatController {
         refresh(false);
     }
 
-    /** Selects a private conversation without carrying a draft across recipients. */
+    /**
+     * Selects a private conversation without carrying a draft across recipients.
+     */
     public void select(ChatThread thread) {
         if (thread == null || (listingId == thread.listingId() && buyerId == thread.buyerId())) {
             return;
@@ -73,7 +92,9 @@ public class ChatController {
         refresh(false);
     }
 
-    /** Refreshes from SQLite so separate application windows see committed replies. */
+    /**
+     * Refreshes from SQLite so separate application windows see committed replies.
+     */
     public void refresh(boolean quiet) {
         if (session.member() == null) {
             return;
@@ -110,7 +131,10 @@ public class ChatController {
         }
     }
 
-    /** Captures the recipient and text, saving once and clearing only that unchanged draft. */
+    /**
+     * Captures the recipient and text, saving once and clearing only that unchanged
+     * draft.
+     */
     public void send() {
         ChatThread thread = selected.get();
         if (thread == null || tasks.busyProperty().get()) {
@@ -131,12 +155,18 @@ public class ChatController {
         });
     }
 
-    /** Returns the signed-in member ID for presentation of incoming and outgoing bubbles. */
+    /**
+     * Returns the signed-in member ID for presentation of incoming and outgoing
+     * bubbles.
+     */
     public long memberId() {
         return session.member() == null ? 0 : session.memberId();
     }
 
-    /** Distinguishes an inbox refresh from a user deliberately choosing another recipient. */
+    /**
+     * Distinguishes an inbox refresh from a user deliberately choosing another
+     * recipient.
+     */
     public boolean isPublishing() {
         return publishing;
     }

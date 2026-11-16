@@ -117,12 +117,11 @@ class ReviewAnalyticsTest {
     @Test
     void historicalSalesDoNotInflateTheCurrentListingPriceChart() throws Exception {
         var before = db.priceSummary("PHP");
-        try (var connection = db.open();
-                var statement = connection.prepareStatement(
-                        """
-                                INSERT INTO HistoricalSales(categoryId, sourceRecordId, priceMinor, currency, soldAt)
-                                VALUES (2, 'old-sale', 99999999, 'PHP', '2026-10-20T08:00:00Z')
-                                """)) {
+        try (var connection = db.open(); var statement = connection.prepareStatement("""
+                INSERT INTO HistoricalSales(categoryId, sourceRecordId,
+                priceMinor, currency, soldAt)
+                VALUES (2, 'old-sale', 99999999, 'PHP', '2026-10-20T08:00:00Z')
+                """)) {
             statement.executeUpdate();
         }
         assertEquals(before, db.priceSummary("PHP"));

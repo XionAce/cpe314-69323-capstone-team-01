@@ -120,8 +120,9 @@ class SalesHistoryImporterTest {
         importer.importFile(file("[" + sale("decimal", "19.99") + "]"), () -> false, n -> {
         });
         try (var connection = db.open();
-                var statement = connection.prepareStatement(
-                        "SELECT priceMinor, soldAt FROM HistoricalSales WHERE sourceRecordId = 'decimal'");
+                var statement = connection
+                        .prepareStatement("SELECT priceMinor, soldAt FROM HistoricalSales WHERE "
+                                + "sourceRecordId = 'decimal'");
                 var result = statement.executeQuery()) {
             assertTrue(result.next());
             assertEquals(1999, result.getLong("priceMinor"));

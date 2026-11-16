@@ -1,17 +1,17 @@
 package edu.uc.campusmarket.service;
 
 import edu.uc.campusmarket.TestDatabase;
-import edu.uc.campusmarket.dao.CategoryDao;
 import edu.uc.campusmarket.dao.HomeDao;
 import edu.uc.campusmarket.dao.InterestDao;
-import edu.uc.campusmarket.dao.ListingDao;
 import edu.uc.campusmarket.model.Listing;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PersonalFeaturesTest {
     @TempDir
@@ -27,8 +27,8 @@ class PersonalFeaturesTest {
         database.initialize();
         var market = database.market();
         market.initialize();
-        listings = new ListingService(market, new ListingDao(database), new CategoryDao(database));
-        waitlists = new WaitlistService(market);
+        listings = market.listings();
+        waitlists = market.waitlists();
         home = new HomeService(new HomeDao(database));
     }
 
@@ -105,6 +105,35 @@ class PersonalFeaturesTest {
                     () -> listings.update(1, before, "Valid", price));
         }
         assertEquals(before.getTitle(), first().getTitle());
+    }
+
+    @Test
+    void invalidPriceTextHasAClearMessageAndDoesNotPostOrEdit() throws Exception {
+        Listing before = first();
+        int count = database.getListings().size();
+        for (String price : new String[] { null, "", "   ", "abc", "1,000.00" }) {
+            IllegalArgumentException postError = assertThrows(IllegalArgumentException.class,
+                    () -> listings.post(1, "New book", price, "TEXTBOOK", 2, "No visible damage"));
+            IllegalArgumentException editError = assertThrows(IllegalArgumentException.class,
+                    () -> listings.update(1, before, "Changed title", price));
+            assertEquals("Price must be a number like 250.00.", postError.getMessage());
+            assertEquals(postError.getMessage(), editError.getMessage());
+        }
+        assertEquals(count, database.getListings().size());
+        assertEquals(before.getTitle(), first().getTitle());
+        assertEquals(before.getPrice(), first().getPrice());
+    }
+
+    @Test
+    void validPriceTextAcceptsSurroundingSpacesAndPreservesExactCents() throws Exception {
+        long id = listings.post(1, "New book", " 250.50 ", "TEXTBOOK", 2, "No visible damage");
+        Listing posted = database.getListings().stream().filter(item -> item.getId() == id)
+                .findFirst().orElseThrow();
+        assertEquals(new BigDecimal("250.50"), posted.getPrice());
+        listings.update(1, posted, "Edited book", " 425.25 ");
+        Listing edited = database.getListings().stream().filter(item -> item.getId() == id)
+                .findFirst().orElseThrow();
+        assertEquals(new BigDecimal("425.25"), edited.getPrice());
     }
 
     @Test

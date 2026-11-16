@@ -32,6 +32,61 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class ControllerTest {
     @Test
+    void unchangedDatabaseSkipsFullReloadAndFailedReadCanRetry(
+            @org.junit.jupiter.api.io.TempDir java.nio.file.Path directory) throws Exception {
+        var database = new edu.uc.campusmarket.persistence.Database(directory.resolve("watch.db"));
+        database.initialize();
+        Fixture fixture = new Fixture();
+        Clock clock = new Clock();
+        RefreshController refresh = new RefreshController(fixture.runner, fixture.session,
+                fixture.listings, fixture.analytics, clock);
+        refresh.setChanges(new edu.uc.campusmarket.persistence.DatabaseChanges(database));
+        try {
+            fixture.session.signIn(new Member(1, "Person A"));
+            clock.tick.run();
+            int first = fixture.service.searches;
+            clock.tick.run();
+            assertEquals(first, fixture.service.searches);
+            try (var connection = database.open();
+                    var update = connection.prepareStatement(
+                            "UPDATE Listings SET title = 'Another window changed this' "
+                                    + "WHERE id = 1")) {
+                update.executeUpdate();
+            }
+            fixture.service.fail = true;
+            clock.tick.run();
+            fixture.service.fail = false;
+            clock.tick.run();
+            assertEquals(first + 2, fixture.service.searches);
+            clock.tick.run();
+            assertEquals(first + 2, fixture.service.searches);
+        } finally {
+            refresh.close();
+        }
+    }
+
+    @Test
+    void rejectedCatalogRequestDoesNotLeaveARequestingLabel() {
+        Fixture fixture = new Fixture();
+        fixture.session.signIn(new Member(1, "Person A"));
+        fixture.runner.busy.set(true);
+        fixture.listings.suggest("monitor", "ELECTRONICS");
+        assertFalse(fixture.listings.suggestionProperty().get().contains("Requesting"));
+        assertTrue(fixture.listings.suggestionProperty().get().contains("try again"));
+    }
+
+    @Test
+    void invalidPostIsReportedBeforeSchedulingOrSaving() {
+        Fixture fixture = new Fixture();
+        fixture.session.signIn(new Member(1, "Person A"));
+        fixture.listings.post("Book", "abc", "TEXTBOOK", new Category(2, 1L, "Textbooks"),
+                "No visible damage", () -> fail("Invalid input must not be saved."));
+        assertEquals("Price must be a number like 250.00.",
+                fixture.listings.formErrorProperty().get());
+        assertEquals(0, fixture.service.postedBy);
+    }
+
+    @Test
     void chatRejectsOldSessionResultsAndClearsPrivateDraftsOnLogout() {
         Runner runner = new Runner();
         UserSession session = new UserSession();
@@ -368,7 +423,7 @@ class ControllerTest {
         List<Listing> rows = List.of(book(1, "First"), book(2, "Second"));
 
         Listings() {
-            super(null, null, null);
+            super(null, null, null, null, null, null);
         }
 
         @Override

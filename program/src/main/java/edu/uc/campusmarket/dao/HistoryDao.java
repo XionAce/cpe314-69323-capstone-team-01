@@ -1,6 +1,7 @@
 package edu.uc.campusmarket.dao;
 
 import edu.uc.campusmarket.persistence.Database;
+import edu.uc.campusmarket.persistence.SavedDates;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -31,7 +32,7 @@ public class HistoryDao {
                 text.append(result.getString(1)).append(" | ").append(result.getString(2))
                         .append(" | ").append(result.getString(4)).append(' ')
                         .append(BigDecimal.valueOf(result.getLong(3), 2)).append(" | ")
-                        .append(result.getString(5)).append('\n');
+                        .append(SavedDates.display(result.getString(5))).append('\n');
             }
         }
         return text.toString();
@@ -53,8 +54,9 @@ public class HistoryDao {
 
     /** Prepare the import insert once, then reuse it for every parsed row. */
     public PreparedStatement prepareImport(Connection connection) throws SQLException {
-        return connection.prepareStatement(
-                "INSERT INTO HistoricalSales(categoryId, sourceRecordId, priceMinor, currency, soldAt)"
+        return connection
+                .prepareStatement("INSERT INTO HistoricalSales(categoryId, sourceRecordId, "
+                        + "priceMinor, currency, soldAt)"
                         + " VALUES (?, ?, ?, ?, ?) ON CONFLICT(sourceRecordId) DO NOTHING");
     }
 

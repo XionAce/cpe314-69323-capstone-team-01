@@ -30,7 +30,10 @@ public class ReviewDao {
         if (rating < MIN_RATING || rating > MAX_RATING) {
             throw new IllegalArgumentException("Rating must be 1 to 5.");
         }
-        if (comment == null || comment.length() > MAX_COMMENT_LENGTH) {
+        if (comment == null) {
+            throw new IllegalArgumentException("Enter a review comment, or leave it empty.");
+        }
+        if (comment.length() > MAX_COMMENT_LENGTH) {
             throw new IllegalArgumentException("Comment must be at most 1000 characters.");
         }
         try (Connection connection = database.open()) {
@@ -51,8 +54,9 @@ public class ReviewDao {
 
     private void requireAvailableOtherOwner(Connection connection, long listingId, long memberId)
             throws SQLException {
-        try (var query = connection.prepareStatement(
-                "SELECT s.memberId, l.status FROM Listings l JOIN Sellers s ON s.id = l.sellerId WHERE l.id = ?")) {
+        try (var query = connection
+                .prepareStatement("SELECT s.memberId, l.status FROM Listings l JOIN Sellers s "
+                        + "ON s.id = l.sellerId WHERE l.id = ?")) {
             query.setLong(1, listingId);
             try (var row = query.executeQuery()) {
                 if (!row.next()) {
@@ -130,12 +134,11 @@ public class ReviewDao {
     /** Loads saved reviews in their recorded order. */
     public String reviews(long listingId) throws SQLException {
         StringBuilder text = new StringBuilder();
-        try (var connection = database.open();
-                var query = connection.prepareStatement(
-                        """
-                                SELECT m.name, r.rating, r.comment FROM Reviews r JOIN Members m ON m.id = r.reviewerId
-                                WHERE r.listingId = ? ORDER BY r.id
-                                """)) {
+        try (var connection = database.open(); var query = connection.prepareStatement("""
+                SELECT m.name, r.rating, r.comment FROM Reviews r JOIN Members m
+                ON m.id = r.reviewerId
+                WHERE r.listingId = ? ORDER BY r.id
+                """)) {
             query.setLong(1, listingId);
             try (var result = query.executeQuery()) {
                 while (result.next()) {

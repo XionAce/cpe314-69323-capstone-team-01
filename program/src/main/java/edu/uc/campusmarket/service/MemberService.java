@@ -47,4 +47,16 @@ public class MemberService {
     public String resetPassword(String username, char[] code, char[] password) {
         return ServiceCall.get(() -> members.resetPassword(username, code, password));
     }
+
+    /** Loads public identities, excluding password and recovery hashes. */
+    public List<Member> identities() {
+        return ServiceCall.get(members::getMembers);
+    }
+
+    /** Rejects unknown member IDs before a private or write operation. */
+    public void require(long member) {
+        if (identities().stream().noneMatch(value -> value.getId() == member)) {
+            throw new IllegalArgumentException("Sign in with an existing member.");
+        }
+    }
 }

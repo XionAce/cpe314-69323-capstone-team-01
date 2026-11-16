@@ -21,7 +21,7 @@ Table 1: Group information
 |  | Emanuelle De Paz |
 | Instructor | Richyll Son |
 | Term | First Semester, S.Y. 2026-2027 |
-| Document Version / Date | V 1.0 / 14 November 2026 |
+| Document Version / Date | V 1.0 / 16 November 2026 |
 
 <!-- pagebreak -->
 
@@ -37,10 +37,10 @@ Table 2: Document revisions
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
-| 0.1 | 23 Oct 2026 | Group 1 | Initial project overview, ER sketch and responsibilities. |
-| 0.2 | 8 Nov 2026 | Group 1 | Documented the listing classes, named the IDs and clarified the table connections. |
-| 0.3 | 13 Nov 2026 | Group 1 | Registration, MVC, Java analysis, listing dates/status, safer detail handling and matching diagrams/tests. |
-| 1.0 | 14 Nov 2026 | Group 1 | Compiled Sections 1-9; documented private listing chats, database upgrade, testing evidence and commit-linked contributions; checked diagrams and page navigation. |
+| 0.1 | 23 Oct 2026 | Acexion B. Mahigugmaon | Initial project overview, ER sketch and responsibilities. |
+| 0.2 | 8 Nov 2026 | Acexion B. Mahigugmaon | Documented the listing classes, named the IDs and clarified the table connections. |
+| 0.3 | 15 Nov 2026 | Acexion B. Mahigugmaon | Registration, MVC and Java analysis; listing dates/status and safer detail handling. Compiled Sections 1-9 with synchronized services, private chat, safe refresh, themed screens, explicit JSON import and analytics breakdowns. Verified diagrams, current UI evidence and page navigation. |
+| 1.0 | 16 Nov 2026 | Acexion B. Mahigugmaon | Revised the project design document: corrected the version sequence, named the author for each revision and updated the current issue date. |
 
 <!-- pagebreak -->
 
@@ -174,38 +174,38 @@ Table 5: Application layers and responsibilities
 | Controllers | Hold observable state, obtain the active member from UserSession and request background work. |
 | Services | Apply account, listing, review and analysis rules. Convert data-access failures before they reach the screen. |
 | DAOs | Execute prepared SQL and return records. Recheck storage-sensitive rules in write transactions. |
-| Database / AccountSetup | Open connections, create tables, seed initial records and migrate account fields without erasing saved data. |
+| Database / AccountSetup / DatabaseChanges | Open connections, initialize and migrate records; observe committed changes without reloading unchanged lists. |
 | ProductCatalogClient / ProductCatalogParser | Download the catalog and validate its JSON in separate classes. |
 | CatalogProduct / CatalogResponse | Carry the parsed product subset and HTTP information in dto. |
-| CatalogMapper / CatalogService | Select supported comparable products and prepare reference information. |
+| CatalogMapper / CatalogService | Select comparable products and return CatalogSuggestion with OK, EMPTY or FAILED status. |
 | ChatController / ChatService / ChatDao | Load private conversations, validate messages and save participant-filtered results. |
 | SalesHistoryImporter / SalesAnalysis | Stream and validate JSON imports; group saved timestamps and count weekly activity in Java. |
 
-The action path is View -> Controller -> Service -> DAO -> SQLite. Task results update controller properties on the JavaFX thread; bound views display them. Models contain no GUI or SQL. The Appendix lists every top-level Java type and the process map.
+The action path is View -> Controller -> Service -> DAO -> SQLite. MemberService, ListingService, ReviewService and WaitlistService own focused operations; there is no shared MarketplaceService facade in the application. CategoryTree owns hierarchy validation and recursion. Background results update controller properties on the JavaFX thread; bound views display them. Models contain no GUI or SQL. The Appendix lists every top-level Java type and the process map.
 
 <!-- pagebreak -->
 
 ### Collections and recursion
 
-Waitlists use Queue with ArrayDeque: offer() adds at the tail and poll() reads the first buyer. Stored joiningOrder values rebuild FIFO order. InterestDao assigns MAX(joiningOrder)+1 and inserts in one atomic INSERT ... SELECT, with eligibility rechecked in that same statement. SQLite serializes writers; ties do not receive the same position. A Map stores each member's Stack of recently viewed IDs. push() adds the latest view; pop() reads a copy, preserving session history. At most 20 unique views are kept per member.
+Waitlists use Queue with ArrayDeque: offer() adds at the tail and poll() reads the first buyer. WaitlistService reads saved joiningOrder values in FIFO order. Leaving deletes only that buyer's row; positions count the remaining earlier rows without rewriting saved orders. InterestDao assigns MAX(joiningOrder)+1 and inserts in one atomic INSERT ... SELECT, with eligibility rechecked in that same statement. SQLite serializes writers; ties do not receive the same position. ListingService keeps a Map of each member's Stack of recently viewed IDs. push() adds the latest view; pop() reads a copy, preserving session history. At most 20 unique views are kept per member.
 
-collectCategoryIds() adds a category ID and recursively visits each child. A category without children is the base case. Validation rejects missing parents, duplicate IDs and cycles before traversal. Search includes the selected category and all descendants.
+CategoryTree.collectCategoryIds() adds a category ID and recursively visits each child. A category without children is the base case. Validation rejects missing parents, duplicate IDs and cycles before traversal. Search includes the selected category and all descendants.
 
 ### Application screens and state
 
-MarketplaceView is the application shell. LoginView, RegistrationView and PasswordResetView contain account forms. HomeView shows the signed-in member's personal summary. ListingTableView and ListingCards display the same observable listing list. ListingFormView handles posting inputs, ReviewsView contains review/waitlist controls, ImportView displays import state and ChartsView renders the returned results. ChatView displays ChatController conversation state.
+MarketplaceView is the application shell. Cards accept Enter or Space, field labels link to controls, and forms show inline validation. The footer shows local-storage status, with the database path in a tooltip. Table 13 maps screens to their controllers and services.
 
-UserSession holds the active Member and a generation number. AccountController, ListingController, ReviewController, WaitlistController, HomeController and AnalyticsController coordinate their features. FxTaskRunner exposes busy, status and error properties. RefreshController decides whether to poll; FxRefreshSchedule supplies the timer. These per-window values are in memory, not new database columns.
+Controllers coordinate feature state through UserSession and FxTaskRunner. UserSession identifies the signed-in member and tracks session changes; FxTaskRunner exposes busy, status and error properties. Section 6 explains background work and refresh.
 
-InitialAccount, Registration, ImportResult, CategorySummary, ListingForRepair, WeeklySales and AnalyticsSnapshot carry setup/action results. HomeItem and HomeSummary carry the personal dashboard snapshot. Review and Seller hold domain values. ItemArtwork draws category illustrations, and UiTools provides presentation helpers. Artwork is not a separate database entity.
+Result records carry action results and screen snapshots without adding database columns. Table 14 lists every Java type, and Table 13 shows the process flow. ItemArtwork draws category illustrations; UiTools provides window and dialog helpers.
 
 ### Buyer-seller conversations
 
-Open chat on an item opens its conversation in Messages. A buyer starts a conversation on an ACTIVE item; its seller sees that buyer in the private inbox and replies there. The seller cannot start a conversation with a buyer who has not written first. Each listing/buyer pair is separate, so two buyers cannot read each other's messages. Starting a chat does not join a waitlist, reserve an item, mark it sold or process a payment.
+A buyer starts a listing conversation with its seller through Open chat on an ACTIVE item. Sellers reply to buyers who have already written. Each listing/buyer pair stays private. Chat does not join waitlists, reserve items, mark sales or process payments.
 
-ChatView displays incoming/outgoing bubbles, names, local-time labels, a text box and Send message. Ctrl+Enter also sends. ChatController takes the sender from UserSession. ChatService strips surrounding whitespace and requires 1-2000 characters. ChatDao uses prepared statements and rechecks participants and listing status in the INSERT. Text is displayed as plain text. SQLite IDs define the saved message order; sentAt records the UTC timestamp.
+ChatView shows named message bubbles and local times. Send message or Ctrl+Enter sends plain text. ChatController takes the sender from UserSession; ChatService trims the text and requires 1-2000 characters. ChatDao uses prepared statements, rechecks participants and listing status before saving, orders messages by SQLite ID and stores sentAt in UTC.
 
-The Messages page refreshes every three seconds while signed in and idle. Separate application processes using the same database see saved replies automatically. Polling preserves unsent text; switching conversations clears the draft, and logout clears private chat state. Stale results from an older account or selection are ignored. Existing conversations remain usable after an item becomes SOLD for pickup arrangements; new conversations cannot start on sold items. REMOVED listings retain read-only history.
+Existing conversations remain usable after a listing becomes SOLD; new conversations cannot start on sold items. REMOVED listings retain read-only history. Section 6 explains automatic updates, draft preservation and session isolation.
 
 ### Sign in, registration and password recovery
 
@@ -221,9 +221,9 @@ Hashes use PBKDF2WithHmacSHA256, 210,000 iterations and 256 bits. Random salts u
 
 ### Marketplace screens and ownership
 
-The app opens maximized with navigation across the top. After login, My home shows the member's active items, interested buyers, reviews received and personal waitlist positions. HomeController loads this data through HomeService and HomeDao in one background task. Every personal query filters by the member ID; a read transaction keeps the summary consistent. Signing out clears it, and results from an older session are rejected.
+The app fills the usable work area with top navigation and the logo's navy, teal and gold theme. The title bar, controls, dialogs and errors share this styling. UiTools.WindowFrame and UiTools.WindowResize handle window movement, sizing and closing. My home shows active items, waiting buyers, received reviews and personal waitlist positions. HomeController loads member-filtered HomeService/HomeDao data in one background task; logout clears the dashboard and older-session results are rejected.
 
-Selecting a card or list row opens a closable details panel on the right. Cards and List show the same records, dates and statuses. Read reviews opens a right-positioned popup with names, stars and comments; Review listing opens a form on that side. Smaller panels scroll. View details loads the waitlist and recent views.
+Marketplace places its saying below the title, above search and scrollable cards. Cards and List share records, dates and statuses. Selection opens a closable details panel on the right; narrow windows stack the panels. Read reviews shows names, initials, stars and wrapped comments; Write a review opens its form. View details loads waitlist and recent views. Sell an item groups item and condition fields beside a live title, price and condition preview; service validation remains authoritative.
 
 Each member may buy or sell. Edit title / price is available for an owned active listing. The service validates the title and exact positive price; SQL rechecks owner and active status at save time. The ID, type, condition, currency, creation date, reviews and waitlist stay unchanged. Posting uses the member's seller profile, created when needed. My listings filters to that owner and can show All statuses, Active, Sold or Removed. Mark as sold and Remove listing require confirmation and recheck ownership in SQL. Records, condition rows, reviews and waitlists are retained. Public search and current-listing means include ACTIVE items only.
 
@@ -580,7 +580,7 @@ Prices use integer minor units: PHP 350.50 is stored as priceMinor 35050 and cur
 
 BuyerInterests has UNIQUE(listingId, buyerId) to prevent repeated interest and UNIQUE(listingId, joiningOrder) to prevent tied positions within a waitlist. Members and Listings have an M:N interest relationship implemented through BuyerInterests.
 
-Foreign keys are enabled on every SQLite connection. PreparedStatement binds input values to SQL. Each operation opens its own connection. Saving a listing with its detail record and restoring missing details both use transactions and roll back on failure.
+Foreign keys are enabled on every SQLite connection. PreparedStatement binds input values to SQL. DAO data operations open their own connections. Saving a listing with its detail record and restoring missing details both use transactions and roll back on failure.
 
 The following CREATE TABLE statements match program/src/main/resources/db/schema.sql. Each snippet defines one table. The username index is created during AccountSetup.upgrade().
 
@@ -786,13 +786,13 @@ ProductCatalogClient sends the request with a 15-second timeout, checks HTTP 200
 
 ### Mapping and listing-form use
 
-CatalogMapper.matches() selects compatible electronics products sharing title words with the listing. It ignores short/common words, ranks by shared-word count, breaks ties by product ID and returns up to three references. CatalogService prepares titles and minimum/maximum reference price for ListingController. The member chooses the campus category and final PHP price manually.
+CatalogMapper.matches() selects compatible electronics products sharing title words with the listing. It ignores short/common words, ranks by shared-word count, breaks ties by product ID and returns up to three references. CatalogService returns titles, a minimum/maximum reference price and an explicit outcome to ListingController. The member chooses the campus category and final PHP price manually.
 
 The API does not state currency, so prices are labeled currency unspecified. Unsupported clothing/jewelry categories are not converted into campus listing types. Textbooks, furniture and unmatched queries retain manual entry. Posting inputs are disabled during a request, preventing a stale response from being applied to changed inputs.
 
 ### Errors and API verification
 
-HTTP failure, timeout or invalid JSON produces a retry/manual-entry message through task error state. It does not save a listing or erase entered values. Parser/client tests use local HTTP servers and the saved real HTTP-200 response containing 20 products. The team captured it on a working connection; its metadata records timestamp and SHA-256. A live GUI network toggle remains a separate check; the illustrative JSON above is not the captured response.
+CatalogSuggestion distinguishes OK, EMPTY and FAILED. HTTP failure, timeout or invalid JSON returns a retry/manual-entry message in the suggestion panel. Rejected requests show a busy message rather than leaving a loading label. It does not save a listing or erase entered values. Parser/client tests use local HTTP servers and the saved real HTTP-200 response containing 20 products. The team captured it on a working connection; its metadata records timestamp and SHA-256. A live GUI network toggle remains a separate check; the illustrative JSON above is not the captured response.
 
 <!-- pagebreak -->
 
@@ -800,7 +800,7 @@ HTTP failure, timeout or invalid JSON produces a retry/manual-entry message thro
 
 ### Worker and controller state
 
-App creates one named ExecutorService, marketplace-database, shared by the controllers. Views create no threads and call no DAOs or HTTP clients. FxTaskRunner.run() wraps slow work in JavaFX Task. Success/failure handlers update controller state on the JavaFX thread; views bind that state.
+App creates one named ExecutorService, marketplace-database, shared by the controllers. Views create no threads and call no DAOs or HTTP clients. FxTaskRunner.run() submits callable work to that serial worker and dispatches results through Platform.runLater. Only foreground actions set busy; one user action can queue behind a quiet refresh. At most one quiet read is pending, so timer ticks cannot build up a backlog.
 
 Initialization, registration, login, reset, listing actions, catalog requests, JSON import and analytics run on this worker. Controllers capture inputs and active member before starting. UserSession's generation number lets listing/analysis results reject a signed-out or changed session.
 
@@ -812,17 +812,17 @@ SalesHistoryImporter streams a UTF-8 JSON array one record at a time. Each recor
 
 HistoryDao supplies a prepared insert. One transaction commits valid new rows after the file ends successfully. Invalid field values and duplicate source IDs are skipped and counted. Broken JSON, database failure or cancellation rolls back that import's new rows and preserves previous history.
 
-AnalyticsController dispatches progress to JavaFX after the first row and every 1,000 rows. An indeterminate spinner/bar shows real import activity without inventing a percentage. Cancel sets a flag checked between records. Success shows saved/invalid/duplicate totals, up to five validation messages and the latest 20 rows. Preview failure after commit still reports that the import was saved.
+ImportView accepts one readable JSON file through Choose JSON file or the drop area. Selection alone writes nothing; Import selected file starts AnalyticsController.importFile(). AnalyticsController reports progress after the first row and every 1,000 rows. A spinner and indeterminate bar show actual work; the bar fills only after a committed result and resets on a new selection or failure. Cancel requests rollback between records. The last completed result shows actual saved, invalid and duplicate totals, up to five validation messages and the latest 20 rows. Preview failure after commit still reports a successful save.
 
 ### Automatic updates between windows
 
-FxRefreshSchedule supplies a three-second Timeline. RefreshController.tick() polls only while signed in, on My home, Marketplace, Analytics or Messages, with no active work or open dialog. Listing results must still match the session, category, query and My listings filter. Unchanged values preserve rows and selection; equal analytics snapshots avoid redraw.
+A three-second Timeline from FxRefreshSchedule calls RefreshController.tick() for signed-in active pages when no dialog or foreground task is running. DatabaseChanges reads SQLite PRAGMA data_version; Marketplace and Analytics reload after a committed change or page entry. Successful reads update the observed version. Session, category, query and ownership checks reject stale results; unchanged rows and chart snapshots preserve selection and avoid redraw.
 
-The timer stops on logout and close. Failed reads show a message and allow retry. Windows using one SQLite file see another connection's post/withdrawal on a successful check; separate laptop databases are not synchronized. Details/reviews/waitlists reload through their corresponding actions. ChatController refreshes the selected conversation and inbox without clearing a draft; changing account or selected conversation invalidates older results.
+The timer stops on logout and close; failed reads show a message and allow retry. Processes sharing one SQLite file see committed updates, while separate laptop databases are not synchronized. Details, reviews and waitlists reload through their actions. ChatController refreshes the selected conversation and inbox without clearing unsent text. Changing conversations clears the draft; logout clears private chat state. Account or selection changes invalidate older results.
 
 ### Responsiveness and shutdown
 
-Work buttons and posting inputs are disabled while busy. Loaded views can scroll and navigation remains available. Cancel import stays available during import. App.stop() stops refresh, requests cancellation and shuts down the worker. Every database operation closes its resources. The Appendix records bounded data-read timings; very large screen rendering remains unmeasured.
+Foreground work disables its work buttons and posting inputs; quiet refresh leaves them available. Navigation, loaded-view scrolling and Cancel import remain usable. App.stop() stops refresh, requests cancellation and shuts down the worker. DAOs close operation resources, and the change observer closes its reused connection. Appendix timings cover data reads; very large screen rendering remains unmeasured.
 
 <!-- pagebreak -->
 
@@ -834,7 +834,7 @@ The analysis asks how many imported sales occurred each week and which observed 
 
 This is Java aggregation, not SQL AVG/COUNT. Counts include all currencies because they count sales, not money. Duplicate source IDs are not inserted twice. Weeks without sales are not plotted; empty history has a no-history message. UTC grouping also handles offset and year boundaries consistently.
 
-The six sample sales produce counts 3, 2 and 1 for weeks beginning 19 October, 26 October and 2 November 2026. The first week is busiest; existing history can change the totals.
+The six-record sample produces weekly counts 3, 2 and 1 for 19 October, 26 October and 2 November 2026. The three-record follow-up changes these to 3, 2 and 4. A separate sales-history-realistic-demo.json contains 1,200 explicitly fictional PHP sales across twelve weeks from 24 August to 14 November, with supported categories and varied prices. Its actual importer check saved 1,200 rows with no invalid records; a repeat skipped all 1,200 duplicates. Existing saved history combines with any sample and changes the totals.
 
 ### Category averages
 
@@ -849,13 +849,13 @@ AnalyticsDao runs separate queries so reviews do not multiply listing prices. Cu
 
 ### Charts and why they fit
 
-Three discrete bar charts compare groups using separated colored bars, light dashed grid lines and exact-value tooltips:
+Analytics displays one of three bar charts at a time through Weekly sales, Listing prices and Review ratings. Separated navy, teal and gold bars, labeled axes, light dashed grid lines and exact-value tooltips support reading the data:
 
 - Weekly frequency: X-axis Week starting Monday (UTC); Y-axis Sales.
 - Listing means: X-axis Category; Y-axis Price in the selected currency, initially PHP.
 - Review means: X-axis Category; Y-axis Rating on a 0-5 scale.
 
-AnalyticsService returns an AnalyticsSnapshot; AnalyticsController publishes it and ChartsView only renders it. Titles, axes, busiest-week/tie summaries and no-data messages explain the result. Manual refresh and idle polling read current data.
+AnalyticsService returns an AnalyticsSnapshot; AnalyticsController publishes it and ChartsView renders the selected chart and its breakdown. Weekly rows show exact counts and shares of imported sales. Price rows show category means, currency and listing counts; their bars compare with the highest mean, not a market share. Rating rows show means out of five and review counts. Summary cards show counts from the same snapshot. Small windows stack the chart and breakdown within a scrollable page; refresh and idle polling read current data.
 
 ### Checking that the analysis changes
 
@@ -867,9 +867,9 @@ HistoryAnalysisTest imports, deletes and reimports saved rows and checks changed
 
 ### Recorded JUnit result
 
-The recorded JDK 21 Maven verification on 14 November 2026 passed 142 JUnit tests in thirteen test classes, with zero failures, errors or skipped tests. The Java/Maven enforcer was enabled. The latest pass adds chat privacy, message-boundary, migration and concurrent-reply tests, plus controller checks for stale conversations and draft preservation. The earlier readiness regressions and real-response parser/mapper test remain. TestDatabase is a shared fixture, not a thirteenth test class.
+The recorded JDK 21 Maven clean verify on 15 November 2026 passed 159 JUnit tests in fourteen test classes, with zero failures, errors or skipped tests and the Java/Maven enforcer enabled. New regressions cover clear price/database messages, rejected catalog requests, foreground actions during refresh, committed-change detection and invalid saved dates. TestDatabase and MarketplaceFixture are shared test helpers, not additional test classes.
 
-Tests use temporary SQLite files and local HTTP servers. They do not change the personal database. From the repository root, run `./program/mvnw.cmd -o -f ./program/pom.xml verify` to repeat the suite after dependencies are available. First-time dependency downloads need a connection.
+Tests use temporary SQLite files and local HTTP servers, leaving the personal database unchanged. The Appendix gives commands for repeating verification.
 
 ### Coverage and meaningful edge cases
 
@@ -877,11 +877,12 @@ Table 10: JUnit coverage and edge cases
 
 | Test class and count | What it checks | Meaningful edge case |
 |---|---|---|
-| ProductCatalogClientTest (11) | Catalog JSON parsing, matching, HTTP failures and timeout. | Reject numeric strings; timeouts stop waiting; the real 20-product capture supplies valid electronics references. |
-| ControllerTest (16) | Session identity, background results, selection, refresh and personal home. | A search or home result arriving after logout cannot refill the screen. |
+| ProductCatalogClientTest (12) | Catalog JSON parsing, matching, HTTP failures and timeout. | Reject numeric strings; timeouts stop waiting; the real 20-product capture supplies valid electronics references. |
+| ControllerTest (19) | Session identity, background results, selection, refresh and personal home. | A search or home result arriving after logout cannot refill the screen. |
+| FxTaskRunnerTest (6) | Worker ordering, UI dispatch, busy state, rejection and quiet refresh. | A user action queues behind a quiet read; a timer cannot queue repeated reads or overwrite the newer action's status. |
 | ListingTest (9) | Three condition subclasses, lifecycle states and exact money. | One missing textbook page overrides otherwise good appearance; fractional cents are rejected. |
 | ListingValidationTest (6) | Member/category identity, title cleanup and money limits. | Accept the largest stored price; reject invalid parents, unknown item types and mismatched condition observations. |
-| DatabaseTest (31) | Initialization, migrations, credentials, subtype storage, recovery and concurrent queues. | Two buyers joining simultaneously receive distinct positions; migration failure rolls back schema/version changes. |
+| DatabaseTest (33) | Initialization, migrations, credentials, subtype storage, recovery and concurrent queues. | Two buyers joining simultaneously receive distinct positions; migration failure rolls back schema/version changes. |
 | ReviewAnalyticsTest (9) | Review rules, averages, currency separation and historical-data exclusion. | Weight every review equally instead of averaging per-item averages; separate different currencies. |
 
 <!-- pagebreak -->
@@ -892,21 +893,23 @@ Table 11: Remaining JUnit coverage and edge cases
 
 | Test class and count | What it checks | Meaningful edge case |
 |---|---|---|
-| AccountAndReviewTest (8) | Registration, recovery codes and waitlist-before-review rules. | A repeated normalized username inserts no extra member; a consumed recovery code cannot be reused. |
+| AccountAndReviewTest (10) | Registration, recovery codes and waitlist-before-review rules. | A repeated normalized username inserts no extra member; a consumed recovery code cannot be reused. |
 | HistoryAnalysisTest (1) | JSON import through saved data to Java weekly analysis. | Deleting and reimporting stored history changes weekly counts while current listing means remain unchanged. |
 | MarketplaceServiceTest (17) | Recursive categories, FIFO waitlists, LIFO history and ownership. | Reject category cycles/missing parents; one member cannot read another member's private recent history. |
-| PersonalFeaturesTest (8) | Account-scoped home, owner edits, leaving/rejoining and position changes. | Reject an edit after an item becomes sold; leaving advances remaining positions and retains saved reviews. |
+| PersonalFeaturesTest (10) | Account-scoped home, owner edits, leaving/rejoining and position changes. | Reject an edit after an item becomes sold; leaving advances remaining positions and retains saved reviews. |
 | SalesAnalysisTest (6) | UTC Monday grouping, sorting, empty results and tied busiest weeks. | A timestamp offset can cross a Monday/year boundary; report all tied busiest weeks. |
-| ChatServiceTest (8) | Private buyer/seller messages, message limits, saved order and version-4 migration. | An unrelated buyer cannot read/send to another conversation; concurrent replies remain ordered; existing account hashes survive upgrade. |
+| ChatServiceTest (9) | Private buyer/seller messages, message limits, saved order and version-4 migration. | An unrelated buyer cannot read/send to another conversation; concurrent replies remain ordered; existing account hashes survive upgrade. |
 | SalesHistoryImporterTest (12) | Streaming validation, duplicates, progress and transaction rollback. | Malformed JSON or cancellation after a valid row rolls back the unfinished import and preserves earlier data. |
 
 ### Application checks and remaining verification
 
-A separate two-process chat demonstration passed seventeen GUI assertions. Buyer and seller signed in through the real screens in independent JVMs, exchanged three saved messages, and received replies through the normal three-second refresh. New message bubbles scrolled fully into view. Incoming replies preserved unsent drafts. An additional buyer's message did not switch the seller's selected recipient, clear its draft or enter the other buyer's history. These checks used a temporary database, not the personal database.
+The 15 November UI revision passed 93 application assertions on temporary databases: 60 workflow checks and 33 layout, file-selection, import-result and analytics-breakdown checks. They covered keyboard use, linked labels, inline errors, ownership/reviews, scrolling, readable review cards, explicit import start, duplicate/failure handling, chart switching and small-window layouts. Separate branding checks covered moving, sizing and closing windows/dialogs. These checks are separate from JUnit. Unknown saved dates show as unavailable; sale previews use readable UTC dates.
 
-Earlier, 50 application checks passed on 13 November using temporary data: account/home flows, reviews, posting, owner edits, queue changes, sold/removal, filters, imports/charts, rollback, refresh, recovery, missing-detail restoration and resizing. These checks are separate from the 142 JUnit tests.
+A separate two-process chat check passed seventeen GUI assertions using a temporary database. Buyer and seller signed in through independent JVMs, exchanged three saved messages and received replies through the normal three-second refresh. Checks confirmed that new bubbles scrolled into view, incoming replies preserved drafts, and another buyer's message did not change the selected recipient, clear its draft or enter another conversation.
 
-A real public response was captured from the team laptop on 13 November 2026 at 15:45 UTC: HTTP 200 with 20 products. The saved response and timestamp/hash metadata are test resources. ProductCatalogClientTest parses that fixture and checks electronics matching. Local HTTP tests cover failures/timeouts. Six additional online GUI checks passed with the real API; the offline/reconnection demonstration remains open. Older-branch ERD image cleanup and very large screen-rendering measurements also remain explicit follow-ups.
+Earlier GUI checks passed 50 assertions on 13 November using temporary data. These historical results are separate from the current JUnit suite; their workflows are covered in the feature descriptions and test tables.
+
+A public HTTP-200 response with 20 products was captured on 13 November 2026 at 15:45 UTC. Test resources retain the response and timestamp/hash metadata; ProductCatalogClientTest checks parsing and electronics matching. Six live API screen checks also passed. The offline/reconnection demonstration, older-branch ERD cleanup and very large screen-rendering measurements remain open.
 
 <!-- pagebreak -->
 
@@ -914,24 +917,24 @@ A real public response was captured from the team laptop on 13 November 2026 at 
 
 ### Contributions linked to repository history
 
-The table identifies concrete changes recorded under each member's Git identity. Section 2 lists responsibility assignments; assignment alone does not prove authorship of later changes. The latest integration, MVC, analysis and personal-feature corrections are recorded under Acexion's account. Each member should explain the actual changes referenced below during questions.
+The contribution table links each member to changes recorded under their Git identity. Section 2 lists assigned roles. Later integration, MVC, analysis and personal-feature corrections are recorded under Acexion's account. Members should explain the referenced changes during individual questions.
 
 Table 12: Member contributions recorded in Git
 
 | Member and responsibility | Recorded change and commit references |
 |---|---|
-| Joshua Brian S. Enovero - Backend and API | Catalog product data (3445979), HTTP catalog requests/parsing (ac9a812), and JSON sales-history importer (ca7b4d7). Later client/importer formatting: 321dfda. |
-| Glyde V. Arreglado - Database | Review persistence and category summaries (e44d82d); schema description (9c5f51d); account login/recovery and database updates (10d57ed). |
-| Tristan Dominic Urot - UI and GUI | Connected review, import, suggestion and chart actions (d71e56b); redesigned login/recovery screens, styles and automatic refresh (507f2de). |
-| John Benedict Alaiza - Listing models | Listing title/money-boundary validation tests (f66a8d3); textbook-model formatting (665d922). The formatting commit is not described as new condition logic. |
-| Emanuelle De Paz - QA and testing | Expanded account, import, API, analytics, model-validation and service tests across six files (5a8d3c3). Earlier README team-member update: 7855ef9. |
-| Acexion B. Mahigugmaon - Project leader and integration | Application/service integration (98f2509); MVC/domain separation (7c2554c, e7ff854, 935659a); Java weekly analysis (c00274c); lifecycle/atomic queue persistence (ec36b77); personal home/edit/queue corrections (65ef65b, 4dc1a9c, a0208ff); follow-up tests (72088f5) and design synchronization (e80c4cf). |
+| Joshua Brian S. Enovero - Backend and API | Catalog product data (3445979), HTTP catalog requests/parsing (ac9a812), and JSON sales-history importer (ca7b4d7). Later client/importer formatting: 321dfda; captured-response verification and samples: e1c9ef2. |
+| Glyde V. Arreglado - Database | Review persistence and category summaries (e44d82d); schema description (9c5f51d); account login/recovery and database updates (10d57ed); message persistence and migration (368351d). |
+| Tristan Dominic Urot - UI and GUI | Connected review, import, suggestion and chart actions (d71e56b); redesigned login/recovery screens, styles and automatic refresh (507f2de); messaging UI (57a7a68). |
+| John Benedict Alaiza - Listing models | Listing title/money-boundary validation tests (f66a8d3); textbook-model formatting (665d922). The formatting commit is not described as new condition logic. Later factory/model-message work: 8bacc0e and 3b9af6c. |
+| Emanuelle De Paz - QA and testing | Expanded account, import, API, analytics, model-validation and service tests across six files (5a8d3c3). Earlier README team-member update: 7855ef9; chat/controller regression coverage: 41dc439. |
+| Acexion B. Mahigugmaon - Project leader and integration | Application/service integration (98f2509); MVC/domain separation (7c2554c, e7ff854, 935659a); Java weekly analysis (c00274c); lifecycle/atomic queue persistence (ec36b77); personal home/edit/queue corrections (65ef65b, 4dc1a9c, a0208ff); follow-up tests (72088f5) and design synchronization (e80c4cf); chat integration (b7a2ee9), final mapping (aea412c) and editable design/contents (63e6d72). |
 
 ### Finding and explaining a contribution
 
-Open the team repository, select a listed commit and inspect Files changed. For example, `git show f66a8d3` shows John's validation tests. Explain one changed line: its input, rule or action, result, and the test or screen that demonstrates it. Earlier file names can differ after the MVC refactor; use the commit view for the original change and the current type inventory for today's file location.
+For individual questions, open a referenced commit's Files changed view and explain the input, rule or action, result and supporting test or screen. Use the current type inventory when refactoring has changed a filename.
 
-Git references above are checked against the current branch's history. They identify recorded changes, not a peer rating or a guarantee of individual understanding.
+The commit references were checked against repository history. They record changes, not peer ratings or proof of individual understanding.
 
 <!-- pagebreak -->
 
@@ -939,27 +942,21 @@ Git references above are checked against the current branch's history. They iden
 
 design-document.md is the editable master. Its Mermaid blocks define the hierarchy and database diagrams; assets/ contains the editable draw.io sketch and PNG. From the repository root, `python tools/export_design.py` rebuilds the PDF using Python, ReportLab and Calibri. Set CALIBRI_DIR for another font folder.
 
-Use JDK 21 and keep the version enforcer enabled. From program/, run `java -version`, `./mvnw.cmd -version` and `./mvnw.cmd clean verify`. Both version checks must show Java 21. The existing Eclipse and Antigravity Run profiles remain available.
+Use JDK 21 with the version enforcer enabled. From program/, run `java -version`, `./mvnw.cmd -version` and `./mvnw.cmd clean verify`. Both version checks must show Java 21. From the repository root, `./program/mvnw.cmd -o -f ./program/pom.xml verify` repeats the suite after dependencies are available. First-time downloads need a connection. The existing Eclipse and Antigravity Run profiles remain available.
 
 ### Account setup and recovery
 
-Initial local users are Person A / person_a, Person B / person_b and Person C / person_c. A new setup displays random passwords and recovery codes once in a local dialog. Save them privately. Existing accounts retain their credentials. A member can also register a new account.
-
-After registration or reset, save the displayed recovery code. A reset consumes the previous code and supplies a replacement. There are no published starter secrets or email-delivery promises.
+Account creation and recovery are described in Section 3. Save issued passwords and recovery codes privately when displayed. Existing accounts keep their credentials; a reset replaces the recovery code.
 
 ### Verification
 
-JDK 21 verification on 14 November 2026 passed 142 JUnit tests in thirteen classes, with zero failures/errors/skips and the enforcer enabled. Cases cover models, account rules, migration, concurrent queues, imports, analysis, personal scope, owner edits and stale results. Tests use temporary databases and local HTTP servers.
-
-Earlier, 50 application checks passed on 13 November using temporary data: account/home/review flows, owner edits, queue positions, posting, sold/removal, filters, import/charts, cancellation rollback, external refresh, missing-detail recovery and resizing.
-
-The public response capture and parser/mapper test are complete. Six additional live API screen checks passed: HTTP 200, parsed electronics references, currency labeling, preserved manual price, background state and available navigation. The offline/reconnection demonstration remains to be checked on the presentation machine.
+Section 8 contains the dated JUnit, GUI and API results. Repeat the build and tests on the presentation machine; demonstrate API offline/reconnection behavior separately.
 
 ### Limitations and requirement mapping
 
 Accounts and private chats use one local SQLite file; cloud sync, email recovery and payments are excluded. Chat history is available to participants through the app, including across two processes on the same file. Recent views last for the session. Five warm runs with 10,003 listings, 10,000 interests and 50,000 sales measured search at 80.2-348.6 ms, analysis at 169.9-286.4 ms and home at 49.5-63.0 ms. These laptop data-read timings exclude rendering and cold startup; they are not a capacity guarantee.
 
-KNOWN_ISSUES.md and REQUIREMENT_MAP.md in the repository root list limits and map checklist requirements to classes, methods and tests. Splitting the code does not add database fields.
+KNOWN_ISSUES.md and REQUIREMENT_MAP.md in the repository root list limits and map checklist requirements to classes, methods and tests.
 
 - [Team repository](https://github.com/XionAce/cpe314-69323-capstone-team-01)
 - [Project proposal](proposal.pdf)
@@ -982,36 +979,60 @@ Table 13: Implemented process flow
 | Register | RegistrationView; AccountController.register() | MemberDao saves a unique account and returns a recovery code. |
 | Login / reset | LoginView / PasswordResetView; AccountController.login()/reset() | MemberDao verifies or replaces hashes; UserSession holds active identity. |
 | Personal home | HomeView; HomeController.load() | HomeDao reads member-filtered active items/buyers, reviews received and personal queue positions in one transaction. |
-| Cards / search | ListingTableView / ListingCards; ListingController.refresh() | ListingService and MarketplaceService search available listings and category descendants. |
+| Cards / search | ListingTableView / ListingCards; ListingController.refresh() | ListingService searches listings; CategoryTree validates and recursively includes descendants. |
 | Post / edit / sold / remove | ListingFormView / ListingTableView; ListingController.post()/update()/markSold()/withdraw() | ListingFactory creates a subtype; ListingDao records created_at or rechecks owner before title/price edits and ACTIVE-to-SOLD/REMOVED changes. |
-| History / waitlist | ListingController.viewDetails(); WaitlistController.join()/leave() | MarketplaceService uses LIFO/FIFO; InterestDao allocates joining order atomically, removes only the requesting buyer and counts current queue position. |
+| History / waitlist | ListingController.viewDetails(); WaitlistController.join()/leave() | ListingService keeps bounded LIFO history; WaitlistService reads FIFO order; InterestDao allocates joining order atomically, removes only the requesting buyer and counts current queue position. |
 | Review | ReviewsView; ReviewController.submit() | ReviewDao checks owner, status, interest, rating and duplicate before saving. |
 | Restore evidence | ListingTableView; ListingController.repairable()/restore() | ListingDao checks owner, type and missing details and saves observed evidence. |
 | API reference | ListingFormView; ListingController.suggest() | CatalogService -> client/parser -> DTOs -> CatalogMapper prepares references. |
 | Private chat | ChatView; ChatController.open()/select()/send()/refresh() | ChatService validates text; ChatDao filters participants and saves to Messages. |
 | Import | ImportView; AnalyticsController.importFile()/cancelImport() | Importer validates rows; HistoryDao supplies the insert; cancellation/failure rolls back. |
 | Analysis / charts | ChartsView; AnalyticsController.refresh() | AnalyticsService combines DAO means and Java weekly counts in AnalyticsSnapshot. |
-| Refresh | RefreshController.tick(); FxRefreshSchedule | Polls active idle pages; session/filter checks reject stale results. |
+| Refresh | RefreshController.tick(); FxRefreshSchedule | Checks committed changes before full list/chart reads; session/filter guards reject stale results. |
 | Sign out / close | AccountController.logout(); App.stop() | Clears session, stops timer, requests cancellation and shuts down the worker. |
 
 <!-- pagebreak -->
 
 ### Complete Java type inventory
 
-The current source contains 82 top-level Java types. Every one is listed below; the database contains eleven tables. A DTO, controller or view is not an additional database table.
+The current source contains 85 top-level Java types. Every one is listed below; the database contains eleven tables. A DTO, controller or view is not an additional database table.
 
 Table 14: Java types by package
 
 | Package | Types |
 |---|---|
 | base | App |
-| model | ChatMessage, ChatSnapshot, ChatThread, AnalyticsSnapshot, Category, CategorySummary, ConditionGrade, Electronics, Furniture, HomeItem, HomeSummary, ImportResult, InitialAccount, Listing, ListingForRepair, Member, Registration, Review, Seller, Textbook, WearLevel, WeeklySales |
+| model | AnalyticsSnapshot, CatalogSuggestion, Category, CategorySummary, ChatMessage, ChatSnapshot, ChatThread, ConditionGrade, Electronics, Furniture, HomeItem, HomeSummary, ImportResult, InitialAccount, Listing, ListingForRepair, Member, Registration, Review, Seller, Textbook, WearLevel, WeeklySales |
 | dto | CatalogProduct, CatalogResponse |
 | api | ProductCatalogClient, ProductCatalogParser |
-| dao | ChatDao, AnalyticsDao, CategoryDao, HistoryDao, HomeDao, InterestDao, ListingDao, MemberDao, ReviewDao, SellerDao |
-| persistence | AccountSetup, Database |
-| service | ChatService, AnalyticsService, AppException, CatalogMapper, CatalogService, CredentialSecurity, HomeService, ListingFactory, ListingService, MarketplaceService, MemberService, ReviewService, SalesAnalysis, SalesHistoryImporter, ServiceCall, WaitlistService |
-| controller | ChatController, AccountController, AnalyticsController, FxRefreshSchedule, FxTaskRunner, HomeController, ListingController, RefreshController, RefreshSchedule, ReviewController, TaskRunner, UserSession, WaitlistController |
-| ui | ChatView, ChartsView, HomeView, ImportView, ItemArtwork, ListingCards, ListingFormView, ListingTableView, LoginView, MarketplaceView, PasswordResetView, RegistrationView, ReviewsView, UiTools |
+| dao | AnalyticsDao, CategoryDao, ChatDao, HistoryDao, HomeDao, InterestDao, ListingDao, MemberDao, ReviewDao, SellerDao |
+| persistence | AccountSetup, Database, DatabaseChanges, SavedDates |
+| service | AnalyticsService, AppException, CatalogMapper, CatalogService, CategoryTree, ChatService, CredentialSecurity, HomeService, ListingFactory, ListingService, MemberService, ReviewService, SalesAnalysis, SalesHistoryImporter, ServiceCall, WaitlistService |
+| controller | AccountController, AnalyticsController, ChatController, FxRefreshSchedule, FxTaskRunner, HomeController, ListingController, RefreshController, RefreshSchedule, ReviewController, TaskRunner, UserSession, WaitlistController |
+| ui | ChartsView, ChatView, HomeView, ImportView, ItemArtwork, ListingCards, ListingFormView, ListingTableView, LoginView, MarketplaceView, PasswordResetView, RegistrationView, ReviewsView, UiTools |
 
-ServiceCall.Query is a nested SQL-operation interface. Anonymous Tasks execute background actions. Listing.incomplete() creates an anonymous read-only fallback for unavailable condition evidence; it is not a new posted item type or table.
+ServiceCall.Query is a nested SQL-operation interface. CatalogSuggestion.Status is a nested outcome enum. FxTaskRunner dispatches serial worker results to the JavaFX thread. Listing.incomplete() creates an anonymous read-only fallback for unavailable condition evidence; it is not a new posted item type or table.
+
+<!-- pagebreak -->
+
+#### Current application screens
+
+These screenshots show the implemented interface using temporary demonstration data. Accounts, listings, messages and imported sales in the pictures are examples; they are not evidence of real campus transactions.
+
+![Application screen](assets/app-marketplace.png)
+
+Figure 8: Marketplace cards and the selected item panel
+
+![Application screen](assets/app-create-listing.png)
+
+Figure 9: Listing fields and the live asking-price preview
+
+<!-- pagebreak -->
+
+![Application screen](assets/app-sales-history.png)
+
+Figure 10: JSON selection, committed progress and actual import totals
+
+![Application screen](assets/app-analytics.png)
+
+Figure 11: Weekly sales with the corresponding breakdown
