@@ -34,7 +34,8 @@ public class MemberDao {
         }
         try (var connection = database.open();
                 var statement = connection.prepareStatement(
-                        "SELECT id, name, passwordSalt, passwordHash FROM Members WHERE username = ?")) {
+                        "SELECT id, name, passwordSalt, passwordHash FROM Members "
+                                + "WHERE username = ?")) {
             statement.setString(1, username.strip().toLowerCase(Locale.ROOT));
             try (var result = statement.executeQuery()) {
                 if (result.next()) {
@@ -105,8 +106,9 @@ public class MemberDao {
         char[] codeChars = code.toCharArray();
         try (Connection connection = database.open()) {
             connection.setAutoCommit(false);
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO Members(name, username, passwordSalt, passwordHash, recoverySalt, recoveryHash)"
+            try (PreparedStatement statement = connection
+                    .prepareStatement("INSERT INTO Members(name, username, passwordSalt, "
+                            + "passwordHash, recoverySalt, recoveryHash)"
                             + " VALUES (?, ?, ?, ?, ?, ?)")) {
                 statement.setString(1, displayName.strip());
                 statement.setString(2, normalized);

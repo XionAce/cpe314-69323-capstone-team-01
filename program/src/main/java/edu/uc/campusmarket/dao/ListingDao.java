@@ -7,6 +7,7 @@ import edu.uc.campusmarket.model.ListingForRepair;
 import edu.uc.campusmarket.model.Textbook;
 import edu.uc.campusmarket.model.WearLevel;
 import edu.uc.campusmarket.persistence.Database;
+import edu.uc.campusmarket.persistence.SavedDates;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -30,9 +31,12 @@ public class ListingDao {
         List<Listing> listings = new ArrayList<>();
         // One shared listing row is joined to its type-specific evidence.
         String sql = """
-                SELECT l.*, t.listingId AS textbookId, t.missingPages, t.markingLevel, t.coverDamaged,
-                       e.listingId AS electronicsId, e.powersOn, e.hasFunctionalDefect, e.hasCosmeticDamage,
-                       f.listingId AS furnitureId, f.structurallyStable, f.hasStructuralDamage, f.surfaceWear
+                SELECT l.*, t.listingId AS textbookId, t.missingPages, t.markingLevel,
+                t.coverDamaged,
+                       e.listingId AS electronicsId, e.powersOn, e.hasFunctionalDefect,
+                       e.hasCosmeticDamage,
+                       f.listingId AS furnitureId, f.structurallyStable, f.hasStructuralDamage,
+                       f.surfaceWear
                 FROM Listings l
                 LEFT JOIN TextbookDetails t ON t.listingId = l.id
                 LEFT JOIN ElectronicsDetails e ON e.listingId = l.id
@@ -59,7 +63,7 @@ public class ListingDao {
         String status = result.getString("status");
         String type = result.getString("type");
         String savedDate = result.getString("created_at");
-        Instant createdAt = savedDate == null ? null : Instant.parse(savedDate);
+        Instant createdAt = SavedDates.read(savedDate);
         int detailCount = 0;
         if (result.getObject("textbookId") != null) {
             detailCount++;
