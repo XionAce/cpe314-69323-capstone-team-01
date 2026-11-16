@@ -34,6 +34,41 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DatabaseTest {
+    @Test
+    void changeObserverOnlyAdvancesForCommittedExternalWrites() throws Exception {
+        try (DatabaseChanges changes = new DatabaseChanges(database)) {
+            long before = changes.version();
+            assertEquals(before, changes.version());
+            try (Connection writer = database.open()) {
+                writer.setAutoCommit(false);
+                try (var update = writer.prepareStatement(
+                        "UPDATE Listings SET title = 'Changed elsewhere' WHERE id = 1")) {
+                    update.executeUpdate();
+                }
+                assertEquals(before, changes.version());
+                writer.commit();
+            }
+            assertNotEquals(before, changes.version());
+            long after = changes.version();
+            assertEquals(after, changes.version());
+        }
+    }
+
+    @Test
+    void badSavedListingDateDoesNotHideTheListingOrChangeItsPrice() throws Exception {
+        try (Connection writer = database.open();
+                var update = writer.prepareStatement(
+                        "UPDATE Listings SET created_at = 'not-a-date' WHERE id = 1")) {
+            update.executeUpdate();
+        }
+        var rows = database.getListings();
+        assertEquals(3, rows.size());
+        assertNull(rows.getFirst().getCreatedAt());
+        assertEquals(new BigDecimal("350.00"), rows.getFirst().getPrice());
+        assertTrue(rows.getFirst().hasConditionDetails());
+        assertTrue(rows.get(1).getCreatedAt() != null);
+    }
+
     @TempDir
     Path folder;
     private TestDatabase database;
@@ -56,8 +91,8 @@ class DatabaseTest {
     @Test
     void createsElevenTablesAndSeedOnlyOnce() throws SQLException {
         database.initialize();
-        assertEquals(11, number(
-                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"));
+        assertEquals(11, number("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND "
+                + "name NOT LIKE 'sqlite_%'"));
         assertEquals(3, database.getMembers().size());
         assertEquals(7, database.getCategories().size());
         assertEquals(3, database.getListings().size());
@@ -376,8 +411,9 @@ class DatabaseTest {
                 var second = other.open();
                 var firstQuery = first.createStatement();
                 var secondQuery = second.createStatement();
-                var a = firstQuery.executeQuery(
-                        "SELECT passwordSalt, passwordHash, recoveryHash FROM Members WHERE id = 1");
+                var a = firstQuery
+                        .executeQuery("SELECT passwordSalt, passwordHash, recoveryHash FROM "
+                                + "Members WHERE id = 1");
                 var b = secondQuery.executeQuery(
                         "SELECT passwordSalt, passwordHash FROM Members WHERE id = 1")) {
             assertTrue(a.next());

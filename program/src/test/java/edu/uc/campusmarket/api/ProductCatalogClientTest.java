@@ -22,6 +22,36 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProductCatalogClientTest {
     @Test
+    void catalogServiceDistinguishesMatchesEmptyAndFailureWithoutLosingManualEntry() {
+        ProductCatalogClient client = new ProductCatalogClient() {
+            @Override
+            public edu.uc.campusmarket.dto.CatalogResponse fetch() throws IOException {
+                return new edu.uc.campusmarket.dto.CatalogResponse(
+                        List.of(new CatalogProduct(1, "Monitor", "electronics", BigDecimal.TEN)),
+                        "HTTP 200");
+            }
+        };
+        var service = new edu.uc.campusmarket.service.CatalogService(client);
+        assertEquals(edu.uc.campusmarket.model.CatalogSuggestion.Status.OK,
+                service.result("monitor", "ELECTRONICS").status());
+        assertEquals(edu.uc.campusmarket.model.CatalogSuggestion.Status.EMPTY,
+                service.result("monitor", "TEXTBOOK").status());
+        assertEquals(edu.uc.campusmarket.model.CatalogSuggestion.Status.FAILED,
+                service.result("", "ELECTRONICS").status());
+        var unavailable = new edu.uc.campusmarket.service.CatalogService(
+                new ProductCatalogClient() {
+                    @Override
+                    public edu.uc.campusmarket.dto.CatalogResponse fetch() throws IOException {
+                        throw new IOException("Technical connection detail");
+                    }
+                });
+        var failed = unavailable.result("monitor", "ELECTRONICS");
+        assertEquals(edu.uc.campusmarket.model.CatalogSuggestion.Status.FAILED, failed.status());
+        assertTrue(failed.message().contains("manually"));
+        assertFalse(failed.message().contains("Technical connection detail"));
+    }
+
+    @Test
     void capturedPublicResponseParsesAndProvidesComparableElectronics() throws Exception {
         String json;
         try (var input = getClass().getResourceAsStream("/api/fakestore-products.json")) {
@@ -38,8 +68,8 @@ class ProductCatalogClientTest {
         var matches = CatalogMapper.matches(products, "monitor", "ELECTRONICS");
         assertFalse(matches.isEmpty());
         assertTrue(matches.stream().allMatch(p -> p.category().equals("electronics")));
-        assertTrue(matches.stream().allMatch(p -> p.title().toLowerCase(java.util.Locale.ROOT)
-                .contains("monitor")));
+        assertTrue(matches.stream()
+                .allMatch(p -> p.title().toLowerCase(java.util.Locale.ROOT).contains("monitor")));
     }
 
     @Test
@@ -98,7 +128,8 @@ class ProductCatalogClientTest {
         var products = ProductCatalogParser
                 .parse("""
                         [{"id":7,"title":"  Monitor  ","category":" electronics ","price":123.45,
-                          "description":"Extra data","rating":{"rate":4.5,"count":10},"image":"example.png"}]
+                          "description":"Extra data","rating":{"rate":4.5,"count":10},
+                          "image":"example.png"}]
                         """);
         assertEquals(new BigDecimal("123.45"), products.getFirst().price());
         assertEquals("Monitor", products.getFirst().title());

@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class MarketplaceServiceTest {
     @TempDir
     Path folder;
-    private MarketplaceService service;
+    private MarketplaceFixture service;
     private String starterPassword;
 
     @BeforeEach
@@ -37,25 +37,25 @@ class MarketplaceServiceTest {
                 new Category(2, 1L, "Electronics"), new Category(3, 2L, "Computers"),
                 new Category(4, 3L, "Laptops"), new Category(5, 4L, "Gaming"),
                 new Category(6, 1L, "Furniture"));
-        assertEquals(List.of(2L, 3L, 4L, 5L), MarketplaceService.categoryIdsUnder(2, tree));
-        assertEquals(List.of(5L), MarketplaceService.categoryIdsUnder(5, tree));
+        assertEquals(List.of(2L, 3L, 4L, 5L), CategoryTree.categoryIdsUnder(2, tree));
+        assertEquals(List.of(5L), CategoryTree.categoryIdsUnder(5, tree));
     }
 
     @Test
     void recursionRejectsCyclesAndMissingParents() {
         List<Category> cycle = List.of(new Category(10, 11L, "A"), new Category(11, 10L, "B"));
         assertThrows(IllegalArgumentException.class,
-                () -> MarketplaceService.categoryIdsUnder(10, cycle));
-        assertThrows(IllegalArgumentException.class, () -> MarketplaceService.categoryIdsUnder(1,
+                () -> CategoryTree.categoryIdsUnder(10, cycle));
+        assertThrows(IllegalArgumentException.class, () -> CategoryTree.categoryIdsUnder(1,
                 List.of(new Category(1, 99L, "Missing parent"))));
     }
 
     @Test
     void duplicateCategoryIdsAndUnknownSelectionAreRejected() {
-        assertThrows(IllegalArgumentException.class, () -> MarketplaceService.categoryIdsUnder(1,
+        assertThrows(IllegalArgumentException.class, () -> CategoryTree.categoryIdsUnder(1,
                 List.of(new Category(1, null, "A"), new Category(1, null, "B"))));
-        assertThrows(IllegalArgumentException.class, () -> MarketplaceService.categoryIdsUnder(99,
-                List.of(new Category(1, null, "Root"))));
+        assertThrows(IllegalArgumentException.class,
+                () -> CategoryTree.categoryIdsUnder(99, List.of(new Category(1, null, "Root"))));
     }
 
     @Test
@@ -70,7 +70,7 @@ class MarketplaceServiceTest {
     @Test
     void newPostBelongsToSelectedMemberAndSurvivesReopen() throws Exception {
         long id = postBook("Demo notes");
-        MarketplaceService reopened = new TestDatabase(folder.resolve("test.db")).market();
+        MarketplaceFixture reopened = new TestDatabase(folder.resolve("test.db")).market();
         reopened.initialize();
         assertTrue(contains(reopened.myListings(1), id));
         assertFalse(contains(reopened.myListings(2), id));
@@ -100,7 +100,7 @@ class MarketplaceServiceTest {
         assertEquals(20, service.recent(2).size());
         assertEquals(viewed.get(20), service.recent(2).get(0).getId());
         assertFalse(contains(service.recent(2), viewed.get(0)));
-        MarketplaceService reopened = new TestDatabase(folder.resolve("test.db")).market();
+        MarketplaceFixture reopened = new TestDatabase(folder.resolve("test.db")).market();
         reopened.initialize();
         assertTrue(reopened.recent(2).isEmpty());
     }
@@ -156,7 +156,7 @@ class MarketplaceServiceTest {
         service.joinWaitlist(1, 3);
         service.joinWaitlist(1, 2);
         service.joinWaitlist(2, 1);
-        MarketplaceService reopened = new TestDatabase(folder.resolve("test.db")).market();
+        MarketplaceFixture reopened = new TestDatabase(folder.resolve("test.db")).market();
         reopened.initialize();
         assertEquals(List.of(3L, 2L), reopened.getWaitlist(1));
         assertEquals(List.of(1L), reopened.getWaitlist(2));
@@ -175,7 +175,7 @@ class MarketplaceServiceTest {
 
     @Test
     void existingSessionSearchSeesAnotherSessionsNewPostAndWithdrawal() throws Exception {
-        MarketplaceService other = new TestDatabase(folder.resolve("test.db")).market();
+        MarketplaceFixture other = new TestDatabase(folder.resolve("test.db")).market();
         other.initialize();
         long id = postBook("Shared database update");
         assertTrue(contains(other.search(1, "Shared database"), id));
@@ -215,9 +215,7 @@ class MarketplaceServiceTest {
         assertEquals(3, rows.size());
         Listing item = rows.stream().filter(row -> row.getId() == 2).findFirst().orElseThrow();
         assertFalse(item.hasConditionDetails());
-        ListingService listings = new ListingService(service,
-                new edu.uc.campusmarket.dao.ListingDao(database),
-                new edu.uc.campusmarket.dao.CategoryDao(database));
+        ListingService listings = service.listings();
         String details = listings.details(1, item);
         assertTrue(details.contains("Details unavailable"));
         assertTrue(details.contains("Restore missing details"));

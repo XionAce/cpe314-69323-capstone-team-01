@@ -5,12 +5,14 @@ import edu.uc.campusmarket.dao.MemberDao;
 import edu.uc.campusmarket.dao.ReviewDao;
 import edu.uc.campusmarket.model.InitialAccount;
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -114,5 +116,25 @@ class AccountAndReviewTest {
         assertThrows(IllegalArgumentException.class, () -> reviews.submit(1, 2, 6, "Invalid"));
         assertTrue(reviews.load(1).isEmpty());
         assertEquals(1, reviews.submit(1, 2, 4, "Valid retry").size());
+    }
+
+    @Test
+    void missingReviewCommentHasItsOwnMessageAndDoesNotSaveAReview() throws Exception {
+        database.addInterest(1, 2);
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> reviews.submit(1, 2, 4, null));
+        assertEquals("Enter a review comment, or leave it empty.", error.getMessage());
+        assertTrue(reviews.load(1).isEmpty());
+        assertEquals("", reviews.submit(1, 2, 4, "").getFirst().comment());
+    }
+
+    @Test
+    void databaseFailureHasAClearMessageAndRetainsItsDiagnosticCause() {
+        SQLException detail = new SQLException("[SQLITE_CONSTRAINT] private table detail");
+        AppException error = assertThrows(AppException.class, () -> ServiceCall.get(() -> {
+            throw detail;
+        }));
+        assertEquals("Could not save or load data. Please try again.", error.getMessage());
+        assertSame(detail, error.getCause());
     }
 }

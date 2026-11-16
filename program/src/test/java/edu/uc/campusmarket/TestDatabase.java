@@ -14,7 +14,7 @@ import edu.uc.campusmarket.model.Listing;
 import edu.uc.campusmarket.model.ListingForRepair;
 import edu.uc.campusmarket.model.Member;
 import edu.uc.campusmarket.persistence.Database;
-import edu.uc.campusmarket.service.MarketplaceService;
+import edu.uc.campusmarket.service.MarketplaceFixture;
 import edu.uc.campusmarket.service.SalesHistoryImporter;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -28,10 +28,8 @@ public class TestDatabase extends Database {
         super(file);
     }
 
-    public MarketplaceService market() {
-        return new MarketplaceService(this, new MemberDao(this), new SellerDao(this),
-                new CategoryDao(this), new ListingDao(this), new InterestDao(this),
-                new ReviewDao(this), new AnalyticsDao(this), new HistoryDao(this));
+    public MarketplaceFixture market() {
+        return new MarketplaceFixture(this);
     }
 
     public SalesHistoryImporter importer() {
