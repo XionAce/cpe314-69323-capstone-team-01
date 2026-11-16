@@ -68,7 +68,7 @@ Maven manages JavaFX, Gson and the SQLite driver. Do not copy JARs by hand.
 | `src/main/resources/ui/marketplace.css` | Colors, spacing and styles used by the JavaFX controls. |
 | `src/test/java/` | Model, DAO, service and controller tests with temporary data and local HTTP servers. |
 
-The usual action path is **view -> controller -> service -> DAO -> SQLite**. Results return through controller properties to the bound screen. `MarketplaceService` retains the recursive category traversal, FIFO waitlist and LIFO recent history; the feature services call those existing rules.
+The usual action path is **view -> controller -> service -> DAO -> SQLite**. Results return through controller properties to the bound screen. `CategoryTree` owns recursive traversal, `WaitlistService` owns FIFO waitlists and `ListingService` owns LIFO recent history. Account and review operations use their focused services; there is no production catch-all facade.
 
 ## Database and missing condition details
 
@@ -84,7 +84,7 @@ If a listing lacks its subtype evidence, it remains visible with **Details unava
 
 ## Submission records
 
-See the root [known issues](../KNOWN_ISSUES.md) and [requirement map](../REQUIREMENT_MAP.md) for actual status and verification. The [editable design](../docs/design-document.md) and [design PDF](../docs/design-document.pdf) describe the refactor, registration/review rules, weekly analysis and all current Java types. The [optional PDF exporter](../tools/export_design.py) requires Python, ReportLab and Calibri; it is separate from running the application. Recorded verification is 142 passing JUnit tests and 50 separate application checks. The real public response is captured and tested; a live GUI network on/off demonstration remains outstanding.
+See the root [known issues](../KNOWN_ISSUES.md) and [requirement map](../REQUIREMENT_MAP.md) for status and verification. The [editable design](../docs/design-document.md) and [design PDF](../docs/design-document.pdf) describe the focused services, account/review rules, analysis and all current types. The [optional PDF exporter](../tools/export_design.py) requires Python, ReportLab and Calibri; it is separate from running the app. Recorded verification on 15 November is 159 passing JUnit tests, 60 broad GUI assertions and 17 independent two-process chat assertions. A live GUI network-toggle demonstration remains a separate presentation requirement.
 
 The application opens maximized. Navigation is across the top; saved reviews open as star/comment cards in a right-side popup. The selling screen includes a type illustration, imports show an indeterminate spinner/bar during actual work, and analytics use spaced colored bars with value tooltips.
 
@@ -99,4 +99,4 @@ Open an item and choose **Open chat**. The buyer writes first; the seller replie
 
 To demonstrate automatic updates, run the current program twice against the same data folder and sign in with two different accounts. Keep both Messages pages open. The existing three-second refresh displays saved replies without a manual refresh and preserves unsent text. Separate laptops do not share local messages. Existing sold-item chats stay usable for pickup; removed-item chats retain read-only history.
 
-Schema version 5 adds Messages and indexes while preserving earlier accounts and records. The current design includes eleven tables, 56 columns, fifteen foreign keys and 82 main Java types. Eight chat service tests and three chat-controller tests were added. A real two-process GUI test passed seventeen assertions, separately from JUnit.
+Schema version 5 adds Messages and indexes while preserving earlier accounts and records. The current design includes eleven tables, 56 columns, fifteen foreign keys and 85 main Java types. Eight chat service tests and three chat-controller tests were added. A real two-process GUI test passed seventeen assertions, separately from JUnit.

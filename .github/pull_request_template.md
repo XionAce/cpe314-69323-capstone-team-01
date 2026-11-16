@@ -14,4 +14,4 @@ List incomplete items honestly. Do not mark instructor approval, live API connec
 
 List the actual contributors and their work. Each member must commit under their own identity.
 
-Course checkpoint submission PRs must remain open for instructor grading; do not merge them yourselves.
+Follow the current instructor checkpoint instructions. Final defense is graded from main after Milestone 2 is merged. Preserve the existing branches and member history.

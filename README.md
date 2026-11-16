@@ -60,7 +60,7 @@ The SQLite database is created outside the repository on first startup. Tests us
 
 ## Verification status
 
-JDK 21 Maven verification on 14 November 2026 passed **142 JUnit tests**, with zero failures, errors or skipped tests and the enforcer enabled. **50 earlier application checks passed on 13 November**, including registration, review eligibility, weekly charts and large-import cancellation/rollback. Temporary databases were used. The revised design was checked against the code and schema, and its PDF was visually reviewed. The real HTTP-200/20-product response is captured and tested; the live GUI network-toggle demonstration remains; see [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+JDK 21 Maven verification on 15 November 2026 passed **159 JUnit tests**, with zero failures, errors or skipped tests and the enforcer enabled. **50 earlier application checks passed on 13 November**, including registration, review eligibility, weekly charts and large-import cancellation/rollback. Temporary databases were used. The revised design was checked against the code and schema, and its PDF was visually reviewed. The real HTTP-200/20-product response is captured and tested; the live GUI network-toggle demonstration remains; see [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ## Project files
 
@@ -74,9 +74,9 @@ JDK 21 Maven verification on 14 November 2026 passed **142 JUnit tests**, with z
 - [Known issues and correction status](KNOWN_ISSUES.md)
 - [Requirement-to-code and test map](REQUIREMENT_MAP.md)
 
-The current integration branch is `project/milestone-2`, with PR #14 titled **Milestone 2 - Team 01**. For final defense, the instructor grades **main after merging Milestone 2**. No new branch is required. Commit/push the verified corrections, review the existing PR, and merge manually before the defense. Then verify a fresh clone of main on the presentation machine. Keep the existing branches/history. See [SETUP.md](SETUP.md) for rehearsal and capture steps.
+The integration branch is `project/milestone-2`. PR #14, **Milestone 2 - Team 01**, was merged into main on 14 November. The latest local corrections still need reviewed publication. For final defense, the instructor grades **main**; verify a fresh clone on the presentation machine after publication. Keep existing branches/history. See [SETUP.md](SETUP.md) for rehearsal and capture steps.
 
-The application opens maximized. Navigation is across the top; saved reviews open as star/comment cards in a right-side popup. The selling screen includes a type illustration, imports show an indeterminate spinner/bar during actual work, and analytics use spaced colored bars with value tooltips.
+The application fills the usable work area and uses the supplied logo with navy, teal and gold. Navigation is across the top; Marketplace has scrollable cards and a selected-item panel, and saved reviews open as readable star/comment cards. The selling screen includes a live listing preview. Choose or drop a JSON file, then select Import selected file; choosing alone saves nothing. Imports show actual activity and saved/invalid/duplicate totals. Analytics shows one chart at a time with an exact breakdown beside it.
 
 
 ## Private listing chat
@@ -85,4 +85,17 @@ Open an item and choose **Open chat**. The buyer writes first; the seller replie
 
 To demonstrate automatic updates, run the current program twice against the same data folder and sign in with two different accounts. Keep both Messages pages open. The existing three-second refresh displays saved replies without a manual refresh and preserves unsent text. Separate laptops do not share local messages. Existing sold-item chats stay usable for pickup; removed-item chats retain read-only history.
 
-Schema version 5 adds Messages and indexes while preserving earlier accounts and records. The current design includes eleven tables, 56 columns, fifteen foreign keys and 82 main Java types. Eight chat service tests and three chat-controller tests were added. A real two-process GUI test passed seventeen assertions, separately from JUnit.
+Schema version 5 adds Messages and indexes while preserving earlier accounts and records. The current design includes eleven tables, 56 columns, fifteen foreign keys and 85 main Java types. Eight chat service tests and three chat-controller tests were added. A real two-process GUI test passed seventeen assertions, separately from JUnit.
+
+
+### Latest correction verification
+
+On 15 November 2026, JDK 21 Maven `clean verify` passed 159 tests in fourteen classes,
+with zero failures, errors or skipped tests. Ninety-three actual-application assertions and
+seventeen independent two-process chat assertions also passed on temporary databases.
+Quiet refresh accepts foreground actions and checks committed changes before full
+list/chart reads. The application uses focused services, explicit catalog outcomes,
+clear inline input errors, keyboard card activation and safe handling of unknown dates.
+The checked design Word/PDF have 33 pages and 50 verified contents entries. The 24-slide defense deck includes the original proposal questions and implementation answers before the closing Q&A. Both contain current application evidence. These local
+corrections still require a reviewed commit and publication; live defense and individual
+contribution requirements remain separate.
