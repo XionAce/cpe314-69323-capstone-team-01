@@ -13,6 +13,8 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib import colors
 from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.utils import ImageReader
+from reportlab.platypus import Image as RasterImage
 from reportlab.platypus import (BaseDocTemplate, PageTemplate, Frame, Paragraph,
                                Spacer, Table, TableStyle, PageBreak, Preformatted, KeepTogether, HRFlowable)
 from reportlab.platypus.tableofcontents import TableOfContents
@@ -381,7 +383,14 @@ def export(name):
         if line.startswith('<!--') or line.startswith('[Editable diagram]'): continue
         if line.startswith('![') and line.endswith('.png)'):
             filename=Path(line.rsplit('(',1)[1][:-1]).with_suffix('.drawio')
-            story.append(drawio_sketch(filename)); continue
+            if (ROOT/filename).is_file():
+                story.append(drawio_sketch(filename))
+            else:
+                image=ROOT/Path(line.rsplit('(',1)[1][:-1])
+                width,height=ImageReader(str(image)).getSize()
+                scale=min(468/width,320/height)
+                story.append(RasterImage(str(image),width=width*scale,height=height*scale))
+            continue
         if line.startswith('```'):
             language=line[3:]; block=[]
             while i<len(lines) and not lines[i].startswith('```'):
@@ -417,6 +426,8 @@ def export(name):
         if line.startswith('# '): story.append(p(line[2:],'title')); continue
         if line.startswith('## '):
             item=p(line[3:],'h1'); item.toc=bool(re.match(r'\d|Appendix|Revision History',line[3:])); rule=HRFlowable(width='100%',thickness=0.8,color=GOLD,spaceAfter=9); rule.keepWithNext=True; story.extend([item,rule]); continue
+        if line.startswith('#### '):
+            story.append(p(line[5:],'h2')); continue
         if line.startswith('### '):
             item=p(line[4:],'h2'); item.toc=(' ' in line[4:] or line[4:] == 'Verification'); story.append(item); continue
         if line.startswith('Table '):
